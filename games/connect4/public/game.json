@@ -1,0 +1,20 @@
+{
+  "id": "connect4",
+  "name": "4 en línea",
+  "version": "1.0.0",
+  "description": "Conecta cuatro fichas antes que tu rival. Contra la computadora (IA en Prolog) o 2 personas en la misma pantalla.",
+  "gameStatsId": "connect4",
+  "gameVersion": "1.0",
+  "entry": "/games/connect4/",
+  "icon": "/games/connect4/icon.svg",
+  "players": { "min": 1, "max": 2 },
+  "modes": ["vs-cpu", "local-2p"],
+  "options": [
+    { "key": "difficulty", "label": "Dificultad", "type": "select",
+      "values": ["easy", "medium", "hard"], "labels": ["Fácil", "Media", "Difícil"],
+      "default": "medium", "modes": ["vs-cpu"] },
+    { "key": "turnSeconds", "label": "Tiempo por turno", "type": "select",
+      "values": [0, 15, 30, 60], "labels": ["Sin límite", "15 s", "30 s", "60 s"], "default": 0 }
+  ],
+  "protocol": "gameconsole/1"
+}
