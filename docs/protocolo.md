@@ -223,7 +223,7 @@ Se usa el **contrato de GameStats tal como está** (`gamestats/contracts/event.s
 | Campo | Lo llena | Cómo |
 |---|---|---|
 | `eventId` | SDK | `{matchId}-e{n}`, con `n` = 1, 2, 3… por partida |
-| `timestamp` | SDK | `new Date().toISOString()` (RFC 3339) |
+| `timestamp` | SDK | `new Date().toISOString()` (RFC 3339). **Nunca retrocede** dentro de una partida: si el reloj de la PC se ajusta hacia atrás, se repite el anterior. Varios eventos de una jugada pueden tener el mismo milisegundo; Go los ordena con `sort.SliceStable` y respeta el orden de llegada |
 | `gameId` | SDK | `gameStatsId` del manifiesto |
 | `gameVersion` | SDK | `gameVersion` del manifiesto |
 | `matchId` | SDK | El que mandó la consola en `INIT` |
@@ -319,11 +319,15 @@ Respuesta `200`:
 
 ## 8. Estadísticas para el panel
 
-El panel **no calcula nada**: muestra lo que devuelve GameStats y vuelve a consultar **cada 3 s**. Estas son las rutas nuevas de GameStats `v1.1`. Los nombres son propuestas; los detalles los define quien implementa cada una.
+El panel **no calcula nada**: muestra lo que devuelve GameStats y vuelve a consultar **cada 3 s**.
+
+**El panel es una app propia en `/panel/`** (carpeta `panel/`, contenedor `panel`). La consola lo muestra con un enlace o un `<iframe src="/panel/">`; no hace falta reprogramarlo dentro de la consola.
+
+Estas son las rutas nuevas de GameStats `v1.1`:
 
 | Ruta | Servicio | Devuelve |
 |---|---|---|
-| `GET /api/games` | Go | Por juego: partidas `inProgress` (en curso ahora) |
+| `GET /api/games` | Go | Por juego: partidas `inProgress` (en curso ahora). Formato que espera el panel: `[{ "gameId": "connect4", "inProgress": 2 }]`. Mientras no exista, el panel las cuenta desde `/api/matches` |
 | `GET /api/stats/overview` | Scala | Totales: partidas terminadas por juego, jugadores distintos, patrones más frecuentes, mejores jugadores |
 | `GET /api/stats/games/{gameId}` | Scala | Lo de un juego: partidas terminadas, duración promedio, victorias por jugador, promedios de sus métricas, patrones |
 | `GET /api/players/{playerId}` | Scala | Ya existe |
