@@ -2,7 +2,7 @@
 
 Acuerdos entre la consola, los juegos, el registry, Prolog y GameStats. Si algo de aquí cambia, se cambia primero este documento y después el código.
 
-**Estado:** v1, revisado por Danny y Dylan (7-nov). Quedan las pruebas de la sección 10.
+**Estado:** v1, revisado por Danny y Dylan y probado contra GameStats `v1.0` (7-nov).
 
 ## Contenido
 
@@ -273,7 +273,7 @@ Se mandan como **datos extra** en el `DISC_DROPPED` de la computadora. El contra
             "ai": { "engine": "prolog-minimax", "depth": 6, "score": 12, "nodes": 4821, "ms": 85 } } }
 ```
 
-> ⚠️ Hay que confirmar con una prueba contra GameStats `v1.0` que Scala ignora el campo `ai` y no descarta el evento (sección 10).
+> ✅ Probado contra GameStats `v1.0`: Scala ignora el campo `ai` y no descarta el evento (sección 10).
 
 ---
 
@@ -365,9 +365,15 @@ Lo que le queda a cada juego:
 ## 10. Pendientes
 
 - [x] **Juegos nuevos en GameStats — aprobado (Danny y Dylan).** `gameId` es una lista cerrada en el contrato (`racing`, `fighting`, `connect4`, `tetris`) y Go rechaza los `gameId` desconocidos. En `v1.1` GameStats acepta **cualquier `gameId`**: los juegos conocidos siguen con sus validaciones y su analizador; uno desconocido se analiza con las estadísticas genéricas de Scala (duración, eventos por acción, jugadores, ganador si lo hay).
-- [ ] **Pruebas contra GameStats `v1.0`** antes de programar los juegos. Mandar lotes directo a Scala (`POST /analyze`) y comprobar que:
-  - un `DISC_DROPPED` con `data.ai` **no** se descarta;
-  - una partida de fighting y una de connect4 terminadas **sin ganador** (abandonadas) se analizan;
-  - un `MATCH_FINISHED` **sin `data`** se acepta en fighting, connect4 y tetris.
+- [x] **Pruebas contra GameStats `v1.0`** (7-nov, lotes armados desde los fixtures del contrato y enviados directo a Scala `POST /analyze`). Las 4 pasaron, todos los eventos analizados y **ningún descarte** en el log de Scala:
+
+  | Caso | Enviados / analizados | Ganador |
+  |---|---|---|
+  | connect4 contra la computadora con `data.ai` en cada `DISC_DROPPED` de `cpu` | 22 / 22 | `p1` (y patrones `DOUBLE_THREAT`, `QUICK_WIN`) |
+  | connect4 abandonada: `PLAYER_LEFT` + `MATCH_FINISHED` sin `data` | 17 / 17 | `null` |
+  | fighting abandonada a mitad del round 1: `PLAYER_LEFT` + `MATCH_FINISHED` sin `data` | 12 / 12 | `null` |
+  | tetris completa con `MATCH_FINISHED` sin `data` | 31 / 31 | `null` (patrón `BACK_TO_BACK`) |
+
+  Conclusión: `data.ai`, las partidas sin ganador y el cierre de respaldo de la consola funcionan con GameStats tal como está.
 - [ ] Definir el formato exacto de las respuestas de `/api/games` y `/api/stats/...` cuando se implementen.
 - [x] Revisión de Dylan (7-nov): rutas de nginx, cierre de respaldo, `STOP`, partidas ocultas, `playerId` distintos, nada por frame, registry en Node/TS. Incorporado en esta versión.
