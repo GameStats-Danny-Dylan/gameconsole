@@ -1,0 +1,80 @@
+# GameConsole: versión desplegada. Igual que docker-compose.yml, pero en lugar
+# de compilar el código descarga las imágenes ya publicadas por el CD en GitHub
+# Container Registry. Solo hace falta Docker.
+#
+#   docker compose -f docker-compose.deploy.yml up -d --wait                    # todo, en http://localhost:8000
+#   docker compose -f docker-compose.deploy.yml --profile tunnel up -d --wait   # además, la URL pública
+#   docker compose -f docker-compose.deploy.yml logs tunnel                     # ahí aparece la URL *.trycloudflare.com
+#   docker compose -f docker-compose.deploy.yml down                            # apagar
+#
+# Versiones: GAMECONSOLE_TAG (por defecto latest; v1.0 al entregar) y
+# GAMESTATS_TAG (por defecto v1.0). Puerto: GATEWAY_PORT (8000).
+
+name: gameconsole
+
+x-gc: &gc
+  restart: unless-stopped
+
+services:
+  gateway:
+    <<: *gc
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-gateway:${GAMECONSOLE_TAG:-latest}
+    ports:
+      - "${GATEWAY_PORT:-8000}:80"
+    depends_on:
+      registry: { condition: service_healthy }
+      prolog: { condition: service_healthy }
+      ingestion: { condition: service_healthy }
+
+  registry:
+    <<: *gc
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-registry:${GAMECONSOLE_TAG:-latest}
+    environment:
+      PORT: "8080"
+      HEARTBEAT_TIMEOUT_MS: "15000"
+
+  prolog:
+    <<: *gc
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-prolog:${GAMECONSOLE_TAG:-latest}
+    environment:
+      PORT: "8080"
+
+  analytics:
+    <<: *gc
+    image: ghcr.io/danny7w7-coder/gamestats-analytics:${GAMESTATS_TAG:-v1.0}
+    environment:
+      PORT: "8081"
+      RESULTS_DIR: "/data"
+    volumes:
+      - analytics-results:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8081/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+
+  ingestion:
+    <<: *gc
+    image: ghcr.io/danny7w7-coder/gamestats-ingestion:${GAMESTATS_TAG:-v1.0}
+    environment:
+      PORT: "8080"
+      SCALA_URL: "http://analytics:8081"
+      WORKERS: "4"
+    depends_on:
+      analytics: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  tunnel:
+    <<: *gc
+    image: cloudflare/cloudflared:2025.11.1
+    profiles: ["tunnel"]
+    command: ["tunnel", "--no-autoupdate", "--url", "http://gateway:80"]
+    depends_on:
+      gateway: { condition: service_healthy }
+
+volumes:
+  analytics-results:
