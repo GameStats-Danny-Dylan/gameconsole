@@ -1,0 +1,106 @@
+# GameConsole: levanta todo el sistema. Solo se publica el gateway (nginx);
+# el resto se habla por la red interna de Docker con su nombre de servicio.
+#
+#   docker compose up -d --build --wait          # todo, en http://localhost:8000
+#   docker compose --profile tunnel up -d        # además, el túnel de Cloudflare
+#   docker compose logs tunnel                   # ahí aparece la URL pública *.trycloudflare.com
+#   docker compose down                          # apagar (los resultados se conservan)
+#   docker compose down -v                       # apagar y borrar los resultados
+#
+# Variables (opcionales, en la terminal o en un archivo .env):
+#   GATEWAY_PORT   puerto de la PC donde se publica todo (8000)
+#   GAMESTATS_TAG  versión de las imágenes de GameStats (v1.0; v1.1 cuando se publique)
+
+name: gameconsole
+
+services:
+  # Única puerta de entrada: consola, juegos y APIs (protocolo, sección 1).
+  gateway:
+    build: ./gateway
+    image: gameconsole-gateway
+    ports:
+      - "${GATEWAY_PORT:-8000}:80"
+    depends_on:
+      registry: { condition: service_healthy }
+      prolog: { condition: service_healthy }
+      ingestion: { condition: service_healthy }
+    restart: unless-stopped
+
+  # Descubrimiento automático de juegos (protocolo, sección 3).
+  registry:
+    build: ./registry
+    image: gameconsole-registry
+    environment:
+      PORT: "8080"
+      HEARTBEAT_TIMEOUT_MS: "15000"
+    restart: unless-stopped
+
+  # IA del 4 en línea en SWI-Prolog (protocolo, sección 7).
+  prolog:
+    build: ./prolog
+    image: gameconsole-prolog
+    environment:
+      PORT: "8080"
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # GameStats (Proyecto 1): imágenes publicadas, no se compilan aquí.
+  # ------------------------------------------------------------------
+  analytics:
+    image: ghcr.io/danny7w7-coder/gamestats-analytics:${GAMESTATS_TAG:-v1.0}
+    environment:
+      PORT: "8081"
+      RESULTS_DIR: "/data"
+    volumes:
+      - analytics-results:/data   # un JSON por partida: sobrevive a "down"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8081/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 20                 # la JVM tarda unos segundos en arrancar
+    restart: unless-stopped
+
+  ingestion:
+    image: ghcr.io/danny7w7-coder/gamestats-ingestion:${GAMESTATS_TAG:-v1.0}
+    environment:
+      PORT: "8080"
+      SCALA_URL: "http://analytics:8081"
+      WORKERS: "4"
+    depends_on:
+      analytics: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # Consola y juegos (Dylan / Danny). Se agregan cuando existan.
+  # Cada juego es un servicio llamado game-{id} en el puerto 8080; nginx
+  # lo encuentra solo y el juego se anota en el registry al arrancar.
+  # ------------------------------------------------------------------
+  # console:
+  #   build: ./console
+  #   image: gameconsole-console
+  #
+  # game-connect4:
+  #   build: ./games/connect4
+  #   image: gameconsole-game-connect4
+  #   environment:
+  #     REGISTRY_URL: "http://registry:8080"
+  #   depends_on:
+  #     registry: { condition: service_healthy }
+
+  # Túnel de Cloudflare: publica el gateway en una URL *.trycloudflare.com
+  # (cambia en cada arranque). Solo con --profile tunnel.
+  tunnel:
+    image: cloudflare/cloudflared:2025.11.1
+    profiles: ["tunnel"]
+    command: ["tunnel", "--no-autoupdate", "--url", "http://gateway:80"]
+    depends_on:
+      gateway: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  analytics-results:

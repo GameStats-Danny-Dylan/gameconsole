@@ -53,19 +53,19 @@ location ~ ^/games/(?<gid>[a-z0-9-]+)/ {
 
 ### APIs (prefijo fijo)
 
-Las APIs usan `proxy_pass` **sin variables y con URI**, así nginx cambia el prefijo `/api/...` por la ruta interna de cada servicio. GameStats no tiene que saber nada de `/api`:
+nginx cambia el prefijo `/api/...` por la ruta interna de cada servicio, así GameStats no tiene que saber nada de `/api`. Como todo usa variables (para que nginx arranque aunque falte un servicio y siga a un contenedor que cambió de IP), el prefijo se cambia con `rewrite`. Archivo completo: [`gateway/default.conf`](../gateway/default.conf).
 
 ```nginx
-location = /api/events   { proxy_pass http://ingestion:8080/events; }
-location = /api/matches  { proxy_pass http://ingestion:8080/matches; }
-location = /api/games    { proxy_pass http://ingestion:8080/games; }
-location /api/stats/     { proxy_pass http://analytics:8081/stats/; }
-location /api/results    { proxy_pass http://analytics:8081/results; }
-location /api/players/   { proxy_pass http://analytics:8081/players/; }
-location /api/registry/  { proxy_pass http://registry:8080/; }
-location /api/ai/        { proxy_pass http://prolog:8080/; }
-location /               { proxy_pass http://console:8080/; }
+location = /api/events  { set $up ingestion:8080; rewrite ^ /events break; proxy_pass http://$up; }
+location /api/stats/    { set $up analytics:8081; rewrite ^/api(/.*)$ $1 break; proxy_pass http://$up; }
+location /api/registry/ { set $up registry:8080;  rewrite ^/api/registry(/.*)$ $1 break; proxy_pass http://$up; }
+location /api/ai/       { set $up prolog:8080;    rewrite ^/api/ai(/.*)$ $1 break; proxy_pass http://$up; }
+# … igual para /api/matches, /api/games, /api/results, /api/players/
+location /              { set $up console:8080;   proxy_pass http://$up; }
 ```
+
+- Si la consola o un juego no están corriendo, el gateway responde una página de aviso (`503`) en vez de caerse.
+- Solo el gateway se publica en la PC (puerto `8000` por defecto, variable `GATEWAY_PORT`). Ver [`docker-compose.yml`](../docker-compose.yml).
 
 ---
 
