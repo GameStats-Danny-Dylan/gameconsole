@@ -24,6 +24,11 @@ echo "-- servicios"
 [ "$(get /api/registry/health | jq -r .status)" = ok ] || fail "registry";        ok "registry"
 [ "$(get /api/ai/health | jq -r .status)" = ok ]       || fail "prolog";          ok "prolog"
 
+echo "-- apps servidas por el gateway"
+curl -fsS --max-time 10 "$BASE/panel/" | grep -q "Panel de GameConsole" || fail "panel /panel/"; ok "panel"
+curl -fsS --max-time 10 "$BASE/games/connect4/" | grep -q "4 en línea" || fail "/games/connect4/"; ok "4 en línea"
+[ "$(get /games/connect4/game.json | jq -r .id)" = connect4 ] || fail "game.json del 4 en línea"; ok "game.json"
+
 echo "-- IA (Prolog): rojo tiene 3 abajo, amarillo debe tapar en la 4"
 board='{"board":[["red"],["red"],["red"],[],["yellow"],["yellow"],[]],"player":"yellow","difficulty":"hard"}'
 col=$(post /api/ai/connect4/move "$board" | jq -r .column)

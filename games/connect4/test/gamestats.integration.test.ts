@@ -15,7 +15,9 @@ import { Connect4Match, type Seat } from "../src/domain/Connect4Match";
 import { EventStamper, type ContractEvent } from "../src/standalone/EventStamper";
 import { simulate } from "./support/simulate";
 
-const BASE = process.env.GAMESTATS_URL;
+// Variable de entorno de Node (sin depender de @types/node).
+const BASE: string | undefined = (globalThis as { process?: { env: Record<string, string | undefined> } })
+  .process?.env.GAMESTATS_URL;
 const run = `${Date.now().toString(36)}`;
 
 async function send(events: ContractEvent[]): Promise<void> {

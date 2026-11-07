@@ -25,6 +25,7 @@ services:
       registry: { condition: service_healthy }
       prolog: { condition: service_healthy }
       ingestion: { condition: service_healthy }
+      panel: { condition: service_healthy }
 
   registry:
     <<: *gc
@@ -38,6 +39,16 @@ services:
     image: ghcr.io/gamestats-danny-dylan/gameconsole-prolog:${GAMECONSOLE_TAG:-latest}
     environment:
       PORT: "8080"
+
+  panel:
+    <<: *gc
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-panel:${GAMECONSOLE_TAG:-latest}
+
+  game-connect4:
+    <<: *gc
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-connect4:${GAMECONSOLE_TAG:-latest}
+    environment:
+      REGISTRY_URL: "http://registry:8080"
 
   analytics:
     <<: *gc

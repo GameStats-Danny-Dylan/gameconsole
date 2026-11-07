@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [registry, games/connect4]
+        app: [registry, panel, games/connect4]
     defaults:
       run:
         working-directory: ${{ matrix.app }}

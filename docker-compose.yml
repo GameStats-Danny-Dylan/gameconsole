@@ -24,6 +24,7 @@ services:
       registry: { condition: service_healthy }
       prolog: { condition: service_healthy }
       ingestion: { condition: service_healthy }
+      panel: { condition: service_healthy }
     restart: unless-stopped
 
   # Descubrimiento automático de juegos (protocolo, sección 3).
@@ -46,8 +47,10 @@ services:
   # ------------------------------------------------------------------
   # GameStats (Proyecto 1): imágenes publicadas, no se compilan aquí.
   # ------------------------------------------------------------------
+  # ANALYTICS_IMAGE / INGESTION_IMAGE permiten probar una versión local de
+  # GameStats sin publicarla (por ejemplo, la v1.1 construida desde ../gamestats).
   analytics:
-    image: ghcr.io/danny7w7-coder/gamestats-analytics:${GAMESTATS_TAG:-v1.0}
+    image: ${ANALYTICS_IMAGE:-ghcr.io/danny7w7-coder/gamestats-analytics:${GAMESTATS_TAG:-v1.0}}
     environment:
       PORT: "8081"
       RESULTS_DIR: "/data"
@@ -61,7 +64,7 @@ services:
     restart: unless-stopped
 
   ingestion:
-    image: ghcr.io/danny7w7-coder/gamestats-ingestion:${GAMESTATS_TAG:-v1.0}
+    image: ${INGESTION_IMAGE:-ghcr.io/danny7w7-coder/gamestats-ingestion:${GAMESTATS_TAG:-v1.0}}
     environment:
       PORT: "8080"
       SCALA_URL: "http://analytics:8081"
@@ -75,22 +78,27 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # Panel de estadísticas (en /panel/): muestra lo que calcula GameStats.
+  panel:
+    build: ./panel
+    image: gameconsole-panel
+    restart: unless-stopped
+
   # ------------------------------------------------------------------
-  # Consola y juegos (Dylan / Danny). Se agregan cuando existan.
-  # Cada juego es un servicio llamado game-{id} en el puerto 8080; nginx
-  # lo encuentra solo y el juego se anota en el registry al arrancar.
+  # Juegos: cada uno es un servicio llamado game-{id} en el puerto 8080.
+  # nginx lo encuentra solo por el nombre y el juego se anota en el registry
+  # al arrancar (con sdk/server). Agregar un juego = agregar su servicio.
   # ------------------------------------------------------------------
-  # console:
+  game-connect4:
+    build: ./games/connect4
+    image: gameconsole-game-connect4
+    environment:
+      REGISTRY_URL: "http://registry:8080"   # lo usará sdk/server
+    restart: unless-stopped
+
+  # console:            (Dylan)
   #   build: ./console
   #   image: gameconsole-console
-  #
-  # game-connect4:
-  #   build: ./games/connect4
-  #   image: gameconsole-game-connect4
-  #   environment:
-  #     REGISTRY_URL: "http://registry:8080"
-  #   depends_on:
-  #     registry: { condition: service_healthy }
 
   # Túnel de Cloudflare: publica el gateway en una URL *.trycloudflare.com
   # (cambia en cada arranque). Solo con --profile tunnel.

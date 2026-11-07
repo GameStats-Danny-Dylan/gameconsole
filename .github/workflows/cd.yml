@@ -68,6 +68,8 @@ jobs:
           - { name: gateway,  context: ./gateway }
           - { name: registry, context: ./registry }
           - { name: prolog,   context: ./prolog }
+          - { name: panel,    context: ./panel }
+          - { name: game-connect4, context: ./games/connect4 }
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
