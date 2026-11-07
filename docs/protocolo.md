@@ -2,7 +2,7 @@
 
 Acuerdos entre la consola, los juegos, el registry, Prolog y GameStats. Si algo de aquí cambia, se cambia primero este documento y después el código.
 
-**Estado:** borrador para revisar entre Danny y Dylan.
+**Estado:** v1, revisado por Danny y Dylan (7-nov). Quedan las pruebas de la sección 10.
 
 ## Contenido
 
@@ -23,26 +23,49 @@ Acuerdos entre la consola, los juegos, el registry, Prolog y GameStats. Si algo 
 
 Todo entra por **nginx**, en un solo origen. Así se evita CORS y el mismo `docker-compose` funciona en una PC, detrás del túnel o en un servidor. **Nunca se escribe `localhost` en el código: siempre rutas relativas.**
 
-| Ruta pública | Va a | Qué es |
+| Ruta pública | Va a (ruta interna) | Qué es |
 |---|---|---|
-| `/` | `console` | La consola |
-| `/games/{id}/` | contenedor `game-{id}` (puerto 8080) | La app de cada juego (por ejemplo, `/games/connect4/`) |
-| `/api/registry/...` | `registry` | Descubrimiento de juegos |
-| `/api/events` | `ingestion` (Go) `POST /events` | Envío de eventos |
-| `/api/matches`, `/api/games` | `ingestion` (Go) | Estado de las partidas y partidas por juego |
-| `/api/stats/...`, `/api/results...`, `/api/players/...` | `analytics` (Scala) | Estadísticas y resultados |
-| `/api/ai/...` | `prolog` | IA |
+| `/` | `console:8080/` | La consola |
+| `/games/{id}/...` | `game-{id}:8080/games/{id}/...` (**sin quitar el prefijo**) | La app de cada juego (por ejemplo, `/games/connect4/`) |
+| `/api/registry/...` | `registry:8080/...` | Descubrimiento de juegos |
+| `/api/events` | `ingestion:8080/events` | Envío de eventos |
+| `/api/matches` | `ingestion:8080/matches` | Estado de las partidas (ya existe) |
+| `/api/games` | `ingestion:8080/games` | Partidas en curso por juego (nuevo en v1.1) |
+| `/api/stats/...` | `analytics:8081/stats/...` | Estadísticas (nuevo en v1.1) |
+| `/api/results...`, `/api/players/...` | `analytics:8081/results...`, `/players/...` | Resultados (ya existen) |
+| `/api/ai/...` | `prolog:8080/...` | IA |
 
-**Juegos dinámicos en nginx:** la ruta `/games/{id}/` se resuelve con una regla genérica que usa el DNS interno de Docker:
+### Juegos dinámicos
+
+La ruta `/games/{id}/` se resuelve con una regla genérica que usa el DNS interno de Docker:
 
 ```nginx
 resolver 127.0.0.11 valid=10s;                       # DNS de Docker
 location ~ ^/games/(?<gid>[a-z0-9-]+)/ {
-    proxy_pass http://game-$gid:8080;
+    proxy_pass http://game-$gid:8080;                # con variable y sin URI: pasa la ruta completa
 }
 ```
 
-Por eso **cada juego corre en un contenedor llamado `game-{id}`** y escucha en el puerto `8080`. Si se agrega un juego nuevo, nginx no cambia.
+- **Cada juego corre en un contenedor llamado `game-{id}`** y escucha en el puerto `8080`. Si se agrega un juego nuevo, nginx no cambia.
+- Como `proxy_pass` lleva una variable, nginx **no quita el prefijo**: el juego recibe `/games/{id}/...`. Por eso **cada juego se sirve bajo `/games/{id}/`**:
+  - en Vite, `base: '/games/{id}/'`;
+  - el servidor del SDK (`sdk/server`) sirve los archivos bajo ese prefijo, que lee de la variable `GAME_BASE` (por defecto `/games/{id}/`).
+
+### APIs (prefijo fijo)
+
+Las APIs usan `proxy_pass` **sin variables y con URI**, así nginx cambia el prefijo `/api/...` por la ruta interna de cada servicio. GameStats no tiene que saber nada de `/api`:
+
+```nginx
+location = /api/events   { proxy_pass http://ingestion:8080/events; }
+location = /api/matches  { proxy_pass http://ingestion:8080/matches; }
+location = /api/games    { proxy_pass http://ingestion:8080/games; }
+location /api/stats/     { proxy_pass http://analytics:8081/stats/; }
+location /api/results    { proxy_pass http://analytics:8081/results; }
+location /api/players/   { proxy_pass http://analytics:8081/players/; }
+location /api/registry/  { proxy_pass http://registry:8080/; }
+location /api/ai/        { proxy_pass http://prolog:8080/; }
+location /               { proxy_pass http://console:8080/; }
+```
 
 ---
 
@@ -107,8 +130,9 @@ Cada juego **se registra solo** cuando su contenedor arranca y después **manda 
 
 - Un juego que pasa **15 s sin latido** se considera caído y no aparece en el `GET`.
 - El registry valida el manifiesto: campos obligatorios, `id` válido y `protocol` conocido. Un manifiesto inválido devuelve `400` con el motivo.
-- Dentro de Docker, los juegos llaman al registry por `http://registry:8080`. La URL se configura con la variable `REGISTRY_URL`.
+- Dentro de Docker, los juegos llaman al registry directo, sin pasar por nginx: `http://registry:8080/games`, `/games/{id}/heartbeat`, etc. (las mismas rutas, sin el prefijo `/api/registry`). La URL se configura con la variable `REGISTRY_URL`.
 - La consola vuelve a pedir la lista **cada 10 s**, así un juego que aparece o desaparece se nota sin recargar la página.
+- **Implementación:** Node + TypeScript con `node:http`, sin framework, igual que el resto del proyecto.
 
 ---
 
@@ -131,11 +155,11 @@ La consola abre cada partida en un `<iframe src="{entry}?matchId=...">`. Se comu
 |---|---|---|
 | `INIT` | `{ gameId, matchId, mode, players, options }` | Prepara la partida y responde `READY` |
 | `START` | `{}` | Empieza: emite `MATCH_STARTED` y `PLAYER_JOINED` (ver sección 5) |
-| `PAUSE` | `{ reason? }` | Detiene el reloj, deja de aceptar teclas y emite `MATCH_PAUSED` |
+| `PAUSE` | `{ reason: "user" \| "hidden" }` | Detiene el reloj, deja de aceptar teclas y emite `MATCH_PAUSED` con ese `reason` |
 | `RESUME` | `{}` | Sigue y emite `MATCH_RESUMED` |
-| `STOP` | `{ reason: "user" \| "closed" }` | Termina: emite `PLAYER_LEFT` y `MATCH_FINISHED`, y después `FINISHED` |
+| `STOP` | `{ reason: "user" \| "closed" }` | Termina. Si la partida ya empezó, emite `PLAYER_LEFT` y `MATCH_FINISHED`; después manda `FINISHED` |
 
-`players` es una lista de `{ "playerId": "danny", "name": "Danny", "kind": "human" \| "cpu", "slot": 1 }`. El `slot` dice qué lugar ocupa cada uno: en connect4, el slot 1 juega con rojo; en fighting, el slot 1 es el de la izquierda y usa WASD.
+`players` es una lista de `{ "playerId": "danny", "name": "Danny", "kind": "human" \| "cpu", "slot": 1 }`. El `slot` dice qué lugar ocupa cada uno: en connect4, el slot 1 juega con rojo; en fighting, el slot 1 es el de la izquierda y usa WASD. **Los `playerId` de una partida son siempre distintos**: en `local-2p` la consola no deja empezar si los dos jugadores tienen el mismo nombre.
 
 ### Juego → consola
 
@@ -151,13 +175,28 @@ La consola abre cada partida en un `<iframe src="{entry}?matchId=...">`. Se comu
 
 ```
 loading ──READY──► ready ──START──► playing ◄──RESUME── paused
-                                     │  └──PAUSE──────────►┘
-                                     └──(fin o STOP)──► finished
+                     │                │  └──PAUSE──────────►┘ │
+                     │                └──(fin o STOP)──┐       │
+                     └──STOP──────────────────────────►finished◄──STOP
 ```
 
-- La consola **no manda** `START` antes de `READY`, ni `PAUSE` si la partida no está en `playing`.
+| Mensaje | Válido en | Si llega en otro estado |
+|---|---|---|
+| `START` | `ready` | Se ignora |
+| `PAUSE` | `playing` | Se ignora |
+| `RESUME` | `paused` | Se ignora |
+| `STOP` | `ready`, `playing`, `paused` | Se ignora (en `loading` la consola simplemente quita el iframe) |
+
+- **`STOP` desde `ready`:** la partida nunca empezó, así que el juego **no emite eventos**; solo manda `FINISHED` con `winner: null`.
 - Si no llega `READY` en **10 s**, la consola marca la partida como error y la cierra.
 - Si después de `STOP` no llega `FINISHED` en **2 s**, la consola cierra la partida por su cuenta (ver "Cierre de respaldo").
+
+### Partidas ocultas
+
+Si una partida deja de verse (la pestaña del navegador pasa a segundo plano, o la consola minimiza o tapa ese iframe), la consola le manda **`PAUSE` con `reason: "hidden"`**. Así un Tetris o una pelea no siguen corriendo sin que nadie juegue.
+
+- La consola **no reanuda sola**: cuando la partida vuelve a verse, muestra un botón "Reanudar" y manda `RESUME` cuando el jugador lo pulsa.
+- Las partidas que están a la vista al mismo tiempo (por ejemplo, en una cuadrícula) siguen corriendo en paralelo.
 
 ### Secuencia normal
 
@@ -203,7 +242,19 @@ Se usa el **contrato de GameStats tal como está** (`gamestats/contracts/event.s
 3. Los `PLAYER_ACTION` del juego.
 4. `MATCH_FINISHED`, **una sola vez**. Después de este evento GameStats rechaza cualquier otro.
 
+### Nada de eventos por frame
+
+Los eventos describen **hechos del juego**, no el dibujo. **Nunca se emite un evento dentro del ciclo de dibujo** (60 veces por segundo).
+
+| Juego | Se emite | No se emite |
+|---|---|---|
+| Tetris | Cada acción del jugador (mover, rotar, bajar, `HOLD`), pieza colocada, líneas, nivel | La caída automática de la pieza en cada paso |
+| Fighting | Cada golpe, bloqueo, combo, derribo, round | La posición de los personajes mientras se mueven |
+| 4 en línea | Cada ficha, amenaza, deshacer, pista | — |
+
 ### Cierre de respaldo (lo hace la consola)
+
+**Solo aplica si la partida llegó a emitir `MATCH_STARTED`.** Si nunca empezó, no hay nada que cerrar en GameStats.
 
 Si la partida se cierra y el juego no alcanzó a mandar `MATCH_FINISHED` (pestaña cerrada, juego colgado, `STOP` sin respuesta), **la consola** manda:
 
@@ -222,7 +273,7 @@ Se mandan como **datos extra** en el `DISC_DROPPED` de la computadora. El contra
             "ai": { "engine": "prolog-minimax", "depth": 6, "score": 12, "nodes": 4821, "ms": 85 } } }
 ```
 
-> ⚠️ Hay que confirmar con una prueba que Scala ignora el campo `ai` y no descarta el evento.
+> ⚠️ Hay que confirmar con una prueba contra GameStats `v1.0` que Scala ignora el campo `ai` y no descarta el evento (sección 10).
 
 ---
 
@@ -262,6 +313,7 @@ Respuesta `200`:
 - `column` va de 1 a 7. `400` si el tablero es inválido o está lleno.
 - Algoritmo: **minimax con poda alfa-beta**. Evalúa líneas de 2, 3 y 4 fichas y prefiere el centro.
 - `GET /api/ai/health` → `{"status":"ok"}`.
+- Dentro del contenedor, las rutas son sin el prefijo: `POST /connect4/move` y `GET /health` (nginx quita `/api/ai`).
 
 ---
 
@@ -300,7 +352,7 @@ export abstract class GameApp {
 }
 ```
 
-Además, el SDK trae el **servidor de cada juego** (`sdk/server`): sirve los archivos del juego en el puerto `8080`, publica `game.json` y hace el registro y el latido en el registry. Cada juego lo usa sin escribir nada de esto.
+Además, el SDK trae el **servidor de cada juego** (`sdk/server`): sirve los archivos del juego en el puerto `8080` **bajo `GAME_BASE`** (`/games/{id}/`, ver sección 1), publica `game.json` y hace el registro y el latido en el registry. Cada juego lo usa sin escribir nada de esto.
 
 Lo que le queda a cada juego:
 1. Su `game.json`.
@@ -312,7 +364,10 @@ Lo que le queda a cada juego:
 
 ## 10. Pendientes
 
-- [ ] **Juegos nuevos en GameStats.** `gameId` es una lista cerrada en el contrato (`racing`, `fighting`, `connect4`, `tetris`) y Go rechaza los `gameId` desconocidos. Para que un juego nuevo funcione de verdad sin tocar GameStats, `v1.1` podría aceptar cualquier `gameId` y analizarlo con las estadísticas genéricas de Scala. Hay que decidirlo.
-- [ ] Confirmar que Scala ignora `data.ai` (sección 5).
+- [x] **Juegos nuevos en GameStats — aprobado (Danny y Dylan).** `gameId` es una lista cerrada en el contrato (`racing`, `fighting`, `connect4`, `tetris`) y Go rechaza los `gameId` desconocidos. En `v1.1` GameStats acepta **cualquier `gameId`**: los juegos conocidos siguen con sus validaciones y su analizador; uno desconocido se analiza con las estadísticas genéricas de Scala (duración, eventos por acción, jugadores, ganador si lo hay).
+- [ ] **Pruebas contra GameStats `v1.0`** antes de programar los juegos. Mandar lotes directo a Scala (`POST /analyze`) y comprobar que:
+  - un `DISC_DROPPED` con `data.ai` **no** se descarta;
+  - una partida de fighting y una de connect4 terminadas **sin ganador** (abandonadas) se analizan;
+  - un `MATCH_FINISHED` **sin `data`** se acepta en fighting, connect4 y tetris.
 - [ ] Definir el formato exacto de las respuestas de `/api/games` y `/api/stats/...` cuando se implementen.
-- [ ] Revisión y visto bueno de Danny y Dylan.
+- [x] Revisión de Dylan (7-nov): rutas de nginx, cierre de respaldo, `STOP`, partidas ocultas, `playerId` distintos, nada por frame, registry en Node/TS. Incorporado en esta versión.
