@@ -330,6 +330,30 @@ El panel **no calcula nada**: muestra lo que devuelve GameStats y vuelve a consu
 
 - **Partidas por juego** = `inProgress` (de Go) + terminadas (de Scala). Las terminadas salen de Scala porque Scala las guarda en disco, mientras que Go las tiene en memoria y las pierde si se reinicia.
 
+**Respuestas de Scala (implementadas en `gamestats`, rama `scala`):**
+
+```jsonc
+// GET /api/stats/games/connect4   (un juego sin partidas responde 200 con todo en 0)
+{
+  "gameId": "connect4", "matches": 3, "players": 5, "totalEvents": 109,
+  "avgDurationSeconds": 134.33, "avgEventsPerMatch": 36.33, "matchesWithoutWinner": 1,
+  "winners":  [{ "playerId": "ana", "wins": 2 }, { "playerId": "cpu", "wins": 1 }],
+  "metrics":  { "discs": { "avg": 12, "min": 4, "max": 21 } },
+  "actions":  { "DISC_DROPPED": 72, "UNDO": 2 },
+  "patterns": [{ "rule": "PERFECT_DEFENSE", "count": 2 }]
+}
+
+// GET /api/stats/overview
+{
+  "matches": 6, "players": 5, "totalEvents": 197, "avgDurationSeconds": 106.5,
+  "games": [ /* un objeto como el de arriba por cada gameId con partidas */ ],
+  "topWinners":  [{ "playerId": "ana", "wins": 2 }],   // máximo 5
+  "topPatterns": [{ "rule": "PERFECT_DEFENSE", "count": 2 }]
+}
+```
+
+- Scala v1.1 acepta **cualquier `gameId`**: un juego sin análisis propio aparece con las estadísticas genéricas (partidas, duración, eventos, acciones), sin métricas por jugador.
+
 ---
 
 ## 9. SDK: lo que implementa cada juego
