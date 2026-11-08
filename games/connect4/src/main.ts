@@ -8,12 +8,15 @@
  */
 import "./style.css";
 import { mountStandalone } from "./standalone/setup";
+import { initTheme } from "./ui/theme";
 
 const root = document.getElementById("app")!;
 const insideConsole = window.self !== window.top;
+initTheme(); // dentro de la consola también: el tema lo elige la persona en cualquier app
 
 if (insideConsole) {
   // TODO(SDK): conectar con GameApp del SDK de la consola.
+  root.classList.add("embedded");
   root.textContent = "Esperando a la consola…";
 } else {
   mountStandalone(root);

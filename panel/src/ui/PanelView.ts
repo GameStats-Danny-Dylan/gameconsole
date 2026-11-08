@@ -7,6 +7,7 @@ import {
   PATTERN_LABELS, playerName, type GameRow, type MatchInfo,
 } from "../model";
 import type { Snapshot } from "../store/PanelStore";
+import { appHeader } from "./theme";
 
 type Child = Node | string | null | false | undefined;
 
@@ -27,11 +28,7 @@ export class PanelView {
     this.status = h("p", { class: "status", "aria-live": "polite" });
     this.body = h("div", { class: "body" });
     root.append(
-      h("header", { class: "top" },
-        h("div", {},
-          h("h1", {}, "Panel de GameConsole"),
-          h("p", { class: "sub" }, "Estadísticas calculadas por GameStats · se actualiza cada 3 s")),
-        this.status),
+      appHeader("Panel de estadísticas", "Calculadas por GameStats · se actualiza cada 3 s", this.status),
       this.body,
     );
     // "hace N s" avanza aunque no llegue una foto nueva.
@@ -86,7 +83,7 @@ export class PanelView {
     this.status.className = `status ${ok ? "ok" : "bad"}`;
     this.status.replaceChildren(
       h("span", { class: "icon", "aria-hidden": "true" }, ok ? "●" : "▲"),
-      ok ? `En vivo · actualizado hace ${secs} s` : `Sin respuesta de ${this.lastErrors.map((e) => e.split(":")[0]).join(", ")}`,
+      ok ? `En vivo · hace ${secs} s` :`Sin respuesta de ${this.lastErrors.map((e) => e.split(":")[0]).join(", ")}`,
     );
     this.status.title = this.lastErrors.join("\n");
   }

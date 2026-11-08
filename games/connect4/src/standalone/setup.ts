@@ -1,12 +1,13 @@
 /**
  * Modo de prueba: jugar el 4 en línea abriendo /games/connect4/ directamente,
  * sin la consola. Muestra un formulario (modo, nombres, dificultad, reloj),
- * hace de "consola" con botones de pausa y cierre, y muestra los eventos.
+ * hace de "consola" con botones de pausa, reinicio y cierre, y muestra los eventos.
  */
 import { MinThinkTime, PrologStrategy } from "../ai/MoveStrategy";
 import { Connect4Game } from "../game/Connect4Game";
 import type { MatchContext } from "../game/ports";
 import { DomBoardView } from "../ui/DomBoardView";
+import { appHeader } from "../ui/theme";
 import { EventStamper } from "./EventStamper";
 import { StandaloneHost } from "./StandaloneHost";
 
@@ -16,27 +17,55 @@ export function toPlayerId(name: string): string {
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "jugador";
 }
 
+const ROBOT = `<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 16h5"/></svg>`;
+const PEOPLE = `<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.2"/><circle cx="16.5" cy="9" r="2.6"/><path d="M2.8 19.5c.6-3.3 3-5 5.7-5s5.1 1.7 5.7 5M14.5 14.6c2.6-.4 5.6.9 6.4 4.4"/></svg>`;
+
+/** Grupo de botones de radio con forma de "pastillas" (control segmentado). */
+function segmented(name: string, options: [string, string][], checked: string): string {
+  return `<div class="segmented" role="radiogroup">${options.map(([value, label]) =>
+    `<label><input type="radio" name="${name}" value="${value}"${value === checked ? " checked" : ""}><span>${label}</span></label>`,
+  ).join("")}</div>`;
+}
+
 export function mountStandalone(root: HTMLElement): void {
   root.innerHTML = `
-    <form class="setup">
-      <h1>4 en línea <small>modo de prueba, sin consola</small></h1>
-      <fieldset>
+    <form class="setup card">
+      <div class="setup-head">
+        <h2>Nueva partida</h2>
+        <p>Elige cómo quieres jugar. Modo de prueba: sin la consola.</p>
+      </div>
+
+      <fieldset class="modes">
         <legend>Modo</legend>
-        <label><input type="radio" name="mode" value="vs-cpu" checked> Contra la computadora (Prolog)</label>
-        <label><input type="radio" name="mode" value="local-2p"> 2 personas en esta pantalla</label>
+        <label class="mode-card">
+          <input type="radio" name="mode" value="vs-cpu" checked>
+          <span class="mode-icon">${ROBOT}</span>
+          <span class="mode-text"><strong>Contra la computadora</strong><small>La IA de Prolog decide cada jugada</small></span>
+        </label>
+        <label class="mode-card">
+          <input type="radio" name="mode" value="local-2p">
+          <span class="mode-icon">${PEOPLE}</span>
+          <span class="mode-text"><strong>2 personas</strong><small>En esta pantalla, por turnos</small></span>
+        </label>
       </fieldset>
-      <label>Jugador 1 (rojo, empieza) <input name="p1" value="Danny" required maxlength="30"></label>
-      <label class="only-2p">Jugador 2 (amarillo) <input name="p2" value="Dylan" maxlength="30"></label>
-      <label class="only-cpu">Dificultad
-        <select name="difficulty"><option value="easy">Fácil</option><option value="medium" selected>Media</option><option value="hard">Difícil</option></select>
-      </label>
-      <label>Tiempo por turno
-        <select name="turnSeconds"><option value="0" selected>Sin límite</option><option value="15">15 s</option><option value="30">30 s</option><option value="60">60 s</option></select>
-      </label>
-      <label class="check"><input type="checkbox" name="send" checked> Mandar los eventos a GameStats (/api/events)</label>
+
+      <div class="names">
+        <label class="field"><span><i class="swatch red"></i>Jugador 1 · empieza</span><input name="p1" value="Danny" required maxlength="30" autocomplete="off"></label>
+        <label class="field only-2p"><span><i class="swatch yellow"></i>Jugador 2</span><input name="p2" value="Dylan" maxlength="30" autocomplete="off"></label>
+      </div>
+
+      <div class="field only-cpu"><span>Dificultad</span>
+        ${segmented("difficulty", [["easy", "Fácil"], ["medium", "Media"], ["hard", "Difícil"]], "medium")}
+      </div>
+      <div class="field"><span>Tiempo por turno</span>
+        ${segmented("turnSeconds", [["0", "Sin límite"], ["15", "15 s"], ["30", "30 s"], ["60", "60 s"]], "0")}
+      </div>
+
+      <label class="switch"><input type="checkbox" name="send" checked><span class="switch-track"></span>Guardar la partida en las estadísticas (GameStats)</label>
       <p class="setup-error" aria-live="polite"></p>
-      <button class="c4-button primary">Jugar</button>
+      <button class="c4-button primary big">Jugar</button>
     </form>`;
+  root.prepend(appHeader("4 en línea", "Conecta 4 fichas en línea antes que tu rival"));
 
   const form = root.querySelector("form")!;
   const sync = () => {
@@ -73,15 +102,17 @@ export function mountStandalone(root: HTMLElement): void {
 
 function play(root: HTMLElement, ctx: MatchContext, send: boolean): void {
   root.innerHTML = `
-    <div class="dev-bar">
-      <button class="c4-button" data-act="pause">Pausar</button>
-      <button class="c4-button" data-act="resume">Reanudar</button>
+    <div class="dev-bar" role="toolbar" aria-label="Partida">
+      <button class="c4-button ghost" data-act="pause">Pausar</button>
+      <button class="c4-button ghost" data-act="resume">Reanudar</button>
+      <span class="spacer"></span>
       <button class="c4-button primary" data-act="restart" title="Termina esta partida y empieza otra con las mismas opciones">Reiniciar</button>
-      <button class="c4-button" data-act="stop">Terminar partida</button>
-      <button class="c4-button" data-act="new">Cambiar opciones</button>
+      <button class="c4-button ghost" data-act="stop">Terminar</button>
+      <button class="c4-button ghost" data-act="new">Cambiar opciones</button>
     </div>
-    <div class="game"></div>
+    <div class="game card"></div>
     <details class="dev-log"><summary>Eventos para GameStats (<span class="count">0</span>) · ${ctx.matchId}</summary><ol></ol></details>`;
+  root.prepend(appHeader("4 en línea", ctx.mode === "vs-cpu" ? "Contra la computadora" : "2 personas en esta pantalla"));
 
   const list = root.querySelector(".dev-log ol")!;
   const count = root.querySelector(".dev-log .count")!;
@@ -103,7 +134,7 @@ function play(root: HTMLElement, ctx: MatchContext, send: boolean): void {
   const leave = () => { game.stop("closed"); document.removeEventListener("visibilitychange", onHidden); };
 
   root.querySelector(".dev-bar")!.addEventListener("click", (e) => {
-    const act = (e.target as HTMLElement).dataset.act;
+    const act = (e.target as HTMLElement).closest<HTMLElement>("[data-act]")?.dataset.act;
     if (act === "pause") game.pause("user");
     if (act === "resume") game.resume();
     if (act === "stop") game.stop("user");

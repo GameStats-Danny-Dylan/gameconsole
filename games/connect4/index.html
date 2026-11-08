@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
     <title>4 en línea</title>
+    <!-- Tema antes de pintar (lo mismo que src/ui/theme.ts), para que no parpadee. -->
+    <script>try{var t=localStorage.getItem("gameconsole-theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}</script>
   </head>
   <body>
     <main id="app"></main>
