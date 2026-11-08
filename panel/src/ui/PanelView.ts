@@ -3,8 +3,8 @@
  * textContent (los nombres de jugador los escribe la gente: nunca innerHTML).
  */
 import {
-  buildRows, duration, KEY_METRICS, liveMatches, METRIC_LABELS, metricValue, PATTERN_LABELS,
-  type GameRow, type MatchInfo,
+  buildRows, duration, KEY_METRICS, liveMatches, METRIC_HELP, METRIC_LABELS, metricValue, PATTERN_HELP,
+  PATTERN_LABELS, playerName, type GameRow, type MatchInfo,
 } from "../model";
 import type { Snapshot } from "../store/PanelStore";
 
@@ -51,27 +51,30 @@ export class PanelView {
       o ? null : h("p", { class: "notice" },
         "Este GameStats todavía no tiene estadísticas por juego (llegan con la versión 1.1). Por ahora se muestran las partidas en curso."),
       h("section", { class: "tiles", "aria-label": "Totales" },
-        tile("Partidas en curso", String(playing), "ahora mismo, en todas las pestañas"),
-        tile("Partidas terminadas", o ? String(o.matches) : "—", "analizadas por GameStats"),
-        tile("Jugadores", o ? String(o.players) : "—", "distintos"),
-        tile("Duración promedio", o ? duration(o.avgDurationSeconds) : "—", "por partida")),
+        tile("Jugándose ahora", String(playing), playing === 1 ? "partida abierta en este momento" : "partidas abiertas en este momento"),
+        tile("Partidas terminadas", o ? String(o.matches) : "—", "desde que se encendió el sistema"),
+        tile("Jugadores", o ? String(o.players) : "—", "personas distintas (y la computadora)"),
+        tile("Una partida dura", o ? duration(o.avgDurationSeconds) : "—", "en promedio")),
       h("section", { "aria-label": "Juegos" },
         h("h2", {}, "Por juego"),
         rows.length
           ? h("div", { class: "games" }, ...rows.map(gameCard))
           : h("p", { class: "empty" }, "Todavía no hay juegos registrados ni partidas.")),
       h("section", { "aria-label": "Partidas en curso" },
-        h("h2", {}, "Partidas en curso ahora"),
+        h("h2", {}, "Partidas que se están jugando"),
         liveTable(liveMatches(s.matches), rows)),
       o && h("section", { class: "two" },
         h("div", {},
-          h("h2", {}, "Más victorias"),
-          bars(o.topWinners.map((w) => ({ label: w.playerId, value: w.wins, unit: w.wins === 1 ? "victoria" : "victorias" })),
+          h("h2", {}, "Quién ganó más"),
+          bars(o.topWinners.map((w) => ({ label: playerName(w.playerId), value: w.wins, unit: w.wins === 1 ? "victoria" : "victorias" })),
             "Nadie ha ganado todavía.")),
         h("div", {},
-          h("h2", {}, "Patrones más frecuentes"),
-          bars(o.topPatterns.map((p) => ({ label: PATTERN_LABELS[p.rule] ?? p.rule, value: p.count, unit: p.count === 1 ? "vez" : "veces" })),
-            "Todavía no se detectó ningún patrón."))),
+          h("h2", {}, "Jugadas destacadas"),
+          h("p", { class: "muted" }, "Cosas que GameStats encontró en las partidas, y cuántas veces pasaron."),
+          bars(o.topPatterns.map((p) => ({
+            label: PATTERN_LABELS[p.rule] ?? p.rule, help: PATTERN_HELP[p.rule],
+            value: p.count, unit: p.count === 1 ? "vez" : "veces",
+          })), "Todavía no pasó nada destacado."))),
     ];
     this.body.replaceChildren(...sections.filter((s): s is Node => s instanceof Node));
   }
@@ -100,48 +103,52 @@ function gameCard(r: GameRow): HTMLElement {
     h("header", {},
       r.icon ? h("img", { src: r.icon, alt: "", width: "28", height: "28" }) : h("span", { class: "noicon" }),
       h("h3", {}, r.name),
-      h("span", { class: `badge ${r.available ? "on" : "off"}` }, r.available ? "disponible" : "no está corriendo")),
+      h("span", { class: `badge ${r.available ? "on" : "off"}` }, r.available ? "se puede jugar" : "apagado")),
     h("div", { class: "counts" },
-      h("div", {}, h("strong", {}, String(r.inProgress)), h("span", {}, "en curso")),
+      h("div", {}, h("strong", {}, String(r.inProgress)), h("span", {}, "jugándose")),
       h("div", {}, h("strong", {}, String(r.finished)), h("span", {}, "terminadas")),
-      h("div", {}, h("strong", {}, s ? duration(s.avgDurationSeconds) : "—"), h("span", {}, "duración prom."))),
+      h("div", {}, h("strong", {}, s ? duration(s.avgDurationSeconds) : "—"), h("span", {}, "dura en promedio"))),
     s && s.matches > 0 && h("div", { class: "detail" },
       metricNames.length > 0 && h("table", { class: "metrics" },
-        h("thead", {}, h("tr", {}, h("th", {}, "Métrica"), h("th", {}, "Promedio"), h("th", {}, "Máximo"))),
+        h("thead", {}, h("tr", {},
+          h("th", {}, "Cada jugador, en una partida"), h("th", {}, "Normalmente"), h("th", {}, "Récord"))),
         h("tbody", {}, ...metricNames.map((m) => h("tr", {},
-          h("td", {}, METRIC_LABELS[m] ?? m),
+          h("td", {}, METRIC_LABELS[m] ?? m, METRIC_HELP[m] ? h("small", {}, METRIC_HELP[m]) : null),
           h("td", {}, metricValue(m, s.metrics[m].avg)),
           h("td", {}, metricValue(m, s.metrics[m].max)))))),
-      h("h4", {}, "Ganadores"),
-      bars(s.winners.slice(0, 3).map((w) => ({ label: w.playerId, value: w.wins, unit: w.wins === 1 ? "victoria" : "victorias" })),
-        s.matchesWithoutWinner === s.matches ? "Sin ganadores (partidas de una persona, empates o cerradas)." : "—"),
-      s.matchesWithoutWinner > 0 && h("p", { class: "muted" }, `${s.matchesWithoutWinner} sin ganador (empate, abandono o de una persona)`),
-      s.patterns.length > 0 && h("p", { class: "muted" }, "Patrones: ",
+      h("h4", {}, "Quién ganó más"),
+      bars(s.winners.slice(0, 3).map((w) => ({ label: playerName(w.playerId), value: w.wins, unit: w.wins === 1 ? "victoria" : "victorias" })),
+        s.matchesWithoutWinner === s.matches ? "Nadie ganó todavía (empates, partidas cerradas antes o de una sola persona)." : "—"),
+      s.matchesWithoutWinner > 0 && h("p", { class: "muted" },
+        `${s.matchesWithoutWinner} ${s.matchesWithoutWinner === 1 ? "partida terminó" : "partidas terminaron"} sin ganador (empate, se cerró antes o era de una sola persona)`),
+      s.patterns.length > 0 && h("p", { class: "muted" }, "Jugadas destacadas: ",
         s.patterns.slice(0, 3).map((p) => `${PATTERN_LABELS[p.rule] ?? p.rule} (${p.count})`).join(" · "))),
   );
 }
 
 /** Lista con barras horizontales de un solo color; el número va escrito al lado. */
-function bars(items: { label: string; value: number; unit: string }[], empty: string): HTMLElement {
+function bars(items: { label: string; help?: string; value: number; unit: string }[], empty: string): HTMLElement {
   if (!items.length) return h("p", { class: "empty" }, empty);
   const max = Math.max(...items.map((i) => i.value), 1);
   return h("ol", { class: "bars" }, ...items.map((i) => {
-    const tip = `${i.label}: ${i.value} ${i.unit}`;
+    const tip = `${i.label}: ${i.value} ${i.unit}${i.help ? ` (${i.help})` : ""}`;
     return h("li", { title: tip, "aria-label": tip, tabindex: "0" },
-      h("span", { class: "name" }, i.label),
+      h("span", { class: "name" }, i.label, i.help ? h("small", {}, i.help) : null),
       h("span", { class: "track" }, h("span", { class: "fill", style: `width:${(i.value / max) * 100}%` })),
       h("span", { class: "value" }, String(i.value)));
   }));
 }
 
 function liveTable(matches: MatchInfo[], rows: GameRow[]): HTMLElement {
-  if (!matches.length) return h("p", { class: "empty" }, "No hay partidas en curso en este momento.");
+  if (!matches.length) return h("p", { class: "empty" }, "Nadie está jugando en este momento.");
   const name = (id: string) => rows.find((r) => r.gameId === id)?.name ?? id;
   return h("div", { class: "table-wrap" }, h("table", { class: "live" },
-    h("thead", {}, h("tr", {}, h("th", {}, "Juego"), h("th", {}, "Jugadores"), h("th", { class: "num" }, "Eventos"), h("th", {}, "Partida"))),
+    h("thead", {}, h("tr", {}, h("th", {}, "Juego"), h("th", {}, "Jugadores"),
+      h("th", { class: "num", title: "Jugadas y avisos que la partida le mandó a GameStats" }, "Jugadas registradas"),
+      h("th", {}, "Código"))),
     h("tbody", {}, ...matches.map((m) => h("tr", {},
       h("td", {}, name(m.gameId)),
-      h("td", {}, m.connectedPlayers.join(" vs ") || "—"),
+      h("td", {}, m.connectedPlayers.map(playerName).join(" vs ") || "—"),
       h("td", { class: "num" }, String(m.eventCount)),
       h("td", { class: "id", title: m.matchId }, m.matchId.slice(-8)))))));
 }

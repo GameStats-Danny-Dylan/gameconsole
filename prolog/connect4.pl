@@ -11,7 +11,7 @@
 */
 :- module(connect4, [
     best_move/5,          % elegir la mejor columna (evaluación completa)
-    best_move/6,          % ... con un estilo de evaluación (attack | full)
+    best_move/6,          % ... con un estilo de evaluación (basic | attack | full)
     difficulty/3,         % easy/medium/hard -> profundidad y estilo
     valid_move/2,         % columna donde todavía cabe una ficha
     drop/4,               % soltar una ficha
@@ -33,16 +33,19 @@ other(yellow, red).
 %% difficulty(?Name, ?Depth, ?Style): cómo juega cada dificultad.
 %    Depth = cuántas jugadas mira hacia adelante (contando las del rival).
 %    Style = qué mira al evaluar un tablero:
+%      basic   solo jugar cerca del centro (no arma líneas ni mira las del rival)
 %      attack  solo sus propias líneas (no se fija en las amenazas del rival)
 %      full    sus líneas y las del rival
 %
-%  - easy:   mira 1 jugada y solo ataca. Gana si puede, pero no tapa: es
-%            como un principiante que solo piensa en su propio 4 en línea.
+%  - easy:   mira 1 jugada y juega cerca del centro. Gana si ve un 4 en
+%            línea, pero no lo arma a propósito ni tapa: un principiante.
+%            (Con attack era peor contra la IA, pero a una persona la
+%            presionaba más que media: armaba una línea en cada turno.)
 %  - medium: mira 3 jugadas (la suya, la respuesta y la suya). Tapa lo que
 %            está por ganar el rival, pero cae en trampas de dos amenazas.
 %  - hard:   mira 6 jugadas: ve trampas de dos amenazas a la vez y las
 %            arma o las esquiva. (Con 7 tardaría varios segundos por jugada.)
-difficulty(easy,   1, attack).
+difficulty(easy,   1, basic).
 difficulty(medium, 3, full).
 difficulty(hard,   6, full).
 
@@ -128,6 +131,19 @@ evaluate(full, Board, Player, Score) :-
 evaluate(attack(Me), Board, Player, Score) :-
     side_score(attack, Board, Me, S),
     (   Player == Me -> Score = S ; Score is -S ).
+%  basic(Me): solo le importa jugar cerca del centro; no arma líneas a
+%  propósito ni mira las del rival (el principiante de la dificultad fácil).
+evaluate(basic(Me), Board, Player, Score) :-
+    center_score(Board, Me, S),
+    (   Player == Me -> Score = S ; Score is -S ).
+
+%% center_score(+Board, +Player, -Score): fichas de Player según su columna
+%  (la del centro vale 3, las de al lado 2, después 1 y las orillas 0).
+center_score(Board, Player, Score) :-
+    aggregate_all(sum(W),
+        ( nth1(C, Board, Column), member(P, Column), P == Player,
+          W is 3 - abs(C - 4) ),
+        Score).
 
 side_score(Style, Board, Player, Score) :-
     other(Player, Opp),
@@ -178,7 +194,7 @@ best_move(Board, Player, Depth, Column, Score) :-
 best_move(Board, Player, Depth, Style, Column, Score) :-
     ordered_moves(Board, Moves),
     Moves \== [],
-    (   Style == attack -> Eval = attack(Player) ; Eval = Style ),
+    (   Style == full -> Eval = full ; Eval =.. [Style, Player] ),   % attack -> attack(Player)
     infinity(Inf), NegInf is -Inf,
     root(Moves, Board, Player, Depth-Eval, NegInf, Inf, none, Column, Score).
 

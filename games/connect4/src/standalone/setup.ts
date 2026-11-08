@@ -76,8 +76,9 @@ function play(root: HTMLElement, ctx: MatchContext, send: boolean): void {
     <div class="dev-bar">
       <button class="c4-button" data-act="pause">Pausar</button>
       <button class="c4-button" data-act="resume">Reanudar</button>
-      <button class="c4-button" data-act="stop">Cerrar partida</button>
-      <button class="c4-button" data-act="new">Nueva partida</button>
+      <button class="c4-button primary" data-act="restart" title="Termina esta partida y empieza otra con las mismas opciones">Reiniciar</button>
+      <button class="c4-button" data-act="stop">Terminar partida</button>
+      <button class="c4-button" data-act="new">Cambiar opciones</button>
     </div>
     <div class="game"></div>
     <details class="dev-log"><summary>Eventos para GameStats (<span class="count">0</span>) · ${ctx.matchId}</summary><ol></ol></details>`;
@@ -96,13 +97,19 @@ function play(root: HTMLElement, ctx: MatchContext, send: boolean): void {
   game.init(ctx);
   game.start();
 
+  // Como haría la consola: si la pestaña se oculta, pausa.
+  const onHidden = () => { if (document.hidden) game.pause("hidden"); };
+  document.addEventListener("visibilitychange", onHidden);
+  const leave = () => { game.stop("closed"); document.removeEventListener("visibilitychange", onHidden); };
+
   root.querySelector(".dev-bar")!.addEventListener("click", (e) => {
     const act = (e.target as HTMLElement).dataset.act;
     if (act === "pause") game.pause("user");
     if (act === "resume") game.resume();
     if (act === "stop") game.stop("user");
-    if (act === "new") { game.stop("closed"); mountStandalone(root); }
+    // Reiniciar = cerrar esta partida y abrir otra nueva (otro matchId): para
+    // GameStats son dos partidas distintas, la primera sin ganador.
+    if (act === "restart") { leave(); play(root, { ...ctx, matchId: `connect4-${crypto.randomUUID()}` }, send); }
+    if (act === "new") { leave(); mountStandalone(root); }
   });
-  // Como haría la consola: si la pestaña se oculta, pausa.
-  document.addEventListener("visibilitychange", () => { if (document.hidden) game.pause("hidden"); });
 }

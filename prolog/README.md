@@ -24,11 +24,15 @@ swipl server.pl      # servidor en el puerto 8080 (o el de la variable PORT)
 
    | Dificultad | Jugadas que mira | Qué evalúa | Cómo se nota al jugar |
    |---|---|---|---|
-   | Fácil | 1 (solo la suya) | solo sus líneas (`attack`) | Gana si puede, pero **no tapa tus amenazas**: como un principiante |
+   | Fácil | 1 (solo la suya) | solo estar cerca del centro (`basic`) | Gana si ve un 4 en línea, pero **no lo arma a propósito ni tapa los tuyos**: como un principiante |
    | Media | 3 (la suya, la tuya, la suya) | las de los dos (`full`) | Tapa cuando estás por ganar, pero **cae en trampas** de dos amenazas a la vez |
    | Difícil | 6 | las de los dos (`full`) | Ve esas trampas: las esquiva y te las arma |
 
    Las tres deciden con las mismas reglas y la misma búsqueda, sin azar: cambian solo la profundidad y la evaluación. Las pruebas `dificultades` de `tests.pl` lo comprueban con posiciones concretas.
+
+   Jugando entre ellas (21 aperturas distintas por cruce): con media de rojo y difícil de amarillo, difícil gana 18–3; media le gana a fácil 42–0 (21 con cada color).
+
+   Primero fácil era `attack` (solo armar sus líneas, sin tapar). Contra la IA perdía, pero a una persona la presionaba más que media: armaba una línea en cada turno y obligaba a defender todo el tiempo. Por eso se cambió a `basic`.
 4. **Evaluación.** Cuando se acaba la profundidad, el tablero se puntúa recorriendo las 69 líneas posibles de 4 casillas:
 
    | En una línea hay… | Puntos |

@@ -77,17 +77,46 @@ const GAME_NAMES: Record<string, string> = {
   connect4: "4 en línea", tetris: "Tetris", fighting: "Peleas", racing: "Carreras",
 };
 
-/** Nombres en español de las métricas que calcula GameStats. */
+/** Nombres de las métricas que calcula GameStats, con palabras de jugador. */
 export const METRIC_LABELS: Record<string, string> = {
   // connect4
-  discs: "Fichas", threatsCreated: "Amenazas creadas", threatsBlocked: "Amenazas tapadas",
-  centerControl: "Control del centro", hintsUsed: "Pistas", undos: "Deshacer", turnTimeouts: "Turnos perdidos",
+  discs: "Fichas jugadas", threatsCreated: "Veces a una ficha de ganar", threatsBlocked: "Amenazas tapadas a tiempo",
+  centerControl: "Fichas en la columna del centro", hintsUsed: "Pistas pedidas", undos: "Jugadas deshechas",
+  turnTimeouts: "Turnos perdidos por tiempo",
   // tetris
-  score: "Puntaje", lines: "Líneas", tetrises: "Tetris", piecesPlaced: "Piezas", piecesPerMinute: "Piezas por minuto",
-  maxLevel: "Nivel máximo", maxCombo: "Combo máximo", tSpins: "T-spins", hardDrops: "Hard drops",
+  score: "Puntos", lines: "Líneas borradas", tetrises: "Tetris (4 líneas de una vez)", piecesPlaced: "Piezas colocadas",
+  piecesPerMinute: "Piezas por minuto", maxLevel: "Nivel más alto", maxCombo: "Mejor combo", tSpins: "Giros en T",
+  hardDrops: "Caídas rápidas",
   // fighting
-  damageDealt: "Daño hecho", accuracy: "Precisión", blocks: "Bloqueos", knockdowns: "Derribos", roundsWon: "Rounds ganados",
+  damageDealt: "Daño causado", accuracy: "Golpes que acertaron", blocks: "Golpes bloqueados", knockdowns: "Derribos",
+  roundsWon: "Rounds ganados",
 };
+
+/** Explicación corta de cada métrica (se muestra debajo del nombre). */
+export const METRIC_HELP: Record<string, string> = {
+  threatsCreated: "Tener 3 en línea con el cuarto lugar libre",
+  threatsBlocked: "Poner ficha justo donde el rival iba a ganar",
+  centerControl: "La columna del centro entra en más líneas de 4",
+  accuracy: "De todos los golpes que lanzó",
+};
+
+/** Qué significa cada patrón que detecta GameStats. */
+export const PATTERN_HELP: Record<string, string> = {
+  DOUBLE_THREAT: "Tuvo dos lugares para ganar a la vez: el rival solo puede tapar uno",
+  QUICK_WIN: "Ganó usando 7 fichas o menos",
+  PERFECT_DEFENSE: "El rival le armó 2 amenazas o más y las tapó todas",
+  BACK_TO_BACK: "Hizo dos Tetris seguidos",
+  PERFECT_CLEAR: "Dejó el tablero completamente vacío",
+  T_SPIN_MASTER: "Hizo 3 giros en T o más",
+  COMEBACK: "Iba perdiendo y terminó ganando",
+  FLAWLESS_VICTORY: "Ganó un round sin recibir daño",
+  COMBO_MASTER: "Encadenó 5 golpes o más sin que el rival respondiera",
+};
+
+/** Nombre para mostrar de un jugador: la IA del 4 en línea se llama "cpu". */
+export function playerName(id: string): string {
+  return id === "cpu" ? "Computadora" : id;
+}
 
 /** Las métricas que se muestran primero en cada juego. */
 export const KEY_METRICS: Record<string, string[]> = {
@@ -97,7 +126,7 @@ export const KEY_METRICS: Record<string, string[]> = {
 };
 
 export const PATTERN_LABELS: Record<string, string> = {
-  DOUBLE_THREAT: "Doble amenaza", QUICK_WIN: "Victoria rápida", PERFECT_DEFENSE: "Defensa perfecta",
+  DOUBLE_THREAT: "Doble amenaza", QUICK_WIN: "Victoria rápida", PERFECT_DEFENSE: "Defensa sin fallas",
   BACK_TO_BACK: "Tetris seguidos", PERFECT_CLEAR: "Tablero limpio", T_SPIN_MASTER: "Maestro del T-spin",
   COMEBACK: "Remontada", FLAWLESS_VICTORY: "Victoria perfecta", COMBO_MASTER: "Maestro del combo",
   CLEAN_RACE: "Carrera limpia", WIRE_TO_WIRE: "De punta a punta",
