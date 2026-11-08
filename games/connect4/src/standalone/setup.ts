@@ -50,8 +50,8 @@ export function mountStandalone(root: HTMLElement): void {
       </fieldset>
 
       <div class="names">
-        <label class="field"><span><i class="swatch red"></i>Jugador 1 · empieza</span><input name="p1" value="Danny" required maxlength="30" autocomplete="off"></label>
-        <label class="field only-2p"><span><i class="swatch yellow"></i>Jugador 2</span><input name="p2" value="Dylan" maxlength="30" autocomplete="off"></label>
+        <label class="field"><span><i class="swatch red"></i>Jugador 1 · empieza</span><input name="p1" placeholder="Escribe tu nombre" maxlength="30" autocomplete="off"></label>
+        <label class="field only-2p"><span><i class="swatch yellow"></i>Jugador 2</span><input name="p2" placeholder="Escribe tu nombre" maxlength="30" autocomplete="off"></label>
       </div>
 
       <div class="field only-cpu"><span>Dificultad</span>
@@ -72,21 +72,35 @@ export function mountStandalone(root: HTMLElement): void {
     const mode = (form.elements.namedItem("mode") as RadioNodeList).value;
     form.dataset.mode = mode;
   };
+  const error = root.querySelector<HTMLElement>(".setup-error")!;
+  const input = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+  /** Marca el campo con el problema, muestra el aviso y lo deja listo para escribir. */
+  const fail = (field: HTMLInputElement, message: string) => {
+    field.setAttribute("aria-invalid", "true");
+    error.textContent = message;
+    field.focus();
+  };
+  form.addEventListener("input", (e) => {
+    (e.target as HTMLElement).removeAttribute("aria-invalid");
+    error.textContent = "";
+  });
   form.addEventListener("change", sync);
   sync();
+  input("p1").focus();
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const data = new FormData(form);
     const mode = data.get("mode") as MatchContext["mode"];
-    const p1 = String(data.get("p1") ?? "").trim() || "Jugador 1";
-    const p2 = String(data.get("p2") ?? "").trim() || "Jugador 2";
+    const p1 = String(data.get("p1") ?? "").trim();
+    const p2 = String(data.get("p2") ?? "").trim();
+    // Nombres obligatorios: solo espacios o símbolos tampoco sirven (no dan un playerId).
+    if (!/[\p{L}\p{N}]/u.test(p1)) return fail(input("p1"), "Escribe el nombre del jugador 1.");
+    if (mode === "vs-cpu" && toPlayerId(p1) === "cpu") return fail(input("p1"), "Ese nombre es el de la computadora: elige otro.");
     const players: MatchContext["players"] = [{ playerId: toPlayerId(p1), name: p1, kind: "human", slot: 1 }];
     if (mode === "local-2p") {
-      if (toPlayerId(p1) === toPlayerId(p2)) {
-        root.querySelector(".setup-error")!.textContent = "Los dos jugadores necesitan nombres distintos.";
-        return;
-      }
+      if (!/[\p{L}\p{N}]/u.test(p2)) return fail(input("p2"), "Escribe el nombre del jugador 2.");
+      if (toPlayerId(p1) === toPlayerId(p2)) return fail(input("p2"), "Los dos jugadores necesitan nombres distintos.");
       players.push({ playerId: toPlayerId(p2), name: p2, kind: "human", slot: 2 });
     }
     const ctx: MatchContext = {
@@ -106,9 +120,9 @@ function play(root: HTMLElement, ctx: MatchContext, send: boolean): void {
       <button class="c4-button ghost" data-act="pause">Pausar</button>
       <button class="c4-button ghost" data-act="resume">Reanudar</button>
       <span class="spacer"></span>
-      <button class="c4-button primary" data-act="restart" title="Termina esta partida y empieza otra con las mismas opciones">Reiniciar</button>
+      <button class="c4-button ghost" data-act="restart" title="Termina esta partida y empieza otra con las mismas opciones">Reiniciar</button>
       <button class="c4-button ghost" data-act="stop">Terminar</button>
-      <button class="c4-button ghost" data-act="new">Cambiar opciones</button>
+      <button class="c4-button ghost" data-act="new" title="Vuelve a elegir modo, nombres y dificultad">Nueva partida</button>
     </div>
     <div class="game card"></div>
     <details class="dev-log"><summary>Eventos para GameStats (<span class="count">0</span>) · ${ctx.matchId}</summary><ol></ol></details>`;

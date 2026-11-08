@@ -115,7 +115,8 @@ body {
   box-shadow: 0 8px 20px -8px var(--accent);
 }
 .c4-button.primary:hover:not(:disabled) { border-color: transparent; filter: brightness(1.07); }
-.c4-button.ghost { background: transparent; }
+.c4-button.ghost { box-shadow: 0 1px 2px rgb(17 22 40 / .08); }
+.c4-button.ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); color: var(--accent); }
 .c4-button.big { padding: 13px 18px; font-size: 16px; border-radius: 13px; }
 .c4-button[hidden] { display: none; }
 
@@ -258,6 +259,8 @@ body {
   border: 1.5px solid var(--line); background: var(--surface-2); color: var(--fg);
 }
 .setup input[name="p1"]:focus, .setup input[name="p2"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.setup input::placeholder { color: var(--muted); opacity: .8; }
+.setup input[aria-invalid="true"], .setup input[aria-invalid="true"]:focus { border-color: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent); }
 
 .segmented { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
 .segmented label { flex: 1; position: relative; }
