@@ -67,7 +67,7 @@ describe("partidas simuladas contra las reglas de GameStats", () => {
     expect(finished).toBeGreaterThan(1000);
     expect(stopped).toBeGreaterThan(100);
     if (mode === "vs-cpu") expect(undos).toBeGreaterThan(100);
-  });
+  }, 60_000); // en local tarda ~3 s; en Docker o en el CI, con otras cosas corriendo, puede pasar de los 5 s por defecto
 
   test("la copia de las reglas sí detecta errores (control)", () => {
     const sim = simulate(7, "local-2p");

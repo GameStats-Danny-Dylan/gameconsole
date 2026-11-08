@@ -171,11 +171,11 @@ describe("Connect4Game", () => {
     });
   });
 
-  test("pista: HINT_USED con la columna que sugiere la IA (dificultad media), máximo 3", async () => {
+  test("pista: HINT_USED con la columna que sugiere la IA (dificultad difícil), máximo 3", async () => {
     setup(ctx("local-2p"));
     game.start();
     view.h.hint();
-    expect(ai.pending[0].difficulty).toBe("medium");
+    expect(ai.pending[0].difficulty).toBe("hard");
     ai.answer(5);
     await flush();
     expect(host.events.at(-1)).toEqual({ type: "PLAYER_ACTION", action: "HINT_USED", playerId: "ana", data: { column: 5 } });

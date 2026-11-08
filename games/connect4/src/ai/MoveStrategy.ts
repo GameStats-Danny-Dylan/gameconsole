@@ -65,4 +65,34 @@ export class PrologStrategy implements MoveStrategy {
 
 class BadRequest extends Error {}
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/**
+ * Patrón Decorator: envuelve otra estrategia y hace que la respuesta tarde
+ * al menos `minMs`. Fácil y media responden en milisegundos y la ficha
+ * aparecería de golpe; con esto la computadora "piensa" un momento, como
+ * una persona. Difícil, que ya tarda más, casi no espera de más.
+ */
+export class MinThinkTime implements MoveStrategy {
+  constructor(
+    private readonly inner: MoveStrategy,
+    private readonly minMs = 700,
+    private readonly now: () => number = () => performance.now(),
+  ) {}
+
+  async choose(board: Board, color: Color, difficulty: Difficulty, signal?: AbortSignal): Promise<AiDecision> {
+    const start = this.now();
+    const decision = await this.inner.choose(board, color, difficulty, signal);
+    const rest = this.minMs - (this.now() - start);
+    if (rest > 0) await sleep(rest, signal);
+    return decision;
+  }
+}
+
+/** Espera `ms`; si se cancela antes (`signal`), termina con AbortError. */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(new DOMException("cancelado", "AbortError"));
+    const t = setTimeout(() => { signal?.removeEventListener("abort", onAbort); resolve(); }, ms);
+    const onAbort = () => { clearTimeout(t); reject(new DOMException("cancelado", "AbortError")); };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}

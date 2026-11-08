@@ -54,6 +54,39 @@ test(nunca_elige_columna_llena) :-
 
 test(todas_las_dificultades_responden) :-
     empty(B),
-    forall(difficulty_depth(_, D), (best_move(B, red, D, Col, _), between(1, 7, Col))).
+    forall(difficulty(_, D, S), (best_move(B, red, D, S, Col, _), between(1, 7, Col))).
 
 :- end_tests(ia).
+
+:- begin_tests(dificultades).
+
+% red tiene 3 en la columna 1 y amenaza ganar ahí. yellow tiene 2 en el
+% centro: a quien solo ataca (fácil) le conviene más seguir su línea.
+amenaza([[red, red, red], [], [], [yellow, yellow], [], [], []]).
+
+jugada(Dificultad, Board, Col) :-
+    difficulty(Dificultad, D, S),
+    best_move(Board, yellow, D, S, Col, _).
+
+test(facil_no_tapa) :-
+    amenaza(B), jugada(easy, B, Col), Col \== 1.
+
+test(media_tapa) :-
+    amenaza(B), jugada(medium, B, 1).
+
+test(dificil_tapa) :-
+    amenaza(B), jugada(hard, B, 1).
+
+test(facil_gana_si_puede) :-
+    jugada(easy, [[yellow, yellow, yellow], [red], [red], [], [], [], [red]], 1).
+
+% Trampa de dos amenazas: red tiene _ _ R R _ abajo (fichas en la 3 y la
+% 4) y le toca a yellow. Si yellow no tapa ya en la 2 o la 5, red juega
+% la otra y queda con dos casillas para ganar: yellow solo puede tapar una.
+% Para verlo hay que mirar 5 jugadas: difícil lo ve; media no.
+test(dificil_ve_la_trampa_y_media_no) :-
+    B = [[], [], [red], [red], [], [yellow], [yellow]],
+    jugada(hard, B, H), memberchk(H, [2, 5]),
+    jugada(medium, B, M), \+ memberchk(M, [2, 5]).
+
+:- end_tests(dificultades).

@@ -3,7 +3,7 @@
  * sin la consola. Muestra un formulario (modo, nombres, dificultad, reloj),
  * hace de "consola" con botones de pausa y cierre, y muestra los eventos.
  */
-import { PrologStrategy } from "../ai/MoveStrategy";
+import { MinThinkTime, PrologStrategy } from "../ai/MoveStrategy";
 import { Connect4Game } from "../game/Connect4Game";
 import type { MatchContext } from "../game/ports";
 import { DomBoardView } from "../ui/DomBoardView";
@@ -92,7 +92,7 @@ function play(root: HTMLElement, ctx: MatchContext, send: boolean): void {
   };
 
   const host = new StandaloneHost(new EventStamper(ctx.matchId), send, log);
-  const game = new Connect4Game(host, new DomBoardView(root.querySelector(".game")!), new PrologStrategy());
+  const game = new Connect4Game(host, new DomBoardView(root.querySelector(".game")!), new MinThinkTime(new PrologStrategy()));
   game.init(ctx);
   game.start();
 

@@ -302,7 +302,7 @@ Vive en la consola. Hay **una cola por partida**, así una partida no frena a ot
 
 - `board`: **7 columnas**, de la 1 a la 7. Cada una es la lista de fichas **de abajo hacia arriba** (máximo 6). Así es como piensa Prolog: soltar una ficha es agregarla al final de su columna.
 - `player`: el color que mueve (la computadora).
-- `difficulty`: `easy` = profundidad 2, `medium` = 4, `hard` = 6.
+- `difficulty`: `easy` = profundidad 1 y solo mira sus propias líneas (no tapa), `medium` = 3, `hard` = 6 (ver [`prolog/README.md`](../prolog/README.md)). Las pistas del juego piden `hard`.
 
 Respuesta `200`:
 

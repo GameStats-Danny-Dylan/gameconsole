@@ -146,7 +146,7 @@ export class Connect4Game {
     const seat = this.match.current;
     this.thinking = true;
     this.render();
-    this.ask(seat.color, "medium")
+    this.ask(seat.color, "hard")                    // la pista es la mejor jugada que conoce la IA
       .then((d) => {
         if (turn !== this.turn) return;
         this.thinking = false;

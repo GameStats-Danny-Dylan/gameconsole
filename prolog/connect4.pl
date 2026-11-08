@@ -7,10 +7,12 @@
         [[red], [], [yellow, red], [yellow], [], [], []]
           col1  col2      col3        col4   ...
 
-    Uso principal:  best_move(+Board, +Player, +Depth, -Column, -Score)
+    Uso principal:  best_move(+Board, +Player, +Depth, +Style, -Column, -Score)
 */
 :- module(connect4, [
-    best_move/5,          % elegir la mejor columna
+    best_move/5,          % elegir la mejor columna (evaluación completa)
+    best_move/6,          % ... con un estilo de evaluación (attack | full)
+    difficulty/3,         % easy/medium/hard -> profundidad y estilo
     valid_move/2,         % columna donde todavía cabe una ficha
     drop/4,               % soltar una ficha
     winner/2,             % ¿alguien hizo 4 en línea?
@@ -28,10 +30,24 @@ cols(7).
 other(red, yellow).
 other(yellow, red).
 
-%% difficulty_depth(?Difficulty, ?Depth): cuántas jugadas mira hacia adelante.
-difficulty_depth(easy,   2).
-difficulty_depth(medium, 4).
-difficulty_depth(hard,   6).
+%% difficulty(?Name, ?Depth, ?Style): cómo juega cada dificultad.
+%    Depth = cuántas jugadas mira hacia adelante (contando las del rival).
+%    Style = qué mira al evaluar un tablero:
+%      attack  solo sus propias líneas (no se fija en las amenazas del rival)
+%      full    sus líneas y las del rival
+%
+%  - easy:   mira 1 jugada y solo ataca. Gana si puede, pero no tapa: es
+%            como un principiante que solo piensa en su propio 4 en línea.
+%  - medium: mira 3 jugadas (la suya, la respuesta y la suya). Tapa lo que
+%            está por ganar el rival, pero cae en trampas de dos amenazas.
+%  - hard:   mira 6 jugadas: ve trampas de dos amenazas a la vez y las
+%            arma o las esquiva. (Con 7 tardaría varios segundos por jugada.)
+difficulty(easy,   1, attack).
+difficulty(medium, 3, full).
+difficulty(hard,   6, full).
+
+%% difficulty_depth(?Difficulty, ?Depth)
+difficulty_depth(D, Depth) :- difficulty(D, Depth, _).
 
 /* ------------------------------------------------------------------ */
 /*  Tablero                                                           */
@@ -99,22 +115,33 @@ winner(Board, Player) :-
 /*  Evaluación (cuando se acaba la profundidad)                       */
 /* ------------------------------------------------------------------ */
 
-%% evaluate(+Board, +Player, -Score): qué tan bueno es el tablero para Player.
-%  Suma, en cada ventana, cuántas fichas propias y rivales hay; además
-%  premia las fichas en la columna del centro (4), que entran en más líneas.
-evaluate(Board, Player, Score) :-
+%% evaluate(+Style, +Board, +Player, -Score): qué tan bueno es el tablero para
+%  Player (el que mueve ahora). Suma, en cada ventana, cuántas fichas propias y
+%  rivales hay; además premia las fichas en la columna del centro (4), que
+%  entran en más líneas.
+%
+%  full:       mira las líneas de los dos.
+%  attack(Me): solo las líneas de Me (la computadora), mueva quien mueva. Si
+%              le toca al rival, el puntaje va con signo contrario (negamax).
+evaluate(full, Board, Player, Score) :-
+    side_score(full, Board, Player, Score).
+evaluate(attack(Me), Board, Player, Score) :-
+    side_score(attack, Board, Me, S),
+    (   Player == Me -> Score = S ; Score is -S ).
+
+side_score(Style, Board, Player, Score) :-
     other(Player, Opp),
-    aggregate_all(sum(S), (line(W), line_score(Board, Player, Opp, W, S)), LinesScore),
+    aggregate_all(sum(S), (line(W), line_score(Style, Board, Player, Opp, W, S)), LinesScore),
     nth1(4, Board, Center),
     count(Center, Player, NCenter),
     Score is LinesScore + 3 * NCenter.
 
-line_score(Board, Player, Opp, Window, S) :-
+line_score(Style, Board, Player, Opp, Window, S) :-
     cells(Window, Board, Values),
     count(Values, Player, Mine),
     count(Values, Opp, Theirs),
     count(Values, empty, Empty),
-    window_score(Mine, Theirs, Empty, S).
+    window_score(Style, Mine, Theirs, Empty, S).
 
 cells([], _, []).
 cells([C-R|Rest], Board, [V|Vs]) :- cell(Board, C, R, V), cells(Rest, Board, Vs).
@@ -123,11 +150,11 @@ cells([C-R|Rest], Board, [V|Vs]) :- cell(Board, C, R, V), cells(Rest, Board, Vs)
 count([], _, 0).
 count([Y|Ys], X, N) :- count(Ys, X, N0), ( Y == X -> N is N0 + 1 ; N = N0 ).
 
-%  window_score(+Mías, +Rivales, +Vacías, -Puntos)
-window_score(3, 0, 1,  5) :- !.   % me falta una para ganar
-window_score(2, 0, 2,  2) :- !.   % voy armando la línea
-window_score(0, 3, 1, -4) :- !.   % el rival amenaza: hay que taparla
-window_score(_, _, _,  0).
+%  window_score(+Estilo, +Mías, +Rivales, +Vacías, -Puntos)
+window_score(_,    3, 0, 1,  5) :- !.   % me falta una para ganar
+window_score(_,    2, 0, 2,  2) :- !.   % voy armando la línea
+window_score(full, 0, 3, 1, -4) :- !.   % el rival amenaza: hay que taparla
+window_score(_,    _, _, _,  0).
 
 /* ------------------------------------------------------------------ */
 /*  Minimax con poda alfa-beta (negamax)                              */
@@ -143,34 +170,40 @@ window_score(_, _, _,  0).
 win_score(1000000).
 infinity(10000000).
 
-%% best_move(+Board, +Player, +Depth, -Column, -Score)
+%% best_move(+Board, +Player, +Depth, -Column, -Score): con evaluación completa.
 best_move(Board, Player, Depth, Column, Score) :-
+    best_move(Board, Player, Depth, full, Column, Score).
+
+%% best_move(+Board, +Player, +Depth, +Style, -Column, -Score)
+best_move(Board, Player, Depth, Style, Column, Score) :-
     ordered_moves(Board, Moves),
     Moves \== [],
+    (   Style == attack -> Eval = attack(Player) ; Eval = Style ),
     infinity(Inf), NegInf is -Inf,
-    root(Moves, Board, Player, Depth, NegInf, Inf, none, Column, Score).
+    root(Moves, Board, Player, Depth-Eval, NegInf, Inf, none, Column, Score).
 
 %  Raíz: recorre las columnas y se queda con la de mayor puntaje.
+%  Search = Profundidad-Estilo (se pasan juntos para no alargar los argumentos).
 root([], _, _, _, Alpha, _, Col, Col, Alpha).
-root([M|Ms], Board, Player, Depth, Alpha, Beta, Col0, Col, Score) :-
-    child_score(Board, M, Player, Depth, Alpha, Beta, S),
+root([M|Ms], Board, Player, Search, Alpha, Beta, Col0, Col, Score) :-
+    child_score(Board, M, Player, Search, Alpha, Beta, S),
     (   S > Alpha
-    ->  root(Ms, Board, Player, Depth, S, Beta, M, Col, Score)
-    ;   root(Ms, Board, Player, Depth, Alpha, Beta, Col0, Col, Score)
+    ->  root(Ms, Board, Player, Search, S, Beta, M, Col, Score)
+    ;   root(Ms, Board, Player, Search, Alpha, Beta, Col0, Col, Score)
     ).
 
 %  child_score: suelta la ficha en M y evalúa la posición para el rival.
-child_score(Board, M, Player, Depth, Alpha, Beta, Score) :-
+child_score(Board, M, Player, Depth-Style, Alpha, Beta, Score) :-
     drop(Board, M, Player, NewBoard),
     other(Player, Opp),
     D1 is Depth - 1,
     NAlpha is -Beta, NBeta is -Alpha,
-    negamax(NewBoard, D1, NAlpha, NBeta, Opp, S0),
+    negamax(NewBoard, D1-Style, NAlpha, NBeta, Opp, S0),
     Score is -S0.
 
-%% negamax(+Board, +Depth, +Alpha, +Beta, +Player, -Score)
+%% negamax(+Board, +Depth-Style, +Alpha, +Beta, +Player, -Score)
 %  Player es quien mueve ahora en Board.
-negamax(Board, Depth, Alpha, Beta, Player, Score) :-
+negamax(Board, Depth-Style, Alpha, Beta, Player, Score) :-
     flag(c4_nodes, N, N + 1),
     other(Player, Opp),
     (   winner(Board, Opp)                     % el rival acaba de ganar
@@ -179,22 +212,26 @@ negamax(Board, Depth, Alpha, Beta, Player, Score) :-
         (   Moves == []                        % tablero lleno: empate
         ->  Score = 0
         ;   Depth =< 0                         % se acabó la búsqueda
-        ->  evaluate(Board, Player, Score)
+        ->  evaluate(Style, Board, Player, Score)
+        ;   member(M, Moves),                  % ¿gano en esta misma jugada?
+            drop(Board, M, Player, B2),
+            winner(B2, Player)
+        ->  win_score(W), Score is W + Depth - 1   % el mismo valor que daría buscarla
         ;   infinity(Inf), NegInf is -Inf,
-            moves(Moves, Board, Depth, Alpha, Beta, Player, NegInf, Score)
+            moves(Moves, Board, Depth-Style, Alpha, Beta, Player, NegInf, Score)
         )
     ).
 
 %  moves: prueba cada columna. Si Alpha >= Beta, el rival nunca dejaría
 %  llegar a esta posición, así que no hace falta mirar el resto (poda).
 moves([], _, _, _, _, _, Best, Best).
-moves([M|Ms], Board, Depth, Alpha, Beta, Player, Best0, Best) :-
-    child_score(Board, M, Player, Depth, Alpha, Beta, S),
+moves([M|Ms], Board, Search, Alpha, Beta, Player, Best0, Best) :-
+    child_score(Board, M, Player, Search, Alpha, Beta, S),
     Best1 is max(Best0, S),
     Alpha1 is max(Alpha, S),
     (   Alpha1 >= Beta
     ->  Best = Best1                           % poda alfa-beta
-    ;   moves(Ms, Board, Depth, Alpha1, Beta, Player, Best1, Best)
+    ;   moves(Ms, Board, Search, Alpha1, Beta, Player, Best1, Best)
     ).
 
 %% Contador de posiciones evaluadas (para el campo "nodes" de la respuesta).

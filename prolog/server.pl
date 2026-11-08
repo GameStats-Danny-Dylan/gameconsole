@@ -34,13 +34,13 @@ handle_move(Request) :-
     http_read_json_dict(Request, In, [value_string_as(atom)]),
     board_from_json(In, Board),
     player_from_json(In, Player),
-    depth_from_json(In, Depth),
+    difficulty_from_json(In, Depth, Style),
     (   connect4:valid_move(Board, _) -> true
     ;   throw(bad_request("el tablero está lleno"))
     ),
     reset_nodes,
     get_time(T0),
-    best_move(Board, Player, Depth, Column, Score),
+    best_move(Board, Player, Depth, Style, Column, Score),
     get_time(T1),
     nodes(Nodes),
     Ms is round((T1 - T0) * 1000),
@@ -56,9 +56,9 @@ player_from_json(In, Player) :-
     ;   throw(bad_request("player debe ser red o yellow"))
     ).
 
-depth_from_json(In, Depth) :-
+difficulty_from_json(In, Depth, Style) :-
     (   get_dict(difficulty, In, D) -> true ; D = medium ),
-    (   difficulty_depth(D, Depth) -> true
+    (   difficulty(D, Depth, Style) -> true
     ;   throw(bad_request("difficulty debe ser easy, medium o hard"))
     ).
 
