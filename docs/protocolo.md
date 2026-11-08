@@ -344,7 +344,11 @@ Estas son las rutas nuevas de GameStats `v1.1`:
   "winners":  [{ "playerId": "ana", "wins": 2 }, { "playerId": "cpu", "wins": 1 }],
   "metrics":  { "discs": { "avg": 12, "min": 4, "max": 21 } },
   "actions":  { "DISC_DROPPED": 72, "UNDO": 2 },
-  "patterns": [{ "rule": "PERFECT_DEFENSE", "count": 2 }]
+  "patterns": [{ "rule": "PERFECT_DEFENSE", "count": 2 }],
+  // Clasificación (máx. 20): más victorias, después mejor % y más partidas.
+  // played = wins + losses + noResult (noResult: empate, abandono o de un solo jugador).
+  "standings": [{ "playerId": "ana", "played": 2, "wins": 2, "losses": 0, "noResult": 0, "winRate": 1,
+                  "metrics": { "discs": { "avg": 11, "min": 9, "max": 13 } } }]
 }
 
 // GET /api/stats/overview
@@ -352,7 +356,8 @@ Estas son las rutas nuevas de GameStats `v1.1`:
   "matches": 6, "players": 5, "totalEvents": 197, "avgDurationSeconds": 106.5,
   "games": [ /* un objeto como el de arriba por cada gameId con partidas */ ],
   "topWinners":  [{ "playerId": "ana", "wins": 2 }],   // máximo 5
-  "topPatterns": [{ "rule": "PERFECT_DEFENSE", "count": 2 }]
+  "topPatterns": [{ "rule": "PERFECT_DEFENSE", "count": 2 }],
+  "standings":   [ /* igual que arriba, sumando todos los juegos; "metrics" va vacío */ ]
 }
 ```
 

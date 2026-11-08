@@ -6,6 +6,19 @@
 
 export interface Ranked { playerId?: string; wins?: number; rule?: string; count?: number }
 
+export type MetricSummary = { avg: number; min: number; max: number };
+
+/** Una fila de la clasificación (la calcula GameStats: /stats/...). */
+export interface Standing {
+  playerId: string;
+  played: number;
+  wins: number;
+  losses: number;
+  noResult: number;   // empates, partidas cerradas antes o de un solo jugador
+  winRate: number;    // 0 a 1
+  metrics: Record<string, MetricSummary>;
+}
+
 export interface GameSummary {
   gameId: string;
   matches: number;
@@ -15,9 +28,10 @@ export interface GameSummary {
   avgEventsPerMatch: number;
   matchesWithoutWinner: number;
   winners: { playerId: string; wins: number }[];
-  metrics: Record<string, { avg: number; min: number; max: number }>;
+  metrics: Record<string, MetricSummary>;
   actions: Record<string, number>;
   patterns: { rule: string; count: number }[];
+  standings?: Standing[];   // opcional: un GameStats v1.1 anterior no la tenía
 }
 
 export interface Overview {
@@ -28,6 +42,7 @@ export interface Overview {
   games: GameSummary[];
   topWinners: { playerId: string; wins: number }[];
   topPatterns: { rule: string; count: number }[];
+  standings?: Standing[];
 }
 
 export interface RegisteredGame { id: string; name: string; gameStatsId: string; icon?: string; entry: string }
@@ -117,6 +132,13 @@ export const PATTERN_HELP: Record<string, string> = {
 export function playerName(id: string): string {
   return id === "cpu" ? "Computadora" : id;
 }
+
+/** La columna propia de cada juego en su clasificación. */
+export const STANDING_METRIC: Record<string, { metric: string; use: "avg" | "max"; label: string }> = {
+  connect4: { metric: "threatsCreated", use: "avg", label: "Amenazas por partida" },
+  tetris: { metric: "score", use: "max", label: "Mejor puntaje" },
+  fighting: { metric: "damageDealt", use: "avg", label: "Daño por partida" },
+};
 
 /** Las métricas que se muestran primero en cada juego. */
 export const KEY_METRICS: Record<string, string[]> = {
