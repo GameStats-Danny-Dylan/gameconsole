@@ -1,0 +1,15 @@
+{
+  // Compila solo sdk/server a JavaScript para Node (dist-server/).
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "outDir": "dist-server",
+    "rootDir": "server",
+    "types": ["node"],
+    "lib": ["ES2022"],
+    "skipLibCheck": true
+  },
+  "include": ["server"]
+}
