@@ -25,6 +25,7 @@ echo "-- servicios"
 [ "$(get /api/ai/health | jq -r .status)" = ok ]       || fail "prolog";          ok "prolog"
 
 echo "-- apps servidas por el gateway"
+curl -fsS --max-time 10 "$BASE/" | grep -q "<title>GameConsole</title>" || fail "consola /"; ok "consola"
 curl -fsS --max-time 10 "$BASE/panel/" | grep -q "Panel de GameConsole" || fail "panel /panel/"; ok "panel"
 curl -fsS --max-time 10 "$BASE/games/connect4/" | grep -q "4 en línea" || fail "/games/connect4/"; ok "4 en línea"
 [ "$(get /games/connect4/game.json | jq -r .id)" = connect4 ] || fail "game.json del 4 en línea"; ok "game.json"
