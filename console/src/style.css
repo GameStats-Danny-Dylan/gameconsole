@@ -174,3 +174,43 @@ body {
 }
 .segmented input:checked + span { color: var(--on-accent); border-color: transparent; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
 .segmented input:focus-visible + span { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+
+/* ---------- Partidas abiertas ---------- */
+.section-head.row { display: flex; align-items: center; gap: 10px; }
+.match-grid { display: grid; gap: 14px; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 900px) {
+  .match-grid:not([data-count="1"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.match-tile {
+  display: grid; grid-template-rows: auto 1fr auto; min-width: 0; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow);
+  transition: border-color .15s, box-shadow .15s;
+}
+.match-tile:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent), var(--shadow); }
+.match-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.match-names { min-width: 0; }
+.match-names h3 { margin: 0; font-size: 16px; }
+.match-players { margin: 0; font-size: 13px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.match-status {
+  flex: none; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--ink-2); background: var(--surface-2);
+}
+.match-status.playing { color: var(--good-text); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+.match-status.paused { color: var(--warn-ink); background: var(--warn-bg); }
+.match-status.error { color: var(--critical); border-color: color-mix(in srgb, var(--critical) 40%, transparent); }
+
+.match-stage { position: relative; height: clamp(380px, 62vh, 720px); background: var(--surface-2); }
+.match-grid:not([data-count="1"]) .match-stage { height: clamp(360px, 52vh, 620px); }
+.match-frame { display: block; width: 100%; height: 100%; border: 0; background: var(--page); }
+.match-stage:empty::after {
+  content: "La partida se cerró."; position: absolute; inset: 0; display: grid; place-items: center;
+  color: var(--muted); font-size: 14px;
+}
+.match-tile[data-status="error"] .match-stage:empty::after { content: "No se pudo abrir la partida."; }
+
+.match-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 10px 16px; border-top: 1px solid var(--border); }
+.match-detail { margin: 0; font-size: 13px; color: var(--ink-2); min-width: 0; }
+.match-detail:empty { display: none; }
+.match-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.btn.small { font-size: 13px; padding: 6px 12px; border-radius: 10px; }
+.btn.danger:not(:disabled):hover { color: var(--critical); border-color: color-mix(in srgb, var(--critical) 45%, var(--border)); }

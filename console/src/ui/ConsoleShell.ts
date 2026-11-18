@@ -1,36 +1,50 @@
 /**
- * ConsoleShell — arma la página: cabecera, menú y formulario.
+ * ConsoleShell — arma la página: cabecera, partidas abiertas, menú y formulario.
  *
- * Mediator: el menú, el formulario y el catálogo no se conocen entre sí; el
- * shell recibe lo que pasa en cada uno y decide a quién avisar (elegir un
- * juego abre el formulario; si ese juego se va del registry, el formulario lo
- * marca como no disponible).
+ * Facade: main.ts solo llama a mount(); por dentro el shell conecta el
+ * catálogo, el menú, el formulario y la cuadrícula de partidas, que no se
+ * conocen entre sí (elegir un juego abre el formulario; el formulario abre una
+ * partida en la cuadrícula; si un juego se va del registry, el formulario lo
+ * marca como no disponible, pero sus partidas abiertas siguen).
  */
 import type { GameManifest, MatchContext } from "@gameconsole/sdk";
 import { appHeader } from "@gameconsole/sdk/theme";
 import type { CatalogSnapshot, GameCatalog } from "../catalog/GameCatalog";
+import type { MatchSessionFactory } from "../match/MatchSessionFactory";
 import { el } from "./dom";
 import { GameMenu } from "./GameMenu";
 import { MatchFormView } from "./MatchFormView";
+import { MatchGrid } from "./MatchGrid";
+import { VisibilityWatcher } from "./VisibilityWatcher";
+
+export interface ShellDeps {
+  catalog: GameCatalog;
+  sessions: MatchSessionFactory;
+}
 
 export class ConsoleShell {
   private readonly status = el("p", { class: "status", role: "status" });
-  private readonly notice = el("p", { class: "notice", role: "status", hidden: true });
-  private readonly menu = new GameMenu((id) => this.play(id));
-  private readonly form = new MatchFormView((ctx, m) => this.matchReady(ctx, m));
+  private readonly menu = new GameMenu((id) => this.openForm(id));
+  private readonly form = new MatchFormView((ctx, m) => this.startMatch(ctx, m));
+  private readonly watcher = new VisibilityWatcher();
+  private readonly grid: MatchGrid;
 
-  constructor(private readonly root: HTMLElement, private readonly catalog: GameCatalog) {}
+  constructor(private readonly root: HTMLElement, private readonly deps: ShellDeps) {
+    this.grid = new MatchGrid(deps.sessions, this.watcher, (m) => this.openForm(m.id, m));
+  }
 
   mount(): void {
     // El panel es otra app (/panel/): se abre aparte para no cerrar las partidas de la consola.
     const panel = el("a", { class: "nav-link", href: "/panel/", target: "_blank", rel: "noopener", text: "Estadísticas" });
     this.root.append(
       appHeader("Consola", "Elige un juego y arma la partida", this.status, panel),
-      this.notice,
+      this.grid.element,
       this.menu.element,
       this.form.element,
     );
-    this.catalog.subscribe((s) => this.catalogChanged(s));
+    // El formulario es modal y tapa las partidas: mientras está abierto cuentan como ocultas.
+    this.form.element.addEventListener("close", () => this.watcher.setCovered(false));
+    this.deps.catalog.subscribe((s) => this.catalogChanged(s));
   }
 
   private catalogChanged(s: CatalogSnapshot): void {
@@ -53,16 +67,20 @@ export class ConsoleShell {
       : s.updatedAt ? `Actualizado a las ${s.updatedAt.toLocaleTimeString("es")}` : "";
   }
 
-  private play(gameId: string): void {
-    const manifest = this.catalog.find(gameId);
-    if (manifest) this.form.open(manifest);
+  /**
+   * Abre el formulario de un juego. Desde "Nueva partida" llega el manifiesto
+   * de la partida, por si el juego ya no está en el registry (se muestra como
+   * no disponible).
+   */
+  private openForm(gameId: string, fallback?: GameManifest): void {
+    const manifest = this.deps.catalog.find(gameId) ?? fallback;
+    if (!manifest) return;
+    this.watcher.setCovered(true);
+    this.form.open(manifest);
+    this.form.setAvailable(this.deps.catalog.find(gameId) !== undefined);
   }
 
-  /** La partida ya tiene su MatchContext. Abrirla en un iframe es el siguiente bloque. */
-  private matchReady(ctx: MatchContext, manifest: GameManifest): void {
-    console.info("[consola] partida lista", ctx);
-    const who = ctx.players.map((p) => p.name).join(" vs ");
-    this.notice.textContent = `Partida de ${manifest.name} lista (${who}). Las partidas se abren en el siguiente bloque.`;
-    this.notice.hidden = false;
+  private startMatch(ctx: MatchContext, manifest: GameManifest): void {
+    this.grid.open(manifest, ctx);
   }
 }
