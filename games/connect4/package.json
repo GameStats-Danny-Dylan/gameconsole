@@ -1,0 +1,22 @@
+{
+  "name": "@gameconsole/connect4",
+  "version": "1.0.0",
+  "private": true,
+  "description": "4 en línea para GameConsole: contra la computadora (Prolog) o 2 personas en la misma pantalla.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:gamestats": "vitest run test/gamestats.integration.test.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@gameconsole/sdk": "file:../../sdk"
+  }
+}

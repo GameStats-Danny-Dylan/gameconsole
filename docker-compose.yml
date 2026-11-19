@@ -1,0 +1,120 @@
+# GameConsole: levanta todo el sistema. Solo se publica el gateway (nginx);
+# el resto se habla por la red interna de Docker con su nombre de servicio.
+#
+#   docker compose up -d --build --wait          # todo, en http://localhost:8000
+#   docker compose --profile tunnel up -d        # además, el túnel de Cloudflare
+#   docker compose logs tunnel                   # ahí aparece la URL pública *.trycloudflare.com
+#   docker compose down                          # apagar (los resultados se conservan)
+#   docker compose down -v                       # apagar y borrar los resultados
+#
+# Variables (opcionales, en la terminal o en un archivo .env):
+#   GATEWAY_PORT   puerto de la PC donde se publica todo (8000)
+#   GAMESTATS_TAG  versión de las imágenes de GameStats (v1.0; v1.1 cuando se publique)
+
+name: gameconsole
+
+services:
+  # Única puerta de entrada: consola, juegos y APIs (protocolo, sección 1).
+  gateway:
+    build: ./gateway
+    image: gameconsole-gateway
+    ports:
+      - "${GATEWAY_PORT:-8000}:80"
+    depends_on:
+      registry: { condition: service_healthy }
+      prolog: { condition: service_healthy }
+      ingestion: { condition: service_healthy }
+      panel: { condition: service_healthy }
+      console: { condition: service_healthy }
+    restart: unless-stopped
+
+  # Descubrimiento automático de juegos (protocolo, sección 3).
+  registry:
+    build: ./registry
+    image: gameconsole-registry
+    environment:
+      PORT: "8080"
+      HEARTBEAT_TIMEOUT_MS: "15000"
+    restart: unless-stopped
+
+  # IA del 4 en línea en SWI-Prolog (protocolo, sección 7).
+  prolog:
+    build: ./prolog
+    image: gameconsole-prolog
+    environment:
+      PORT: "8080"
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # GameStats (Proyecto 1): imágenes publicadas, no se compilan aquí.
+  # ------------------------------------------------------------------
+  # ANALYTICS_IMAGE / INGESTION_IMAGE permiten probar una versión local de
+  # GameStats sin publicarla (por ejemplo, la v1.1 construida desde ../gamestats).
+  analytics:
+    image: ${ANALYTICS_IMAGE:-ghcr.io/danny7w7-coder/gamestats-analytics:${GAMESTATS_TAG:-v1.0}}
+    environment:
+      PORT: "8081"
+      RESULTS_DIR: "/data"
+    volumes:
+      - analytics-results:/data   # un JSON por partida: sobrevive a "down"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8081/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 20                 # la JVM tarda unos segundos en arrancar
+    restart: unless-stopped
+
+  ingestion:
+    image: ${INGESTION_IMAGE:-ghcr.io/danny7w7-coder/gamestats-ingestion:${GAMESTATS_TAG:-v1.0}}
+    environment:
+      PORT: "8080"
+      SCALA_URL: "http://analytics:8081"
+      WORKERS: "4"
+    depends_on:
+      analytics: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+    restart: unless-stopped
+
+  # Panel de estadísticas (en /panel/): muestra lo que calcula GameStats.
+  # Se construye desde la raíz porque usa el tema del SDK (sdk/).
+  panel:
+    build: { context: ., dockerfile: panel/Dockerfile }
+    image: gameconsole-panel
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------
+  # Juegos: cada uno es un servicio llamado game-{id} en el puerto 8080.
+  # nginx lo encuentra solo por el nombre y el juego se anota en el registry
+  # al arrancar (con sdk/server). Agregar un juego = agregar su servicio.
+  # Se construyen desde la raíz porque usan el SDK (sdk/).
+  # ------------------------------------------------------------------
+  game-connect4:
+    build: { context: ., dockerfile: games/connect4/Dockerfile }
+    image: gameconsole-game-connect4
+    environment:
+      REGISTRY_URL: "http://registry:8080"   # sdk/server se registra y manda el latido
+    restart: unless-stopped
+
+  # Consola: menú dinámico desde el registry y formulario de partida (en /).
+  # Se construye desde la raíz porque usa el SDK (sdk/).
+  console:
+    build: { context: ., dockerfile: console/Dockerfile }
+    image: gameconsole-console
+    restart: unless-stopped
+
+  # Túnel de Cloudflare: publica el gateway en una URL *.trycloudflare.com
+  # (cambia en cada arranque). Solo con --profile tunnel.
+  tunnel:
+    image: cloudflare/cloudflared:2025.11.1
+    profiles: ["tunnel"]
+    command: ["tunnel", "--no-autoupdate", "--url", "http://gateway:80"]
+    depends_on:
+      gateway: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  analytics-results:

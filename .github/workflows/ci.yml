@@ -1,0 +1,51 @@
+# CI de GameConsole: pruebas de cada parte en cada push y en cada PR.
+# Cada app es independiente, así que cada una se prueba por separado.
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Apps en Node/TypeScript: instala, compila y corre sus pruebas.
+  # Agregar una app = agregar su carpeta a la lista.
+  node:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [registry, panel, games/connect4, console]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Build (si la app tiene)
+        run: if npm run | grep -q '^  build$'; then npm run build; fi
+
+  # IA en SWI-Prolog: las pruebas plunit, con la misma versión que la imagen.
+  prolog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: swipl tests.pl (swipl 10.0.2)
+        run: docker run --rm -v "$PWD/prolog:/app" -w /app swipl:10.0.2 swipl tests.pl
+
+  # El gateway: que la configuración de nginx sea válida.
+  gateway:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t gateway-test ./gateway

@@ -1,0 +1,21 @@
+{
+  "name": "@gameconsole/panel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Panel de control: estadísticas de GameStats por juego y generales, y partidas en curso, en vivo.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@gameconsole/sdk": "file:../sdk"
+  }
+}

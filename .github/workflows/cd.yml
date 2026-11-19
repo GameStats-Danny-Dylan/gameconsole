@@ -1,0 +1,140 @@
+# CD de GameConsole (mismo esquema que el de GameStats):
+#   1. integration: levanta todo con docker compose y corre scripts/smoke.sh.
+#   2. publish: publica las imágenes en ghcr.io/<organización>/gameconsole-*
+#      (amd64 y arm64). Tags: el hash del commit; "latest" en main; v1.0 con un tag.
+#   3. deploy: levanta docker-compose.deploy.yml con las imágenes DESCARGADAS
+#      de GHCR y vuelve a correr la prueba de humo. Es lo que hace quien recibe
+#      GameConsole: si pasa, la versión publicada funciona.
+# En un PR hacia main solo corre la integración.
+name: CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Levantar todo (espera a que esté healthy)
+        run: docker compose up -d --build --wait
+
+      - name: Prueba de humo por el gateway
+        run: bash scripts/smoke.sh
+
+      # Partidas del 4 en línea (simuladas y una entera contra Prolog) mandadas
+      # a GameStats: Scala tiene que analizar todos los eventos.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: games/connect4/package-lock.json
+      - name: 4 en línea contra GameStats real
+        working-directory: games/connect4
+        env:
+          GAMESTATS_URL: http://localhost:8000
+        run: npm ci && npm run test:gamestats
+
+      - name: Logs (si algo falló)
+        if: failure()
+        run: docker compose logs
+
+      - name: Bajar todo
+        if: always()
+        run: docker compose down -v
+
+  publish:
+    needs: integration
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.tags.outputs.tag }}
+    strategy:
+      matrix:
+        # Cada app con su imagen. Agregar una app = agregar su carpeta aquí.
+        app:
+          # Las que usan el SDK se construyen desde la raíz (context: .) con su Dockerfile.
+          - { name: gateway,  context: ./gateway,  file: gateway/Dockerfile }
+          - { name: registry, context: ./registry, file: registry/Dockerfile }
+          - { name: prolog,   context: ./prolog,   file: prolog/Dockerfile }
+          - { name: panel,    context: .,          file: panel/Dockerfile }
+          - { name: console,  context: .,          file: console/Dockerfile }
+          - { name: game-connect4, context: .,     file: games/connect4/Dockerfile }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calcular los tags
+        id: tags
+        run: |
+          owner=${GITHUB_REPOSITORY_OWNER,,}   # GHCR no acepta mayúsculas
+          image=ghcr.io/$owner/gameconsole-${{ matrix.app.name }}
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then extra="$GITHUB_REF_NAME"; tag="$GITHUB_REF_NAME"
+          else extra="latest"; tag="$GITHUB_SHA"; fi
+          echo "list=$image:$GITHUB_SHA,$image:$extra" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Construir y publicar gameconsole-${{ matrix.app.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.app.context }}
+          file: ${{ matrix.app.file }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.list }}
+          cache-from: type=gha,scope=${{ matrix.app.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app.name }}
+
+  deploy:
+    needs: publish
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      GAMECONSOLE_TAG: ${{ needs.publish.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Mientras los paquetes sean privados, hace falta iniciar sesión para bajarlos.
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Descargar las imágenes publicadas (${{ env.GAMECONSOLE_TAG }})
+        run: docker compose -f docker-compose.deploy.yml pull
+
+      - name: Levantar todo
+        run: docker compose -f docker-compose.deploy.yml up -d --wait
+
+      - name: Prueba de humo por el gateway
+        run: bash scripts/smoke.sh
+
+      - name: Logs (si algo falló)
+        if: failure()
+        run: docker compose -f docker-compose.deploy.yml logs
+
+      - name: Bajar todo
+        if: always()
+        run: docker compose -f docker-compose.deploy.yml down -v

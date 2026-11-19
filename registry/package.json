@@ -1,0 +1,19 @@
+{
+  "name": "@gameconsole/registry",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Descubrimiento automático de juegos: cada juego se registra al arrancar y manda un latido (protocolo, sección 3).",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/src/main.js",
+    "test": "tsc && node --test \"dist/test/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
