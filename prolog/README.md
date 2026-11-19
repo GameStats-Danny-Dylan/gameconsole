@@ -25,12 +25,21 @@ swipl server.pl      # servidor en el puerto 8080 (o el de la variable PORT)
    | Dificultad | Jugadas que mira | Qué evalúa | Cómo se nota al jugar |
    |---|---|---|---|
    | Fácil | 1 (solo la suya) | solo estar cerca del centro (`basic`) | Gana si ve un 4 en línea, pero **no lo arma a propósito ni tapa los tuyos**: como un principiante |
-   | Media | 3 (la suya, la tuya, la suya) | las de los dos (`full`) | Tapa cuando estás por ganar, pero **cae en trampas** de dos amenazas a la vez |
+   | Media | 1 (solo la suya) | las de los dos (`full`) | Arma líneas y **tapa las amenazas que se ven en el tablero**, pero no planea: **no ve trampas** de varias jugadas |
    | Difícil | 6 | las de los dos (`full`) | Ve esas trampas: las esquiva y te las arma |
 
    Las tres deciden con las mismas reglas y la misma búsqueda, sin azar: cambian solo la profundidad y la evaluación. Las pruebas `dificultades` de `tests.pl` lo comprueban con posiciones concretas.
 
-   Jugando entre ellas (21 aperturas distintas por cruce): con media de rojo y difícil de amarillo, difícil gana 18–3; media le gana a fácil 42–0 (21 con cada color).
+   **Cómo se calibró (19-nov).** Con media mirando 3 jugadas, a una persona normal le ganaba casi siempre y no se distinguía de difícil. Se midió cada dificultad contra un jugador simulado "casual" (gana si puede, tapa si debe, no regala una victoria y si no juega al azar cerca del centro), jugando la computadora en segundo lugar como en la consola:
+
+   | Dificultad | La computadora gana | La persona gana |
+   |---|---|---|
+   | Fácil | 10 % | 90 % |
+   | Media (1 jugada, `full`) | 50 % | 40 % (10 % empates) |
+   | Media anterior (3 jugadas) | 80 % | 15 % |
+   | Difícil | 95 % | 5 % |
+
+   Entre ellas, con aperturas al azar: media le gana a fácil 22–7 y difícil a media 17–2.
 
    Primero fácil era `attack` (solo armar sus líneas, sin tapar). Contra la IA perdía, pero a una persona la presionaba más que media: armaba una línea en cada turno y obligaba a defender todo el tiempo. Por eso se cambió a `basic`.
 4. **Evaluación.** Cuando se acaba la profundidad, el tablero se puntúa recorriendo las 69 líneas posibles de 4 casillas:

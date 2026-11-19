@@ -80,13 +80,17 @@ test(dificil_tapa) :-
 test(facil_gana_si_puede) :-
     jugada(easy, [[yellow, yellow, yellow], [red], [red], [], [], [], [red]], 1).
 
-% Trampa de dos amenazas: red tiene _ _ R R _ abajo (fichas en la 3 y la
-% 4) y le toca a yellow. Si yellow no tapa ya en la 2 o la 5, red juega
-% la otra y queda con dos casillas para ganar: yellow solo puede tapar una.
-% Para verlo hay que mirar 5 jugadas: difícil lo ve; media no.
-test(dificil_ve_la_trampa_y_media_no) :-
-    B = [[], [], [red], [red], [], [yellow], [yellow]],
-    jugada(hard, B, H), memberchk(H, [2, 5]),
-    jugada(medium, B, M), \+ memberchk(M, [2, 5]).
+% Media tapa lo que se ve en el tablero (dos rojas con espacio a los lados).
+test(media_tapa_dos_abiertas) :-
+    jugada(medium, [[], [], [red], [red], [], [yellow], [yellow]], M),
+    memberchk(M, [2, 5]).
+
+% Victoria forzada a varias jugadas: jugando en la 5, yellow arma amenazas
+% que red no alcanza a tapar todas. Difícil (6 jugadas) la ve; media, que
+% mira 1, juega otra cosa.
+test(dificil_ve_la_victoria_forzada_y_media_no) :-
+    B = [[red, red], [], [], [red, yellow, red, yellow, yellow], [yellow, yellow], [red], []],
+    jugada(hard, B, 5),
+    jugada(medium, B, M), M \== 5.
 
 :- end_tests(dificultades).
