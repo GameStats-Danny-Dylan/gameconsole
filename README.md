@@ -1,6 +1,6 @@
 # GameConsole
 
-Consola web para jugar varios juegos a la vez, con sus estadísticas en vivo. Es la **continuación de [GameStats](https://github.com/Danny7w7-coder/gamestats)** (Proyecto 1): allá un simulador generaba las partidas; aquí las generan juegos de verdad, y GameStats las analiza.
+Consola web para jugar varios juegos a la vez, con sus estadísticas en vivo. Es la **continuación de [GameStats](https://github.com/GameStats-Danny-Dylan/gamestats)** (Proyecto 1): allá un simulador generaba las partidas; aquí las generan juegos de verdad, y GameStats las analiza.
 
 - **Juegos independientes:** cada juego es una app propia, con su contenedor y su manifiesto (`game.json`). La consola no conoce los juegos de antemano: los **descubre sola** porque cada juego se registra al arrancar.
 - **Varias partidas a la vez:** cada partida corre en su propio iframe, en la misma consola o en pestañas distintas, y manda sus eventos sin frenar a las demás.
