@@ -1,0 +1,21 @@
+{
+  "name": "@gameconsole/console",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Consola de GameConsole: menú dinámico de juegos (desde el registry) y formulario de partida generado desde el manifiesto.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@gameconsole/sdk": "file:../sdk"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  }
+}

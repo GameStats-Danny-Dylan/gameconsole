@@ -2,7 +2,7 @@
 
 Acuerdos entre la consola, los juegos, el registry, Prolog y GameStats. Si algo de aquí cambia, se cambia primero este documento y después el código.
 
-**Estado:** v1, revisado por Danny y Dylan y probado contra GameStats `v1.0` (7-nov).
+**Estado:** v1, revisado por Danny y Dylan y probado contra GameStats `v1.0` (7-nov). Ajustes del 17-nov: timestamps estrictamente crecientes (sección 5), qué `gameId` va en cada lugar, opciones con `labels` y API del SDK (sección 9).
 
 ## Contenido
 
@@ -82,12 +82,15 @@ Cada juego publica su ficha en `/games/{id}/game.json` y la manda al registry al
   "gameStatsId": "connect4",
   "gameVersion": "1.0",
   "entry": "/games/connect4/",
-  "icon": "/games/connect4/icon.png",
+  "icon": "/games/connect4/icon.svg",
   "players": { "min": 1, "max": 2 },
   "modes": ["vs-cpu", "local-2p"],
   "options": [
     { "key": "difficulty", "label": "Dificultad", "type": "select",
-      "values": ["easy", "medium", "hard"], "default": "medium", "modes": ["vs-cpu"] }
+      "values": ["easy", "medium", "hard"], "labels": ["Fácil", "Media", "Difícil"],
+      "default": "medium", "modes": ["vs-cpu"] },
+    { "key": "turnSeconds", "label": "Tiempo por turno", "type": "select",
+      "values": [0, 15, 30, 60], "labels": ["Sin límite", "15 s", "30 s", "60 s"], "default": 0 }
   ],
   "protocol": "gameconsole/1"
 }
@@ -95,22 +98,36 @@ Cada juego publica su ficha en `/games/{id}/game.json` y la manda al registry al
 
 | Campo | Obligatorio | Qué es |
 |---|---|---|
-| `id` | sí | Identificador único: minúsculas, números y guiones. Es el nombre del contenedor (`game-{id}`) |
-| `name`, `description`, `icon` | `name` sí | Lo que muestra el menú |
+| `id` | sí | Identificador único: minúsculas, números y guiones. Es el nombre del contenedor (`game-{id}`), el `gameId` de `INIT` y el prefijo del `matchId` (sección 5) |
+| `name`, `description`, `icon` | `name` sí | Lo que muestra el menú. `icon` es una ruta relativa a una imagen (`.svg` o `.png`) |
 | `version` | sí | Versión de la app del juego |
-| `gameStatsId` | sí | El `gameId` que usa en GameStats (`connect4`, `tetris`, `fighting`) |
+| `gameStatsId` | sí | El `gameId` que va **en cada evento** hacia GameStats (`connect4`, `tetris`, `fighting`) |
 | `gameVersion` | sí | El `gameVersion` que va en cada evento |
 | `entry` | sí | URL relativa que la consola abre en el iframe |
 | `players` | sí | Mínimo y máximo de jugadores humanos |
 | `modes` | sí | `solo`, `vs-cpu` o `local-2p` (2 personas en el mismo dispositivo) |
-| `options` | no | Opciones que la consola le pregunta al jugador antes de empezar. La consola las muestra sin saber qué significan |
+| `options` | no | Opciones que la consola le pregunta al jugador antes de empezar. La consola las muestra sin saber qué significan (ver abajo) |
 | `protocol` | sí | Versión del protocolo que entiende: `gameconsole/1` |
+
+### Opciones
+
+Cada opción de `options` tiene estos campos. La consola arma el formulario con ellos y manda lo elegido en `INIT.options` como `{ [key]: valor }`, con el valor tal como está en `values` (texto o número).
+
+| Campo | Obligatorio | Qué es |
+|---|---|---|
+| `key` | sí | Nombre de la opción en `INIT.options` (`difficulty`, `turnSeconds`…) |
+| `label` | sí | Texto que se muestra junto al control |
+| `type` | sí | Tipo de control. En v1 solo `select` |
+| `values` | sí (en `select`) | Valores posibles, texto o número |
+| `labels` | no | Texto que se muestra para cada valor, en el mismo orden que `values`. Si falta, se muestra el valor |
+| `default` | no | Valor elegido al empezar. Si falta, el primero de `values` |
+| `modes` | no | Solo se pregunta en esos modos. Si falta, en todos |
 
 Los tres juegos:
 
 | `id` | `modes` | `players` | `options` |
 |---|---|---|---|
-| `connect4` | `vs-cpu`, `local-2p` | 1–2 | `difficulty` (solo en `vs-cpu`) |
+| `connect4` | `vs-cpu`, `local-2p` | 1–2 | `difficulty` (solo en `vs-cpu`), `turnSeconds` (0 = sin límite, 15, 30 o 60) |
 | `tetris` | `solo` | 1 | `startLevel` (1–15) |
 | `fighting` | `local-2p` | 2 | `rounds` (1, 3 o 5) |
 
@@ -159,7 +176,7 @@ La consola abre cada partida en un `<iframe src="{entry}?matchId=...">`. Se comu
 | `RESUME` | `{}` | Sigue y emite `MATCH_RESUMED` |
 | `STOP` | `{ reason: "user" \| "closed" }` | Termina. Si la partida ya empezó, emite `PLAYER_LEFT` y `MATCH_FINISHED`; después manda `FINISHED` |
 
-`players` es una lista de `{ "playerId": "danny", "name": "Danny", "kind": "human" \| "cpu", "slot": 1 }`. El `slot` dice qué lugar ocupa cada uno: en connect4, el slot 1 juega con rojo; en fighting, el slot 1 es el de la izquierda y usa WASD. **Los `playerId` de una partida son siempre distintos**: en `local-2p` la consola no deja empezar si los dos jugadores tienen el mismo nombre.
+`gameId` es el `id` del manifiesto (no el `gameStatsId`). `players` es una lista de `{ "playerId": "danny", "name": "Danny", "kind": "human" \| "cpu", "slot": 1 }`. El `slot` dice qué lugar ocupa cada uno: en connect4, el slot 1 juega con rojo; en fighting, el slot 1 es el de la izquierda y usa WASD. **Los `playerId` de una partida son siempre distintos**: en `local-2p` la consola no deja empezar si los dos jugadores tienen el mismo nombre.
 
 ### Juego → consola
 
@@ -223,16 +240,16 @@ Se usa el **contrato de GameStats tal como está** (`gamestats/contracts/event.s
 | Campo | Lo llena | Cómo |
 |---|---|---|
 | `eventId` | SDK | `{matchId}-e{n}`, con `n` = 1, 2, 3… por partida |
-| `timestamp` | SDK | `new Date().toISOString()` (RFC 3339). **Nunca retrocede** dentro de una partida: si el reloj de la PC se ajusta hacia atrás, se repite el anterior. Varios eventos de una jugada pueden tener el mismo milisegundo; Go los ordena con `sort.SliceStable` y respeta el orden de llegada |
-| `gameId` | SDK | `gameStatsId` del manifiesto |
+| `timestamp` | SDK | RFC 3339 con milisegundos (`toISOString()`). **Estrictamente creciente** dentro de una partida: `max(ahora, último + 1 ms)`. Si dos eventos caen en el mismo milisegundo, o el reloj de la PC se ajusta hacia atrás, el siguiente lleva el anterior + 1 ms. Así el orden por `timestamp` es siempre el orden en que se generaron, sin depender de cómo desempata Go |
+| `gameId` | SDK | `gameStatsId` del manifiesto (no el `id`) |
 | `gameVersion` | SDK | `gameVersion` del manifiesto |
 | `matchId` | SDK | El que mandó la consola en `INIT` |
 | `type`, `action`, `playerId`, `data` | **El juego** | Con su adapter (sección 9) |
 
 ### Identificadores
 
-- **`matchId`** = `{gameId}-{uuid}` (por ejemplo, `connect4-3f9c2a1e-...`). Lo crea la consola con `crypto.randomUUID()`. Es único aunque haya muchas partidas a la vez o en varias pestañas.
-- **`playerId`** = el nombre que escribe el jugador, en minúsculas y sin espacios (`"Danny G"` → `danny-g`). La computadora es siempre `cpu`.
+- **`matchId`** = `{id}-{uuid}`, con el `id` del manifiesto (por ejemplo, `connect4-3f9c2a1e-...`). Lo crea la consola con `crypto.randomUUID()`. Es único aunque haya muchas partidas a la vez o en varias pestañas.
+- **`playerId`** = el nombre que escribe el jugador, normalizado: en minúsculas, sin acentos y con los espacios y símbolos cambiados por guiones (una racha de varios cuenta como un solo guion, y no quedan guiones al principio ni al final). Por ejemplo, `"Danny G"` → `danny-g` y `"José Pérez"` → `jose-perez`. Un nombre sin letras ni números no es válido. La computadora es siempre `cpu`, y ningún humano puede tener ese `playerId`.
 - **Nombres repetidos:** la consola consulta `/api/players/{playerId}`. Si el nombre ya existe, pregunta "¿eres tú?". Si la persona dice que no, le pide otro nombre.
 
 ### Eventos obligatorios en cada partida
@@ -262,6 +279,8 @@ Si la partida se cierra y el juego no alcanzó a mandar `MATCH_FINISHED` (pesta�
 - y un `MATCH_FINISHED` sin `data`.
 
 Se puede porque en fighting, connect4 y tetris esos dos eventos no exigen `data`. La consola sabe si ya pasó un `MATCH_FINISHED` por esa partida, así que **nunca lo manda dos veces**.
+
+Estos eventos los sella la consola con las mismas reglas que el SDK, **continuando la partida**: el `eventId` sigue la numeración (`n` = último visto + 1) y el `timestamp` sigue siendo estrictamente creciente, `max(ahora, último timestamp visto de esa partida + 1 ms)`. `gameId` y `gameVersion` salen del manifiesto del juego (`gameStatsId` y `gameVersion`), igual que en el SDK.
 
 ### Decisiones de la IA
 
@@ -372,18 +391,23 @@ El SDK (`sdk/`) implementa este protocolo una sola vez. Cada juego solo hereda y
 ```ts
 // Template Method: el SDK maneja el protocolo y los estados; el juego llena los pasos.
 export abstract class GameApp {
-  protected abstract onInit(ctx: MatchContext): Promise<void>; // cargar, armar el tablero
+  protected abstract onInit(ctx: MatchContext): void | Promise<void>; // cargar, armar el tablero
   protected abstract onStart(): void;                          // emitir MATCH_STARTED, PLAYER_JOINED y arrancar
-  protected abstract onPause(): void;
-  protected abstract onResume(): void;
+  protected abstract onPause(reason: PauseReason): void;       // emitir MATCH_PAUSED con ese reason
+  protected abstract onResume(): void;                         // emitir MATCH_RESUMED
   protected abstract onStop(reason: StopReason): void;         // emitir PLAYER_LEFT y MATCH_FINISHED
 
   /** Adapter: el juego describe el hecho y el SDK completa eventId, timestamp, gameId, gameVersion y matchId. */
   protected emit(e: { type: EventType; action?: string; playerId?: string; data?: object }): void;
-  /** Avisa a la consola que terminó (manda FINISHED). */
-  protected finish(winner: string | null): void;
+  /** Avisa a la consola que terminó (manda FINISHED con winner y reason). */
+  protected finish(winner: string | null, reason: "normal" | "stopped"): void;
+  /** Avisa a la consola que algo falló (manda ERROR). Si fatal, la consola cierra la partida. */
+  protected error(message: string, fatal: boolean): void;
 }
 ```
+
+- **`onInit` puede ser síncrono o asíncrono.** El SDK espera a que termine (`await`) antes de mandar `READY`. Si lanza un error o la promesa se rechaza, el SDK manda `ERROR` con `fatal: true` y no manda `READY`.
+- `emit`, `finish` y `error` también se pueden pasar al código del juego como un objeto `GameHost` (`{ emit, finish, error }`), así la lógica del juego no depende de `GameApp` y se puede probar sin consola.
 
 Además, el SDK trae el **servidor de cada juego** (`sdk/server`): sirve los archivos del juego en el puerto `8080` **bajo `GAME_BASE`** (`/games/{id}/`, ver sección 1), publica `game.json` y hace el registro y el latido en el registry. Cada juego lo usa sin escribir nada de esto.
 
@@ -408,5 +432,6 @@ Lo que le queda a cada juego:
   | tetris completa con `MATCH_FINISHED` sin `data` | 31 / 31 | `null` (patrón `BACK_TO_BACK`) |
 
   Conclusión: `data.ai`, las partidas sin ganador y el cierre de respaldo de la consola funcionan con GameStats tal como está.
-- [ ] Definir el formato exacto de las respuestas de `/api/games` y `/api/stats/...` cuando se implementen.
+- [x] Formato de las respuestas de `/api/stats/overview` y `/api/stats/games/{gameId}`: definido en la sección 8 (implementado en `gamestats`, rama `scala`).
+- [ ] Formato de `/api/games` (Go): el que espera el panel está en la sección 8; falta que Go lo implemente.
 - [x] Revisión de Dylan (7-nov): rutas de nginx, cierre de respaldo, `STOP`, partidas ocultas, `playerId` distintos, nada por frame, registry en Node/TS. Incorporado en esta versión.

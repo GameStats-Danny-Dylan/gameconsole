@@ -1,0 +1,27 @@
+{
+  "name": "@gameconsole/sdk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SDK de GameConsole: protocolo consola-juego, GameApp, sellado de eventos para GameStats y el servidor de cada juego.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme": "./src/ui/theme.ts"
+  },
+  "bin": {
+    "game-server": "./dist-server/main.js"
+  },
+  "scripts": {
+    "build": "tsc --noEmit && npm run build:server",
+    "build:server": "tsc -p tsconfig.server.json && node -e \"require('fs').writeFileSync('dist-server/package.json', '{\\\"type\\\":\\\"module\\\"}')\"",
+    "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

@@ -1,0 +1,11 @@
+# Para las imágenes que se construyen con la raíz del repo como contexto
+# (los juegos sobre el SDK). Las que usan su propia carpeta tienen su .dockerignore.
+**/node_modules
+**/dist
+**/dist-server
+**/*.log
+.git
+.github
+.claude
+.env
+CLAUDE.md
