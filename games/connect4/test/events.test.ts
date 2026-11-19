@@ -6,7 +6,7 @@
 import { describe, expect, test } from "vitest";
 import { GameStatsAdapter } from "../src/adapter/GameStatsAdapter";
 import type { Seat } from "../src/domain/Connect4Match";
-import { EventStamper } from "../src/standalone/EventStamper";
+import { EventStamper } from "@gameconsole/sdk";
 import { scalaRejections } from "./support/scalaRules";
 import { simulate } from "./support/simulate";
 
@@ -40,12 +40,13 @@ describe("GameStatsAdapter", () => {
 });
 
 describe("EventStamper", () => {
-  test("eventId {matchId}-e{n} y timestamps que nunca retroceden", () => {
-    const times = [1000, 3000, 2000];
-    const s = new EventStamper("connect4-x", "connect4", "1.0", () => times.shift()!);
-    const e = [1, 2, 3].map(() => s.stamp({ type: "MATCH_PAUSED" }));
-    expect(e.map((x) => x.eventId)).toEqual(["connect4-x-e1", "connect4-x-e2", "connect4-x-e3"]);
-    expect(e[2].timestamp).toBe(e[1].timestamp);
+  test("el del SDK: eventId {matchId}-e{n} y timestamps estrictamente crecientes", () => {
+    const times = [1000, 3000, 2000, 3001];
+    const s = new EventStamper({ matchId: "connect4-x", gameId: "connect4", gameVersion: "1.0", now: () => times.shift()! });
+    const e = [1, 2, 3, 4].map(() => s.stamp({ type: "MATCH_PAUSED" }));
+    expect(e.map((x) => x.eventId)).toEqual(["connect4-x-e1", "connect4-x-e2", "connect4-x-e3", "connect4-x-e4"]);
+    // el reloj retrocede (2000): +1 ms; y el siguiente que empata (3001) también suma
+    expect(e.map((x) => Date.parse(x.timestamp) - 1000)).toEqual([0, 2000, 2001, 2002]);
     expect(e[0]).toMatchObject({ gameId: "connect4", gameVersion: "1.0", matchId: "connect4-x" });
   });
 });

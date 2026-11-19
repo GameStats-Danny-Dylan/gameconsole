@@ -4,7 +4,7 @@
  * Sirve para probar SIN red que ningún evento del juego se descartaría.
  * Si GameStats cambia sus reglas, esta copia se actualiza.
  */
-import type { ContractEvent } from "../../src/standalone/EventStamper";
+import type { ContractEvent } from "@gameconsole/sdk";
 
 type Cell = string; // "c,r"
 interface Board { discs: Map<Cell, string>; threats: Map<Cell, Set<string>>; turn: string | null; last: { p: string; cell: Cell } | null }

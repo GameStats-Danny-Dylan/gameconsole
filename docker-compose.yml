@@ -80,8 +80,9 @@ services:
     restart: unless-stopped
 
   # Panel de estadísticas (en /panel/): muestra lo que calcula GameStats.
+  # Se construye desde la raíz porque usa el tema del SDK (sdk/).
   panel:
-    build: ./panel
+    build: { context: ., dockerfile: panel/Dockerfile }
     image: gameconsole-panel
     restart: unless-stopped
 
@@ -89,12 +90,13 @@ services:
   # Juegos: cada uno es un servicio llamado game-{id} en el puerto 8080.
   # nginx lo encuentra solo por el nombre y el juego se anota en el registry
   # al arrancar (con sdk/server). Agregar un juego = agregar su servicio.
+  # Se construyen desde la raíz porque usan el SDK (sdk/).
   # ------------------------------------------------------------------
   game-connect4:
-    build: ./games/connect4
+    build: { context: ., dockerfile: games/connect4/Dockerfile }
     image: gameconsole-game-connect4
     environment:
-      REGISTRY_URL: "http://registry:8080"   # lo usará sdk/server
+      REGISTRY_URL: "http://registry:8080"   # sdk/server se registra y manda el latido
     restart: unless-stopped
 
   # Consola: menú dinámico desde el registry y formulario de partida (en /).

@@ -14,6 +14,7 @@ src/
   domain/Connect4Match.ts    reglas de la partida: turnos, amenazas, ganador, empate, deshacer
   adapter/GameStatsAdapter   hechos del juego -> eventos del contrato de GameStats
   ai/MoveStrategy.ts         cómo elige columna la computadora (PrologStrategy: POST /api/ai/connect4/move)
+  game/Connect4App.ts        el juego dentro de la consola (hereda de GameApp del SDK)
   game/Connect4Game.ts       controlador: ciclo de vida del protocolo (INIT/START/PAUSE/RESUME/STOP)
   game/ports.ts              GameHost, MatchContext, Connect4View: lo que el juego necesita de afuera
   ui/DomBoardView.ts         dibujo con HTML/CSS y teclado (1–7, P = pista, U = deshacer)
@@ -36,7 +37,7 @@ public/game.json             manifiesto (protocolo, sección 2)
 
 ```bash
 npm install
-npm test                 # 38 pruebas (incluye 3000 partidas al azar contra una copia de las reglas de Scala)
+npm test                 # 44 pruebas (incluye el protocolo con la consola por el SDK) (incluye 3000 partidas al azar contra una copia de las reglas de Scala)
 npm run dev              # modo de prueba en http://localhost:5173/games/connect4/
                          # (/api va al gateway: antes, "docker compose up -d --build --wait" en la raíz)
 
@@ -44,4 +45,4 @@ npm run dev              # modo de prueba en http://localhost:5173/games/connect
 GAMESTATS_URL=http://localhost:8000 npm run test:gamestats
 ```
 
-**Falta (cuando esté el SDK):** la clase `Connect4App extends GameApp` que llama a `init/start/pause/resume/stop` de `Connect4Game` (ver `src/main.ts`), y el Dockerfile con `sdk/server`.
+**Dentro de la consola** corre `Connect4App extends GameApp` (SDK, Template Method): cada paso del protocolo (`onInit/onStart/onPause/onResume/onStop`) se lo pasa a `Connect4Game`, que solo conoce la interfaz `GameHost`. El SDK sella los eventos (timestamps estrictamente crecientes) y el contenedor corre `sdk/server`, que sirve el juego bajo `/games/connect4/` y lo registra solo en el registry con su latido. La imagen se construye desde la raíz del repo: `docker build -f games/connect4/Dockerfile .`.

@@ -94,7 +94,6 @@ docker compose down                     # apagar (los resultados se conservan)
 
 ## Pendientes
 
-- Consola, SDK (`sdk/` y `sdk/server`), Tetris y peleas (Dylan).
-- Conectar el 4 en línea al SDK (`Connect4App extends GameApp`) y reemplazar su servidor provisional por `sdk/server`.
-- GameStats v1.1 publicado (`/games` y tiempo de espera por juego en Go; Scala ya está listo).
+- Tetris y peleas (Dylan).
+- GameStats v1.1 publicado (tag `v1.1` en `gamestats`) y `GAMESTATS_TAG=v1.1` en los compose.
 - Video de demostración.

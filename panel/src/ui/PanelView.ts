@@ -10,7 +10,7 @@ import {
   PATTERN_LABELS, playerName, STANDING_METRIC, type GameRow, type MatchInfo, type Standing,
 } from "../model";
 import type { Snapshot } from "../store/PanelStore";
-import { appHeader } from "./theme";
+import { appHeader } from "@gameconsole/sdk/theme";
 
 type Child = Node | string | null | false | undefined;
 

@@ -1,6 +1,6 @@
 /* ============================================================
    Tema: tokens de color. El claro es el de base; el oscuro se
-   activa con <html data-theme="dark"> (ver src/ui/theme.ts).
+   activa con <html data-theme="dark"> (ver sdk/src/ui/theme.ts).
    ============================================================ */
 :root {
   color-scheme: light;

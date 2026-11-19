@@ -7,8 +7,8 @@ import { MinThinkTime, PrologStrategy } from "../ai/MoveStrategy";
 import { Connect4Game } from "../game/Connect4Game";
 import type { MatchContext } from "../game/ports";
 import { DomBoardView } from "../ui/DomBoardView";
-import { appHeader } from "../ui/theme";
-import { EventStamper } from "./EventStamper";
+import { EventStamper } from "@gameconsole/sdk";
+import { appHeader } from "@gameconsole/sdk/theme";
 import { StandaloneHost } from "./StandaloneHost";
 
 /** "Danny G" -> "danny-g" (protocolo, sección 5). */
@@ -137,7 +137,7 @@ function play(root: HTMLElement, ctx: MatchContext, send: boolean): void {
     count.textContent = String(list.children.length);
   };
 
-  const host = new StandaloneHost(new EventStamper(ctx.matchId), send, log);
+  const host = new StandaloneHost(new EventStamper({ matchId: ctx.matchId, gameId: "connect4", gameVersion: "1.0" }), send, log);
   const game = new Connect4Game(host, new DomBoardView(root.querySelector(".game")!), new MinThinkTime(new PrologStrategy()));
   game.init(ctx);
   game.start();

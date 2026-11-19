@@ -6,7 +6,7 @@
  */
 import type { GameEventDraft } from "../adapter/GameStatsAdapter";
 import type { GameHost } from "../game/ports";
-import { EventStamper, type ContractEvent } from "./EventStamper";
+import type { ContractEvent, EventStamper } from "@gameconsole/sdk";
 
 export class StandaloneHost implements GameHost {
   readonly sent: ContractEvent[] = [];

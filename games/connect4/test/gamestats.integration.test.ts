@@ -12,7 +12,7 @@ import { describe, expect, test } from "vitest";
 import { GameStatsAdapter } from "../src/adapter/GameStatsAdapter";
 import { PrologStrategy } from "../src/ai/MoveStrategy";
 import { Connect4Match, type Seat } from "../src/domain/Connect4Match";
-import { EventStamper, type ContractEvent } from "../src/standalone/EventStamper";
+import { EventStamper, type ContractEvent } from "@gameconsole/sdk";
 import { simulate } from "./support/simulate";
 
 // Variable de entorno de Node (sin depender de @types/node).
@@ -56,7 +56,7 @@ describe.skipIf(!BASE)("GameStats real (por el gateway)", () => {
 
   test("una partida completa contra la IA de Prolog (difícil contra fácil)", async () => {
     const matchId = `connect4-it-${run}-prolog`;
-    const stamper = new EventStamper(matchId);
+    const stamper = new EventStamper({ matchId, gameId: "connect4", gameVersion: "1.0" });
     const adapter = new GameStatsAdapter();
     const events: ContractEvent[] = [];
     const emit = (d: ReturnType<GameStatsAdapter["fromFact"]>) => { if (d) events.push(stamper.stamp(d)); };

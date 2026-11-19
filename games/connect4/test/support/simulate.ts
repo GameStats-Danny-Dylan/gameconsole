@@ -6,7 +6,7 @@
  */
 import { GameStatsAdapter, type Mode } from "../../src/adapter/GameStatsAdapter";
 import { Connect4Match, type Seat } from "../../src/domain/Connect4Match";
-import { EventStamper, type ContractEvent } from "../../src/standalone/EventStamper";
+import { EventStamper, type ContractEvent } from "@gameconsole/sdk";
 
 /** Generador pseudoaleatorio con semilla (mulberry32): mismas partidas en cada corrida. */
 export function rng(seed: number): () => number {
@@ -29,7 +29,7 @@ export function simulate(seed: number, mode: Mode, matchId = `connect4-sim-${mod
   const rand = rng(seed);
   const pick = <T>(xs: T[]) => xs[Math.floor(rand() * xs.length)];
   let clock = Date.parse("2026-11-07T12:00:00Z");
-  const stamper = new EventStamper(matchId, "connect4", "1.0", () => (clock += 1 + Math.floor(rand() * 900)));
+  const stamper = new EventStamper({ matchId, gameId: "connect4", gameVersion: "1.0", now: () => (clock += 1 + Math.floor(rand() * 900)) });
   const adapter = new GameStatsAdapter();
   const events: ContractEvent[] = [];
   const emit = (d: Parameters<EventStamper["stamp"]>[0] | null) => { if (d) events.push(stamper.stamp(d)); };

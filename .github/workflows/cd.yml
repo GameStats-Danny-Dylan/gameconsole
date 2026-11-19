@@ -65,11 +65,13 @@ jobs:
       matrix:
         # Cada app con su imagen. Agregar una app = agregar su carpeta aquí.
         app:
-          - { name: gateway,  context: ./gateway }
-          - { name: registry, context: ./registry }
-          - { name: prolog,   context: ./prolog }
-          - { name: panel,    context: ./panel }
-          - { name: game-connect4, context: ./games/connect4 }
+          # Las que usan el SDK se construyen desde la raíz (context: .) con su Dockerfile.
+          - { name: gateway,  context: ./gateway,  file: gateway/Dockerfile }
+          - { name: registry, context: ./registry, file: registry/Dockerfile }
+          - { name: prolog,   context: ./prolog,   file: prolog/Dockerfile }
+          - { name: panel,    context: .,          file: panel/Dockerfile }
+          - { name: console,  context: .,          file: console/Dockerfile }
+          - { name: game-connect4, context: .,     file: games/connect4/Dockerfile }
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -94,6 +96,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.app.context }}
+          file: ${{ matrix.app.file }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.tags.outputs.list }}
