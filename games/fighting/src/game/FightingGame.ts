@@ -16,7 +16,7 @@ import type { GameHost, MatchContext, PauseReason, StopReason } from "@gameconso
 import { GameStatsAdapter } from "../adapter/GameStatsAdapter";
 import { FightingMatch, ROUND_OPTIONS, type RoundsOption } from "../domain/FightingMatch";
 import { NO_INTENT, type Intent } from "../domain/fighter/Intent";
-import { EffectsSystem } from "../fx/EffectsSystem";
+import { GameFeel } from "../fx/GameFeel";
 import { controlsForSlot, type ControlStrategy } from "../input/ControlScheme";
 import { animationFrames, type FightView, type FrameScheduler, type InputPort, type Status } from "./ports";
 
@@ -30,8 +30,11 @@ export class FightingGame {
   private match!: FightingMatch;
   private controls: [ControlStrategy, ControlStrategy] = [controlsForSlot(1), controlsForSlot(2)];
   private readonly adapter = new GameStatsAdapter();
-  /** Lo que se anima en la presentación; avanza con el mismo dt que la pelea (en la pausa, nada). */
-  private readonly fx = new EffectsSystem();
+  /**
+   * Mediator de la presentación: congelado de impacto, cámara lenta y efectos.
+   * Solo avanza con el ciclo, así en la pausa todo queda quieto.
+   */
+  private readonly feel = new GameFeel();
 
   private frameId: number | null = null;
   private lastTime: number | null = null;
@@ -47,6 +50,8 @@ export class FightingGame {
 
   get state(): Status { return this.status; }
   get fight(): FightingMatch { return this.match; }
+  /** La presentación (congelado, cámara lenta y efectos). Solo para leer. */
+  get presentation(): GameFeel { return this.feel; }
   /** Si el ciclo de cuadros está corriendo. */
   get running(): boolean { return this.frameId !== null; }
 
@@ -62,6 +67,7 @@ export class FightingGame {
       throw new Error("local-2p: dos personas en el mismo teclado");
 
     this.match = new FightingMatch(ctx.players, parseRounds(ctx.options.rounds));
+    this.feel.watch(this.match);
     if (controls) this.controls = controls;
     // Observer: cada hecho de la pelea se traduce (Adapter) y se manda a la consola.
     this.match.facts.on((fact) => {
@@ -142,16 +148,23 @@ export class FightingGame {
     const dt = this.lastTime === null ? 0 : Math.min(MAX_DT, Math.max(0, (timeMs - this.lastTime) / 1000));
     this.lastTime = timeMs;
 
+    // Congelado de impacto: el cuadro entero se lo come el congelado y las
+    // teclas apretadas se guardan para el primer cuadro en que la pelea siga.
+    let held = false;
     if (this.status === "playing") {
-      const intents = this.controls.map((c) => c.read(this.input)) as [Intent, Intent];
-      this.match.step(dt, intents);
-      this.fx.update(dt, this.match);
+      const simDt = this.feel.advance(dt);
+      held = dt > 0 && simDt === 0;
+      if (!held) {
+        const intents = this.controls.map((c) => c.read(this.input)) as [Intent, Intent];
+        this.match.step(simDt, intents);
+      }
+      this.feel.settle(this.match);
     } else if (this.status === "finished" && !this.stopped) {
-      this.match.step(dt, [NO_INTENT, NO_INTENT]); // final: solo la animación
-      this.fx.update(dt, this.match);
+      this.match.step(this.feel.advance(dt), [NO_INTENT, NO_INTENT]); // final: solo la animación (quizá en cámara lenta)
+      this.feel.settle(this.match);
       this.outroLeft -= dt;
     }
-    this.input.endFrame();
+    if (!held) this.input.endFrame();
     this.render();
 
     const keepGoing = this.status === "playing" || (this.status === "finished" && !this.stopped && this.outroLeft > 0);
@@ -163,6 +176,7 @@ export class FightingGame {
     if (this.status !== "playing") return;
     this.status = "finished";
     this.outroLeft = OUTRO_SECONDS;
+    this.feel.matchOver(this.match);
     this.host.emit(this.adapter.matchFinished("normal"));
     this.host.finish(winner, "normal");
   }
@@ -175,7 +189,7 @@ export class FightingGame {
       status: this.status,
       winnerName: w ? this.match.fighters.find((f) => f.playerId === w)?.name ?? w : null,
       stopped: this.stopped,
-      fx: this.fx,
+      fx: this.feel.fx,
     });
   }
 }

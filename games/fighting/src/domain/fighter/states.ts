@@ -53,14 +53,18 @@ export class IdleState extends GroundFree {
 
 export class WalkState extends GroundFree {
   readonly name = "walk";
-  update(f: Fighter, i: Intent): FighterState | void {
+  update(f: Fighter, i: Intent, dt: number): FighterState | void {
     if (!f.grounded) return new JumpState(0, false);
     const next = this.common(f, i);
     if (next) return next;
+    // Soltar es frenar en seco (para medir bien las distancias, como en casi todos los juegos de pelea).
     if (i.move === 0) return new IdleState();
-    // Hacia atrás se camina un poco más lento (como en casi todos los juegos de pelea).
+    // Hacia atrás se camina un poco más lento. Se acelera hasta esa velocidad;
+    // al cambiar de sentido, el doble de rápido.
     const backwards = i.move !== f.facing;
-    f.vx = i.move * f.physics.walkSpeed * (backwards ? 0.8 : 1);
+    const target = i.move * f.physics.walkSpeed * (backwards ? 0.8 : 1);
+    const turning = f.vx !== 0 && Math.sign(f.vx) !== i.move;
+    f.vx = approach(f.vx, target, f.physics.walkAccel * (turning ? 2 : 1) * dt);
   }
 }
 
@@ -68,7 +72,7 @@ export class JumpState extends FighterState {
   readonly name = "jump";
 
   /** dir: hacia dónde salta. takeoff: false si ya estaba en el aire (se cayó, no saltó). */
-  constructor(private readonly dir: -1 | 0 | 1, private readonly takeoff = true) { super(); }
+  constructor(private readonly dir: -1 | 0 | 1, readonly takeoff = true) { super(); }
 
   override enter(f: Fighter): void {
     if (!this.takeoff) return;
@@ -96,10 +100,11 @@ export class AttackState extends FighterState {
     if (f.grounded) f.vx = 0;
   }
 
-  update(f: Fighter): FighterState | void {
+  update(f: Fighter, _i: Intent, dt: number): FighterState | void {
     const rules = f.rules;
     const elapsed = f.stateTime;
-    if (f.grounded) f.vx = 0;
+    // En el piso no se camina golpeando; solo se frena un empujón (el de la pared, por ejemplo).
+    if (f.grounded) f.vx = friction(f.vx, f.physics.friction, dt);
     // Terminó la parte activa sin tocar a nadie: un golpe al aire.
     if (!this.connected && !this.whiffed && elapsed >= rules.move(this.move).startup + rules.move(this.move).active) {
       this.whiffed = true;
@@ -121,9 +126,9 @@ export class BlockState extends FighterState {
 
   override enter(f: Fighter): void { f.vx = 0; }
 
-  update(f: Fighter, i: Intent): FighterState | void {
+  update(f: Fighter, i: Intent, dt: number): FighterState | void {
     // El empujón del bloqueo se frena solo; mientras dure el bloqueo-aturdimiento no se suelta.
-    f.vx *= 0.8;
+    f.vx = friction(f.vx, f.physics.friction * 1.35, dt);
     if (f.stateTime < f.blockstunUntil) return;
     if (!i.block) return new IdleState();
   }
@@ -138,8 +143,8 @@ export class HitState extends FighterState {
     f.vx = this.pushDir * this.push;
   }
 
-  update(f: Fighter): FighterState | void {
-    f.vx *= 0.85;
+  update(f: Fighter, _i: Intent, dt: number): FighterState | void {
+    f.vx = friction(f.vx, f.physics.friction, dt);
     if (f.stateTime >= this.duration && f.grounded) return new IdleState();
   }
 }
@@ -155,7 +160,18 @@ export class KoState extends FighterState {
     if (f.grounded) f.vy = -f.physics.jumpSpeed * 0.35; // sale despedido un poco
   }
 
-  update(f: Fighter): void {
-    if (f.grounded) f.vx *= 0.8;
+  update(f: Fighter, _i: Intent, dt: number): void {
+    if (f.grounded) f.vx = friction(f.vx, f.physics.friction * 1.35, dt);
   }
+}
+
+/** Fricción que no depende de los cuadros por segundo: v · e^(-k·dt). */
+function friction(v: number, k: number, dt: number): number {
+  const next = v * Math.exp(-k * dt);
+  return Math.abs(next) < 1 ? 0 : next;
+}
+
+/** Acerca v a target sin pasarse, a lo sumo step. */
+function approach(v: number, target: number, step: number): number {
+  return v < target ? Math.min(target, v + step) : Math.max(target, v - step);
 }

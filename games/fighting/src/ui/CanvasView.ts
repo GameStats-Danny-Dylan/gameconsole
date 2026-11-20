@@ -1,7 +1,9 @@
 /**
  * CanvasView — la vista de la pelea en un <canvas>. Coordina a los que dibujan
  * (cada uno con lo suyo): StageRenderer (escenario por capas), FighterRenderer
- * (los luchadores articulados) y HudRenderer (marcador y carteles).
+ * (los luchadores articulados), EffectsRenderer (chispas, polvo, combo) y
+ * HudRenderer (marcador y carteles). El mundo se dibuja a través de la cámara
+ * de los efectos (sacudida y zoom); el marcador queda fijo.
  *
  * Solo lee la pelea y los efectos; nunca los cambia. Dibuja en coordenadas
  * lógicas de la arena (960 × 540) y escala al tamaño real del canvas. El
@@ -11,6 +13,7 @@ import type { Fighter } from "../domain/fighter/Fighter";
 import type { FightingMatch } from "../domain/FightingMatch";
 import { SLOT1_KEYS, SLOT2_KEYS, type KeyBindings } from "../input/ControlScheme";
 import type { FightView, ViewModel } from "../game/ports";
+import { EffectsRenderer } from "./EffectsRenderer";
 import { FighterRenderer } from "./FighterRenderer";
 import { HudRenderer } from "./HudRenderer";
 import { lookOf } from "./looks";
@@ -32,6 +35,7 @@ export class CanvasView implements FightView {
   });
   private readonly fighters = new FighterRenderer();
   private readonly hud = new HudRenderer();
+  private readonly effects = new EffectsRenderer();
   private namesShown = false;
   private last: ViewModel | null = null;
 
@@ -110,6 +114,17 @@ export class CanvasView implements FightView {
     const theme: Theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
     const [a, b] = m.fighters;
 
+    // El mundo, a través de la cámara (sacudida y zoom).
+    c.save();
+    const cam = fx?.camera;
+    if (cam) {
+      const z = cam.zoom;
+      const fxX = clamp(cam.focusX, W / (2 * z), W - W / (2 * z));
+      const fxY = clamp(cam.focusY, H / (2 * z), H - H / (2 * z));
+      c.translate(W / 2 + cam.offsetX, H / 2 + cam.offsetY);
+      c.scale(z, z);
+      c.translate(-fxX, -fxY);
+    }
     this.stage.drawBackground(c, theme, Math.max(sx, sy), clock, (a.x + b.x) / 2, m.fighters);
     const anim = (f: Fighter): AnimContext => ({
       clock,
@@ -120,13 +135,19 @@ export class CanvasView implements FightView {
     // El que está en KO va detrás; si no, el que ataca va adelante.
     const order = [...m.fighters].sort((x, y) => depth(x) - depth(y));
     for (const f of order) this.fighters.draw(c, f, anim(f));
+    if (fx) this.effects.drawParticles(c, fx);
+    c.restore();
     this.stage.drawVignette(c);
+    if (fx) this.effects.drawScreenFlash(c, fx);
 
     this.hud.draw(c, vm, fx);
+    if (fx && vm.status !== "paused") this.effects.drawCombos(c, fx);
     this.hud.drawBanners(c, vm);
     if (vm.status === "playing" && typeof document !== "undefined" && !document.hasFocus()) this.hud.drawFocusHint(c);
   }
 }
+
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /** Orden de dibujo: KO atrás, el que golpea adelante. */
 function depth(f: Fighter): number {

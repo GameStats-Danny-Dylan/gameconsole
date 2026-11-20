@@ -84,6 +84,30 @@ export class FighterRenderer {
     // Brazo de adelante (el que golpea), encima de todo.
     this.arm(c, P.shoulderFront, P.elbowFront, P.handFront, look, (x) => x, s, pose.armFront.upper + pose.armFront.lower);
 
+    if (f.stateName === "block") this.guard(c, P, f);
+    c.restore();
+  }
+
+  /** Arco de guardia delante de los brazos: tenue al bloquear y brillante al frenar un golpe. */
+  private guard(c: Ctx, P: CanvasPoints, f: Fighter): void {
+    const stun = f.stateTime < f.blockstunUntil ? 1 - f.stateTime / Math.max(0.001, f.blockstunUntil) : 0;
+    const settle = Math.min(1, f.stateTime / 0.08);
+    const alpha = 0.22 * settle + 0.75 * stun;
+    if (alpha <= 0.01) return;
+    const cx = P.chest.x + 14, cy = P.chest.y + 4;
+    c.save();
+    c.globalCompositeOperation = "lighter";
+    c.lineCap = "round";
+    c.strokeStyle = withAlpha("#5fd4ff", alpha);
+    c.lineWidth = 6 + 4 * stun;
+    c.beginPath();
+    c.arc(cx, cy, 44 + 6 * stun, -1.05, 1.15);
+    c.stroke();
+    c.strokeStyle = withAlpha("#e8fbff", alpha);
+    c.lineWidth = 2;
+    c.beginPath();
+    c.arc(cx, cy, 44 + 6 * stun, -0.95, 1.05);
+    c.stroke();
     c.restore();
   }
 
