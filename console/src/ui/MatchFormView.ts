@@ -158,7 +158,9 @@ export class MatchFormView {
 
   /** Errores y playerId de cada nombre. Un error se muestra al salir del campo o al intentar jugar. */
   private refreshNames(): void {
-    const errors = this.setup!.nameErrors();
+    // El blur de un campo puede llegar cuando el panel ya se cerró (setup = null).
+    if (!this.setup) return;
+    const errors = this.setup.nameErrors();
     this.rows.forEach((row, i) => {
       const show = (row.touched || this.submitted) ? errors[i] : null;
       row.error.textContent = show ?? "";
