@@ -159,7 +159,7 @@ describe("MatchSession: tiempos límite", () => {
     expect(session.status).toBe("loading");
     await vi.advanceTimersByTimeAsync(1);
     expect(session.status).toBe("error");
-    expect(session.error).toMatch(/10 s/);
+    expect(session.error).toMatch(/no respondió a tiempo/);
     expect(frame.removed).toBe(true);
     await expect(session.closed).resolves.toBeUndefined();
   });

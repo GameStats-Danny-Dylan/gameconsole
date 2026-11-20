@@ -25,10 +25,19 @@ echo "-- servicios"
 [ "$(get /api/ai/health | jq -r .status)" = ok ]       || fail "prolog";          ok "prolog"
 
 echo "-- apps servidas por el gateway"
-curl -fsS --max-time 10 "$BASE/" | grep -q "<title>GameConsole</title>" || fail "consola /"; ok "consola"
+curl -fsS --max-time 10 "$BASE/" | grep -q "<title>DnD Games</title>" || fail "consola /"; ok "consola"
 curl -fsS --max-time 10 "$BASE/panel/" | grep -q "Panel de GameConsole" || fail "panel /panel/"; ok "panel"
 curl -fsS --max-time 10 "$BASE/games/connect4/" | grep -q "4 en línea" || fail "/games/connect4/"; ok "4 en línea"
-[ "$(get /games/connect4/game.json | jq -r .id)" = connect4 ] || fail "game.json del 4 en línea"; ok "game.json"
+for g in connect4 tetris fighting; do
+  [ "$(get /games/$g/game.json | jq -r .id)" = "$g" ] || fail "game.json de $g"; ok "game.json de $g"
+done
+
+echo "-- los 3 juegos se registraron solos"
+for i in $(seq 1 15); do
+  n=$(get /api/registry/games | jq '[.[] | select(.id == "connect4" or .id == "tetris" or .id == "fighting")] | length')
+  [ "$n" = 3 ] && break; sleep 1
+done
+[ "$n" = 3 ] || fail "en el registry hay $n de 3 juegos"; ok "3 juegos en el registry"
 
 echo "-- IA (Prolog): rojo tiene 3 abajo, amarillo debe tapar en la 4"
 board='{"board":[["red"],["red"],["red"],[],["yellow"],["yellow"],[]],"player":"yellow","difficulty":"hard"}'

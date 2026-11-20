@@ -100,6 +100,8 @@ Cada juego publica su ficha en `/games/{id}/game.json` y la manda al registry al
 |---|---|---|
 | `id` | sí | Identificador único: minúsculas, números y guiones. Es el nombre del contenedor (`game-{id}`), el `gameId` de `INIT` y el prefijo del `matchId` (sección 5) |
 | `name`, `description`, `icon` | `name` sí | Lo que muestra el menú. `icon` es una ruta relativa a una imagen (`.svg` o `.png`) |
+| `howToPlay` | no | Texto corto en español con los controles y el objetivo del juego (también lo usa el propio juego en su pantalla) |
+| `instructions` | no | El "Cómo se juega" por partes: `goal` (objetivo), `steps` (paso a paso), `controls` (`[{ keys, action, player? }]`; `"S+F"` = combinación, varias teclas = alternativas) y `tips` (consejos). Si está, la consola lo muestra en secciones que se abren y cierran, antes de empezar y durante la partida; si no, usa `howToPlay` |
 | `version` | sí | Versión de la app del juego |
 | `gameStatsId` | sí | El `gameId` que va **en cada evento** hacia GameStats (`connect4`, `tetris`, `fighting`) |
 | `gameVersion` | sí | El `gameVersion` que va en cada evento |
@@ -321,7 +323,7 @@ Vive en la consola. Hay **una cola por partida**, así una partida no frena a ot
 
 - `board`: **7 columnas**, de la 1 a la 7. Cada una es la lista de fichas **de abajo hacia arriba** (máximo 6). Así es como piensa Prolog: soltar una ficha es agregarla al final de su columna.
 - `player`: el color que mueve (la computadora).
-- `difficulty`: `easy` = profundidad 1 y solo mira sus propias líneas (no tapa), `medium` = 3, `hard` = 6 (ver [`prolog/README.md`](../prolog/README.md)). Las pistas del juego piden `hard`.
+- `difficulty`: `easy` = profundidad 1 y solo busca el centro (no tapa), `medium` = profundidad 1 mirando las líneas de los dos (tapa lo que ve, no planea), `hard` = 6 (ver [`prolog/README.md`](../prolog/README.md)). Las pistas del juego piden `hard`.
 
 Respuesta `200`:
 
@@ -433,5 +435,6 @@ Lo que le queda a cada juego:
 
   Conclusión: `data.ai`, las partidas sin ganador y el cierre de respaldo de la consola funcionan con GameStats tal como está.
 - [x] Formato de las respuestas de `/api/stats/overview` y `/api/stats/games/{gameId}`: definido en la sección 8 (implementado en `gamestats`, rama `scala`).
-- [ ] Formato de `/api/games` (Go): el que espera el panel está en la sección 8; falta que Go lo implemente.
+- [x] Formato de `/api/games` (Go): `[{gameId, inProgress}]`, como espera el panel (sección 8). Implementado en `gamestats` (PR #23), junto con el tiempo de espera por juego (`IDLE_TIMEOUT_BY_GAME`).
+- [x] EventSender (sección 6) en la consola, con el cierre de respaldo (sección 5) y el indicador de envío (19-nov).
 - [x] Revisión de Dylan (7-nov): rutas de nginx, cierre de respaldo, `STOP`, partidas ocultas, `playerId` distintos, nada por frame, registry en Node/TS. Incorporado en esta versión.

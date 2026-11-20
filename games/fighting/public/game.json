@@ -1,0 +1,43 @@
+{
+  "id": "fighting",
+  "name": "Pelea",
+  "version": "1.0.0",
+  "description": "Pelea 1 contra 1 para 2 personas en el mismo teclado, al mejor de 1, 3 o 5 rounds.",
+  "gameStatsId": "fighting",
+  "gameVersion": "1.0",
+  "entry": "/games/fighting/",
+  "icon": "/games/fighting/icon.svg",
+  "players": { "min": 2, "max": 2 },
+  "modes": ["local-2p"],
+  "options": [
+    { "key": "rounds", "label": "Rounds", "type": "select",
+      "values": [1, 3, 5], "labels": ["1 round", "Mejor de 3", "Mejor de 5"], "default": 3 }
+  ],
+  "howToPlay": "Jugador 1 (izquierda): A y D caminan, W salta, F golpea, G bloquea; S + F es patada. Jugador 2 (derecha): flechas ← → caminan, ↑ salta, K golpea, L bloquea; ↓ + K es patada. Golpear en el aire también es patada. Deja al rival sin vida (KO) o termina el tiempo con más vida para ganar el round; gana quien gane la mayoría de los rounds.",
+  "instructions": {
+    "goal": "Gana más rounds que tu rival. Un round se gana dejando al otro sin vida (KO) o teniendo más vida cuando se acaba el tiempo.",
+    "steps": [
+      "Dos personas juegan en el mismo teclado: el Jugador 1 a la izquierda y el Jugador 2 a la derecha.",
+      "Golpea y patea para bajarle la vida al rival; bloquea para no recibir daño.",
+      "Cada round dura 60 segundos. Gana la pelea quien gane la mayoría de los rounds (1, 3 o 5)."
+    ],
+    "controls": [
+      { "player": "Jugador 1 (izquierda)", "keys": ["A", "D"], "action": "Caminar" },
+      { "player": "Jugador 1 (izquierda)", "keys": ["W"], "action": "Saltar" },
+      { "player": "Jugador 1 (izquierda)", "keys": ["F"], "action": "Golpe" },
+      { "player": "Jugador 1 (izquierda)", "keys": ["S+F"], "action": "Patada" },
+      { "player": "Jugador 1 (izquierda)", "keys": ["G"], "action": "Bloquear" },
+      { "player": "Jugador 2 (derecha)", "keys": ["←", "→"], "action": "Caminar" },
+      { "player": "Jugador 2 (derecha)", "keys": ["↑"], "action": "Saltar" },
+      { "player": "Jugador 2 (derecha)", "keys": ["K"], "action": "Golpe" },
+      { "player": "Jugador 2 (derecha)", "keys": ["↓+K"], "action": "Patada" },
+      { "player": "Jugador 2 (derecha)", "keys": ["L"], "action": "Bloquear" }
+    ],
+    "tips": [
+      "Golpear en el aire también es patada.",
+      "Conecta golpes seguidos, rápido (menos de un segundo entre uno y otro), y haces un combo.",
+      "Bloquear un golpe corta el combo del rival."
+    ]
+  },
+  "protocol": "gameconsole/1"
+}

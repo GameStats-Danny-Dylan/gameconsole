@@ -1,0 +1,42 @@
+{
+  "id": "tetris",
+  "name": "Tetris",
+  "version": "1.0.0",
+  "description": "Acomoda las piezas que caen y completa líneas. Un jugador, cada vez más rápido.",
+  "howToPlay": "Mueve con ← →, rota con ↑ (Z rota al revés), baja con ↓ y deja caer de golpe con Espacio. C guarda la pieza. Completa líneas horizontales para sumar puntos y subir de nivel; pierdes si las piezas llegan arriba.",
+  "instructions": {
+    "goal": "Acomoda las piezas que caen para completar líneas horizontales. Cada línea completa se borra y suma puntos.",
+    "steps": [
+      "Las piezas caen solas desde arriba, una a la vez.",
+      "Muévelas y gíralas antes de que toquen el fondo o otra pieza.",
+      "Cuando una fila queda llena, se borra. Con más líneas, subes de nivel y las piezas caen más rápido.",
+      "Pierdes si las piezas se amontonan hasta arriba."
+    ],
+    "controls": [
+      { "keys": ["←", "→"], "action": "Mover la pieza a los lados" },
+      { "keys": ["↑"], "action": "Girar la pieza" },
+      { "keys": ["Z"], "action": "Girar la pieza al revés" },
+      { "keys": ["↓"], "action": "Bajar más rápido" },
+      { "keys": ["Espacio"], "action": "Dejarla caer de golpe" },
+      { "keys": ["C"], "action": "Guardar la pieza para después" }
+    ],
+    "tips": [
+      "Borrar 4 líneas de una vez (un Tetris) da muchos más puntos.",
+      "Deja un hueco a un lado para la pieza larga.",
+      "Mira las piezas siguientes para planear dónde va cada una."
+    ]
+  },
+  "gameStatsId": "tetris",
+  "gameVersion": "1.0",
+  "entry": "/games/tetris/",
+  "icon": "/games/tetris/icon.svg",
+  "players": { "min": 1, "max": 1 },
+  "modes": ["solo"],
+  "options": [
+    { "key": "startLevel", "label": "Nivel inicial", "type": "select",
+      "values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "labels": ["Nivel 1", "Nivel 2", "Nivel 3", "Nivel 4", "Nivel 5", "Nivel 6", "Nivel 7", "Nivel 8", "Nivel 9", "Nivel 10", "Nivel 11", "Nivel 12", "Nivel 13", "Nivel 14", "Nivel 15"],
+      "default": 1 }
+  ],
+  "protocol": "gameconsole/1"
+}

@@ -33,8 +33,12 @@ export class PanelView {
   constructor(root: HTMLElement) {
     this.status = h("p", { class: "status", "aria-live": "polite" });
     this.body = h("div", { class: "body" });
+    // Abierto aparte (/panel/): botón para volver a la consola. Dentro de la
+    // consola esta cabecera no se muestra (allí el panel se cierra con ✕).
+    const back = h("a", { class: "back-link", href: "/", title: "Volver a la consola de juegos" },
+      h("span", { class: "btn-icon", "aria-hidden": "true" }, "←"), "Volver a DnD Games");
     root.append(
-      appHeader("Panel de estadísticas", "Calculadas por GameStats · se actualiza cada 3 s", this.status),
+      appHeader("Estadísticas", "La lista de Santa: calculadas por GameStats · se actualizan cada 3 s", back, this.status),
       this.body,
     );
     // "hace N s" avanza aunque no llegue una foto nueva.

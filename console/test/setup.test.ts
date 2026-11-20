@@ -114,7 +114,7 @@ describe("MatchContext (payload de INIT)", () => {
       mode: "vs-cpu",
       players: [
         { playerId: "danny-g", name: "Danny G", kind: "human", slot: 1 },
-        { playerId: "cpu", name: "CPU", kind: "cpu", slot: 2 },
+        { playerId: "cpu", name: "Computadora", kind: "cpu", slot: 2 },
       ],
       options: { nivel: "c", segundos: 0 },
     });

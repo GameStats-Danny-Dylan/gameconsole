@@ -41,12 +41,19 @@ other(yellow, red).
 %            línea, pero no lo arma a propósito ni tapa: un principiante.
 %            (Con attack era peor contra la IA, pero a una persona la
 %            presionaba más que media: armaba una línea en cada turno.)
-%  - medium: mira 3 jugadas (la suya, la respuesta y la suya). Tapa lo que
-%            está por ganar el rival, pero cae en trampas de dos amenazas.
+%  - medium: mira 1 jugada pero evalúa sus líneas y las del rival: arma
+%            líneas y tapa las amenazas que ve en el tablero, sin planear
+%            trampas. (Con 3 jugadas le ganaba casi siempre a una persona
+%            normal y no se distinguía de hard.)
 %  - hard:   mira 6 jugadas: ve trampas de dos amenazas a la vez y las
 %            arma o las esquiva. (Con 7 tardaría varios segundos por jugada.)
+%
+%  Medido el 19-nov contra un jugador simulado "casual" (gana si puede, tapa
+%  si debe, no regala, si no al azar), 20–40 partidas: la IA gana 10 % en
+%  easy, ~50 % en medium y 95 % en hard. Entre IAs: medium le gana a easy
+%  22–7 y hard a medium 17–2.
 difficulty(easy,   1, basic).
-difficulty(medium, 3, full).
+difficulty(medium, 1, full).
 difficulty(hard,   6, full).
 
 %% difficulty_depth(?Difficulty, ?Depth)

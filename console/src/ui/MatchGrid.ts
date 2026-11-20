@@ -13,26 +13,32 @@ import type { MatchSession } from "../match/MatchSession";
 import type { MatchSessionFactory } from "../match/MatchSessionFactory";
 import { el } from "./dom";
 import { MatchTile, type TileActions } from "./MatchTile";
+import type { Toasts } from "./Toasts";
 import type { VisibilityWatcher } from "./VisibilityWatcher";
 
 export class MatchGrid {
   readonly element = el("section", { class: "matches", "aria-label": "Partidas" });
   private readonly grid = el("div", { class: "match-grid" });
-  private readonly count = el("span", { class: "chip" });
+  private readonly count = el("span", { class: "count-badge" });
   private readonly tiles = new Set<MatchTile>();
   private readonly actions: TileActions = {
     restart: (t) => void this.restart(t),
     newMatch: (t) => this.onNewMatch(t.session.manifest),
     close: (t) => void this.close(t),
+    notify: (text, kind) => this.toasts?.show(text, kind),
   };
 
   constructor(
     private readonly factory: MatchSessionFactory,
     private readonly watcher: VisibilityWatcher,
     private readonly onNewMatch: (manifest: GameManifest) => void,
+    private readonly toasts?: Toasts,
   ) {
     this.element.append(
-      el("div", { class: "section-head row" }, el("h2", { text: "Partidas" }), this.count),
+      el("header", { class: "section-head" },
+        el("span", { class: "kicker", text: "En juego" }),
+        el("div", { class: "row" }, el("h2", { text: "Tus partidas" }), this.count),
+        el("p", { text: "Todas corren a la vez. Haz clic en una para jugarla con el teclado." })),
       this.grid,
     );
     this.update();
@@ -46,6 +52,9 @@ export class MatchGrid {
     this.watcher.watch(tile.stage, session);
     this.update();
     tile.element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // La partida nueva recibe el teclado: se puede jugar sin hacer clic antes.
+    setTimeout(() => tile.focusGame(), 400);
+    this.toasts?.show(`Se abrió ${manifest.name}: ${context.players.map((p) => p.name).join(" vs ")}.`, "info");
   }
 
   private async restart(tile: MatchTile): Promise<void> {

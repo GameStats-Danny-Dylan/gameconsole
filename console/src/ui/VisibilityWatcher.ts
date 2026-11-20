@@ -4,8 +4,9 @@
  *
  * Una partida NO se ve si la pestaña está oculta (visibilitychange), si su
  * iframe salió de la pantalla (IntersectionObserver) o si la consola la tapa
- * (el formulario de nueva partida es modal y tapa todo). Le avisa a la sesión,
- * que decide si manda PAUSE "hidden".
+ * (setCovered). Los paneles laterales de nueva partida y estadísticas NO tapan:
+ * dejan las partidas a la vista. Le avisa a la sesión, que decide si manda
+ * PAUSE "hidden".
  */
 import type { MatchSession } from "../match/MatchSession";
 
