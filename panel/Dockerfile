@@ -2,7 +2,10 @@
 # Se construye desde la RAÍZ del repo, porque usa el tema del SDK (sdk/):
 #
 #   docker build -f panel/Dockerfile -t gameconsole-panel .
-FROM node:22-alpine AS build
+# Las etapas de pruebas y compilación corren en la plataforma del que construye
+# ($BUILDPLATFORM): el resultado es JS y archivos estáticos, igual para amd64 y arm64.
+# Así las pruebas no corren emuladas con QEMU (muy lentas) al publicar para arm64.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 # Del SDK solo hace falta el código (el panel usa @gameconsole/sdk/theme).
 COPY sdk/package.json /repo/sdk/package.json
 COPY sdk/src /repo/sdk/src

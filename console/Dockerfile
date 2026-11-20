@@ -4,7 +4,10 @@
 #   docker build -f console/Dockerfile -t gameconsole-console .
 
 # 1) El SDK: sus pruebas (la consola usa sus tipos y su tema desde ../sdk).
-FROM node:22-alpine AS sdk
+# Las etapas de pruebas y compilación corren en la plataforma del que construye
+# ($BUILDPLATFORM): el resultado es JS y archivos estáticos, igual para amd64 y arm64.
+# Así las pruebas no corren emuladas con QEMU (muy lentas) al publicar para arm64.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS sdk
 WORKDIR /repo/sdk
 COPY sdk/package.json sdk/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -15,7 +18,7 @@ COPY sdk/test ./test
 RUN npm test
 
 # 2) La consola, con el SDK en ../sdk (file:../sdk).
-FROM node:22-alpine AS build
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 COPY --from=sdk /repo/sdk /repo/sdk
 WORKDIR /repo/console
 COPY console/package.json console/package-lock.json ./
