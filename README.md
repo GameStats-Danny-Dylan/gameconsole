@@ -1,10 +1,19 @@
 # DnD Games · GameConsole
 
+**Proyecto 2 — Lenguajes de Programación**
+Instituto Tecnológico de Costa Rica, Sede San Carlos
+Profesor: Oscar Viquez Acuña
+
+| Integrante | Partes |
+|---|---|
+| Danny Gonzalez Molina | 4 en línea, IA en Prolog, registry, panel, envío de eventos, GameStats Scala v1.1, Docker y CI/CD |
+| Dylan Mendez Zamora | Consola, SDK, Tetris, peleas, GameStats Go v1.1 |
+
+---
+
 **DnD Games** (por **D**anny a**n**d **D**ylan) es una consola web de videojuegos orientada a objetos, con inteligencia de juego en Prolog y estadísticas en vivo de **GameStats**, con una temática navideña propia. El repositorio se llama `gameconsole`.
 
 Es la **continuación de [GameStats](https://github.com/GameStats-Danny-Dylan/gamestats)** (Proyecto 1). En el P1 un simulador generaba las partidas; aquí las generan **juegos de verdad**, y GameStats las sigue analizando con el mismo contrato de eventos.
-
-Proyecto 2 del curso Lenguajes de Programación · Danny González y Dylan Mendez · noviembre de 2026.
 
 ---
 
