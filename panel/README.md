@@ -33,6 +33,8 @@ Arriba hay una **pestaña por juego** y una **General** (cada una con cuántas p
 
 **Sin ganador y Cortadas** (GameStats v1.3): "Sin ganador" son las partidas jugadas hasta el final que terminaron empatadas; "Cortadas" son las que se cerraron antes de terminar. Ninguna de las dos cuenta como ganada ni perdida. Con un GameStats anterior a v1.3, "Cortadas" sale en 0 y esas partidas quedan dentro de "Sin ganador".
 
+**En cualquier pantalla:** la clasificación va a todo el ancho y las jugadas destacadas debajo (en tarjetas de 1, 2 o 3 columnas según el ancho). Los títulos de las columnas nunca se cortan a la mitad de una palabra. En tablet se quita el círculo con la inicial para que quepan todas las columnas; en celular (y en el panel lateral de la consola) los títulos se acortan a **PJ, PG, PP y %**, con una leyenda debajo, y "Sin ganador", "Cortadas" y la columna propia del juego se ven desde tablet en adelante. En Tetris el mejor puntaje se ve siempre. Revisado con capturas en 1920, 1440, 1280, 1024, 768 y 390 px de ancho: ninguna tabla necesita desplazarse de lado.
+
 En las tablas cada número va centrado bajo su título, y la columna del juego y el % de victorias van separadas con una línea para que no se lean como una sola.
 
 ## 2. De dónde sale cada dato

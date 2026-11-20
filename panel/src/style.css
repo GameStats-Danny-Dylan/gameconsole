@@ -395,3 +395,48 @@ th, td { padding-top: 14px; padding-bottom: 14px; }
 :root { --gold-text: #7a5100; }
 :root[data-theme="dark"] { --gold-text: #f6c453; }
 .leaderboard td.c-extra, .metrics td.record { color: var(--gold-text); }
+
+/* ============================================================
+   v7 (20-nov) — tablas legibles en cualquier ancho.
+   Los títulos de las columnas nunca se cortan a la mitad de una
+   palabra ("PARTI-DAS"): solo bajan de línea entre palabras.
+   Las jugadas destacadas de General van debajo de la clasificación,
+   en tarjetas que se acomodan en 1, 2 o 3 columnas según el ancho.
+   ============================================================ */
+table th, table td { hyphens: manual; -webkit-hyphens: manual; overflow-wrap: normal; word-break: normal; }
+.leaderboard th, .score-board th, .metrics th { white-space: nowrap; }
+.leaderboard th.c-nores, .leaderboard th.c-extra, .leaderboard th.c-rate { white-space: normal; min-width: 76px; }
+.leaderboard .who-name { white-space: nowrap; }
+.wide-highlights .highlights { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+
+/* Títulos cortos y su leyenda: solo en pantallas angostas. */
+.lbl-short, .short-legend { display: none; }
+.short-legend { margin: 12px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+
+/* Tablet: sin el círculo de la inicial y columnas más juntas. */
+@media (max-width: 900px) {
+  .leaderboard .avatar { display: none; }
+  .leaderboard .who { gap: 0; }
+  .leaderboard th.num, .leaderboard td.num { padding-left: 5px; padding-right: 5px; }
+  .leaderboard th { font-size: 11px; letter-spacing: .04em; }
+  .leaderboard .c-extra, .leaderboard .c-rate { padding-left: 10px; }
+  .c-rate { width: 96px; }
+  .rate-track { width: 64px; }
+  .leaderboard th.c-nores, .leaderboard th.c-extra, .leaderboard th.c-rate { min-width: 64px; }
+}
+
+/* Celular: títulos cortos (PJ, PG, PP, %) con su leyenda debajo. */
+@media (max-width: 640px) {
+  .lbl-long { display: none; }
+  .lbl-short { display: inline; }
+  .short-legend { display: block; text-align: left; }
+  .leaderboard th.c-rate { min-width: 0; }
+  .c-rate { width: 64px; }
+  .rate-track { width: 48px; }
+  .leaderboard .who-name { white-space: normal; overflow-wrap: anywhere; }
+  .leaderboard .c-pos { width: 30px; }
+  /* Tetris: el mejor puntaje es lo principal, nunca se esconde; los títulos largos bajan de línea. */
+  .score-board .c-extra { display: table-cell; }
+  .score-board th { white-space: normal; }
+  .score-board .c-avg { padding-left: 8px; }
+}
