@@ -70,6 +70,9 @@ services:
       PORT: "8080"
       SCALA_URL: "http://analytics:8081"
       WORKERS: "4"
+      DATA_DIR: "/app/data"         # GameStats v1.1: las partidas en curso sobreviven a un reinicio
+    volumes:
+      - ingestion-data:/app/data
     depends_on:
       analytics: { condition: service_healthy }
     healthcheck:
@@ -132,3 +135,4 @@ services:
 
 volumes:
   analytics-results:
+  ingestion-data:

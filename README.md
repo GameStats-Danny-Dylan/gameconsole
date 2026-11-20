@@ -116,8 +116,10 @@ Queda en **<http://localhost:8000>**. Al construir, cada imagen corre sus prueba
 | `docker compose ps` | Ver los servicios y si están sanos |
 | `docker compose logs -f console` | Ver los mensajes de un servicio |
 | `bash scripts/smoke.sh` | Prueba de humo por el gateway (necesita `curl` y `jq`) |
-| `docker compose down` | Apagar (las estadísticas se conservan) |
-| `docker compose down -v` | Apagar y **borrar** las estadísticas guardadas |
+| `docker compose down` | Apagar (se conservan las estadísticas y las partidas en curso) |
+| `docker compose down -v` | Apagar y **borrar** las estadísticas guardadas y las partidas en curso |
+
+Se guardan en dos volúmenes: `analytics-results` (los resultados de Scala) y `ingestion-data` (las partidas en curso de Go, para que un reinicio de `ingestion` no las corte).
 
 ### Variables (opcionales, en la terminal o en un archivo `.env`)
 
