@@ -99,6 +99,20 @@ services:
       REGISTRY_URL: "http://registry:8080"   # sdk/server se registra y manda el latido
     restart: unless-stopped
 
+  game-tetris:
+    build: { context: ., dockerfile: games/tetris/Dockerfile }
+    image: gameconsole-game-tetris
+    environment:
+      REGISTRY_URL: "http://registry:8080"
+    restart: unless-stopped
+
+  game-fighting:
+    build: { context: ., dockerfile: games/fighting/Dockerfile }
+    image: gameconsole-game-fighting
+    environment:
+      REGISTRY_URL: "http://registry:8080"
+    restart: unless-stopped
+
   # Consola: menú dinámico desde el registry y formulario de partida (en /).
   # Se construye desde la raíz porque usa el SDK (sdk/).
   console:

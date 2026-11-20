@@ -55,6 +55,18 @@ services:
     environment:
       REGISTRY_URL: "http://registry:8080"
 
+  game-tetris:
+    <<: *gc
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-tetris:${GAMECONSOLE_TAG:-latest}
+    environment:
+      REGISTRY_URL: "http://registry:8080"
+
+  game-fighting:
+    <<: *gc
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-fighting:${GAMECONSOLE_TAG:-latest}
+    environment:
+      REGISTRY_URL: "http://registry:8080"
+
   analytics:
     <<: *gc
     image: ghcr.io/danny7w7-coder/gamestats-analytics:${GAMESTATS_TAG:-v1.0}

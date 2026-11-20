@@ -76,7 +76,8 @@ Proyecto 2 del curso Lenguajes de Programación · Danny González y Dylan Mende
 | [`console/`](console/) | Consola: menú, formulario de partida, iframes, envío de eventos | TypeScript + Vite |
 | [`sdk/`](sdk/) | Protocolo consola ↔ juego (`GameApp`), sellado de eventos, tema común y servidor de cada juego | TypeScript, Node |
 | [`games/connect4/`](games/connect4/) | 4 en línea: contra la computadora o 2 personas | TypeScript + Vite |
-| `games/tetris/`, `games/fighting/` | Tetris (1 persona) y peleas (2 personas, mismo teclado) | TypeScript + Vite |
+| [`games/tetris/`](games/tetris/) | Tetris: 1 persona, 15 niveles iniciales | TypeScript + Vite (canvas) |
+| [`games/fighting/`](games/fighting/) | Peleas: 2 personas en el mismo teclado, al mejor de 1, 3 o 5 rounds | TypeScript + Vite (canvas) |
 | [`registry/`](registry/) | Descubrimiento de juegos: registro, latido, vencimiento | Node + TypeScript |
 | [`prolog/`](prolog/) | IA del 4 en línea | SWI-Prolog 10 |
 | [`panel/`](panel/) | Panel de estadísticas en vivo | TypeScript + Vite |
@@ -158,6 +159,8 @@ GAMECONSOLE_TAG=v1.0 docker compose -f docker-compose.deploy.yml up -d --wait
 | `ghcr.io/gamestats-danny-dylan/gameconsole-gateway` | nginx |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-console` | consola |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-game-connect4` | 4 en línea (con `sdk/server`) |
+| `ghcr.io/gamestats-danny-dylan/gameconsole-game-tetris` | Tetris (con `sdk/server`) |
+| `ghcr.io/gamestats-danny-dylan/gameconsole-game-fighting` | Peleas (con `sdk/server`) |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-registry` | registry |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-prolog` | IA en Prolog |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-panel` | panel |
@@ -171,7 +174,7 @@ Todas para `amd64` y `arm64` (también funcionan en una Mac con chip Apple).
 
 | Workflow | Cuándo | Qué hace |
 |---|---|---|
-| [`ci.yml`](.github/workflows/ci.yml) | Cada push y PR | Instala, compila y prueba cada app por separado (registry, panel, 4 en línea, consola), corre las pruebas de Prolog y valida la configuración de nginx |
+| [`ci.yml`](.github/workflows/ci.yml) | Cada push y PR | Instala, compila y prueba cada app por separado (consola, SDK, los 3 juegos, registry, panel), corre las pruebas de Prolog y valida la configuración de nginx |
 | [`cd.yml`](.github/workflows/cd.yml) | PR a `main`: solo el paso 1. Push a `main` o tag `v*`: los 3 | **1. Integración:** levanta todo con Docker Compose, corre la prueba de humo y manda partidas del 4 en línea a GameStats real (Scala no puede descartar ningún evento). **2. Publicación:** construye y publica las imágenes en GHCR. **3. Deploy:** levanta `docker-compose.deploy.yml` con las imágenes **descargadas** y repite la prueba de humo |
 
 El paso 3 hace exactamente lo que haría quien recibe el proyecto: si pasa, la versión publicada funciona.
@@ -284,6 +287,8 @@ gameconsole/
 | SDK | 80 (Vitest) | `cd sdk && npm ci && npm test` |
 | 4 en línea | 44 (Vitest), incluidas 3000 partidas al azar contra una copia de las reglas de Scala | `cd games/connect4 && npm ci && npm test` |
 | 4 en línea contra GameStats real | partidas simuladas y una entera contra Prolog | con el compose corriendo: `GAMESTATS_URL=http://localhost:8000 npm run test:gamestats` |
+| Tetris | 58 (Vitest), incluidos eventos contra una copia de las reglas de Scala | `cd games/tetris && npm ci && npm test` |
+| Peleas | 63 (Vitest) | `cd games/fighting && npm ci && npm test` |
 | Registry | 15 (`node:test`) | `cd registry && npm ci && npm test` |
 | Panel | 7 (Vitest) | `cd panel && npm ci && npm test` |
 | Prolog | 18 (plunit) | `cd prolog && swipl tests.pl` |
@@ -299,6 +304,8 @@ Con Docker no hace falta instalar nada: cada imagen corre sus pruebas al constru
 | [`console/README.md`](console/README.md) | La consola y el envío de eventos |
 | [`sdk/README.md`](sdk/README.md) | Cómo se construye un juego sobre el SDK |
 | [`games/connect4/README.md`](games/connect4/README.md) | El 4 en línea |
+| [`games/tetris/README.md`](games/tetris/README.md) | Tetris |
+| [`games/fighting/README.md`](games/fighting/README.md) | Peleas |
 | [`prolog/README.md`](prolog/README.md) | Cómo decide la computadora |
 | [`registry/README.md`](registry/README.md) | El descubrimiento de juegos |
 | [`panel/README.md`](panel/README.md) | El panel de estadísticas |
@@ -313,6 +320,6 @@ Con Docker no hace falta instalar nada: cada imagen corre sus pruebas al constru
 | Envío de eventos (`EventSender`) | ✅ |
 | Panel | ✅ |
 | Docker, CI/CD, deployment | ✅ |
-| Tetris y peleas | en desarrollo |
+| Tetris y peleas | ✅ |
 | GameStats v1.1 publicado y en los compose (`GAMESTATS_TAG=v1.1`) | pendiente |
 | Video de demostración | pendiente |

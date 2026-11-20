@@ -3,6 +3,7 @@
   "name": "4 en línea",
   "version": "1.0.0",
   "description": "Conecta cuatro fichas antes que tu rival. Contra la computadora (IA en Prolog) o 2 personas en la misma pantalla.",
+  "howToPlay": "Suelta tus fichas por turnos con un clic en la columna o con las teclas 1 a 7. Gana quien conecte 4 fichas seguidas en horizontal, vertical o diagonal. P pide una pista (hasta 3) y, contra la computadora, U deshace tu última jugada. Tapa las líneas de 3 del rival antes de que complete la cuarta.",
   "gameStatsId": "connect4",
   "gameVersion": "1.0",
   "entry": "/games/connect4/",

@@ -72,6 +72,8 @@ jobs:
           - { name: panel,    context: .,          file: panel/Dockerfile }
           - { name: console,  context: .,          file: console/Dockerfile }
           - { name: game-connect4, context: .,     file: games/connect4/Dockerfile }
+          - { name: game-tetris,   context: .,     file: games/tetris/Dockerfile }
+          - { name: game-fighting, context: .,     file: games/fighting/Dockerfile }
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
