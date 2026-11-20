@@ -7,7 +7,7 @@ import { MinThinkTime, PrologStrategy } from "../ai/MoveStrategy";
 import { Connect4Game } from "../game/Connect4Game";
 import type { MatchContext } from "../game/ports";
 import { DomBoardView } from "../ui/DomBoardView";
-import { EventStamper } from "@gameconsole/sdk";
+import { EventStamper, newUuid } from "@gameconsole/sdk";
 import { appHeader } from "@gameconsole/sdk/theme";
 import { StandaloneHost } from "./StandaloneHost";
 
@@ -105,7 +105,7 @@ export function mountStandalone(root: HTMLElement): void {
     }
     const ctx: MatchContext = {
       gameId: "connect4",
-      matchId: `connect4-${crypto.randomUUID()}`,
+      matchId: `connect4-${newUuid()}`,
       mode,
       players,
       options: { difficulty: data.get("difficulty"), turnSeconds: Number(data.get("turnSeconds")) },
@@ -154,7 +154,7 @@ function play(root: HTMLElement, ctx: MatchContext, send: boolean): void {
     if (act === "stop") game.stop("user");
     // Reiniciar = cerrar esta partida y abrir otra nueva (otro matchId): para
     // GameStats son dos partidas distintas, la primera sin ganador.
-    if (act === "restart") { leave(); play(root, { ...ctx, matchId: `connect4-${crypto.randomUUID()}` }, send); }
+    if (act === "restart") { leave(); play(root, { ...ctx, matchId: `connect4-${newUuid()}` }, send); }
     if (act === "new") { leave(); mountStandalone(root); }
   });
 }
