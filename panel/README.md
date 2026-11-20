@@ -66,7 +66,7 @@ Las rutas `/stats/...` y `/games` las agregó **GameStats v1.1** para este proye
 - Mismo diseño que la consola (temática **DnD Games**): letras Poppins e Inter, rojo navidad, dorado y verde pino.
 - Modo claro tipo cabaña (kraft y crema) y modo oscuro de noche de invierno. El tema se comparte con la consola y los juegos.
 - **Dentro de la consola** se oculta la cabecera propia (la pone la consola) y la tabla se compacta para entrar en el panel lateral sin desplazarse.
-- Las pestañas son botones: cambian de color al pasar el mouse y la elegida queda en verde. Se recuerda cuál estaba abierta (mientras dure la pestaña del navegador).
+- Las pestañas son botones: cambian de color al pasar el mouse y la elegida queda en verde. Siempre se abre en **General**; dentro de la consola, cada vez que se vuelve a abrir Estadísticas también empieza en General.
 - **Abierto aparte** tiene el botón **← Volver a DnD Games**, que lleva a la consola.
 
 ## 6. Pruebas y comandos

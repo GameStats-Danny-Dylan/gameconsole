@@ -26,8 +26,9 @@ function h(tag: string, attrs: Record<string, string> = {}, ...children: Child[]
 const plural = (n: number, one: string, many: string) => `${n.toLocaleString("es")} ${n === 1 ? one : many}`;
 const percent = (x: number) => `${Math.round(x * 100)} %`;
 
-const TAB_KEY = "gameconsole-panel-tab";
 const GENERAL = "general";
+/** Mensaje que manda la consola al volver a abrir Estadísticas: empezar en General. */
+export const SHOW_GENERAL = "gameconsole:panel:general";
 
 export class PanelView {
   private readonly status: HTMLElement;
@@ -36,7 +37,8 @@ export class PanelView {
   private lastUpdate: Date | null = null;
   private lastErrors: string[] = [];
   private last: Snapshot | null = null;
-  private tab: string = readTab();
+  /** Siempre se empieza en General; la pestaña elegida dura mientras el panel está abierto. */
+  private tab: string = GENERAL;
 
   constructor(root: HTMLElement) {
     this.status = h("p", { class: "status", "aria-live": "polite" });
@@ -53,6 +55,11 @@ export class PanelView {
     );
     // "hace N s" avanza aunque no llegue una foto nueva.
     setInterval(() => this.renderStatus(), 1000);
+    // Dentro de la consola el panel queda cargado entre aperturas: al volver a
+    // abrirlo, la consola (mismo origen) pide empezar otra vez en General.
+    window.addEventListener("message", (e) => {
+      if (e.origin === location.origin && e.data === SHOW_GENERAL && this.tab !== GENERAL) this.select(GENERAL);
+    });
   }
 
   render(s: Snapshot): void {
@@ -90,7 +97,7 @@ export class PanelView {
 
   private select(id: string): void {
     this.tab = id;
-    try { sessionStorage.setItem(TAB_KEY, id); } catch { /* sin almacenamiento: igual cambia */ }
+    window.scrollTo(0, 0);
     if (this.last) this.render(this.last);
     (this.tabs.querySelector(".tab.active") as HTMLElement | null)?.focus();
   }
@@ -106,10 +113,6 @@ export class PanelView {
     );
     this.status.title = this.lastErrors.join("\n");
   }
-}
-
-function readTab(): string {
-  try { return sessionStorage.getItem(TAB_KEY) ?? GENERAL; } catch { return GENERAL; }
 }
 
 // ---------------------------------------------------------------------------
