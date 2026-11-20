@@ -2,12 +2,14 @@
  * PanelView — dibuja una foto del PanelStore. Todo el texto entra con
  * textContent (los nombres de jugador los escribe la gente: nunca innerHTML).
  *
- * Orden de la página: totales → clasificación general y jugadas destacadas →
- * una tarjeta por juego (su clasificación y sus números) → partidas en curso.
+ * Pestañas, para no tener todo en una sola página larga:
+ *   General   totales → clasificación general | jugadas destacadas → partidas en curso
+ *   un juego  sus totales → su clasificación | sus jugadas destacadas y sus números
+ * La pestaña elegida se mantiene aunque lleguen datos nuevos cada 3 s.
  */
 import {
   buildRows, duration, KEY_METRICS, liveMatches, METRIC_HELP, METRIC_LABELS, metricValue, PATTERN_HELP,
-  PATTERN_LABELS, playerName, STANDING_METRIC, type GameRow, type MatchInfo, type Standing,
+  PATTERN_LABELS, playerName, STANDING_METRIC, type GameRow, type GameSummary, type MatchInfo, type Standing,
 } from "../model";
 import type { Snapshot } from "../store/PanelStore";
 import { appHeader } from "@gameconsole/sdk/theme";
@@ -24,21 +26,29 @@ function h(tag: string, attrs: Record<string, string> = {}, ...children: Child[]
 const plural = (n: number, one: string, many: string) => `${n.toLocaleString("es")} ${n === 1 ? one : many}`;
 const percent = (x: number) => `${Math.round(x * 100)} %`;
 
+const TAB_KEY = "gameconsole-panel-tab";
+const GENERAL = "general";
+
 export class PanelView {
   private readonly status: HTMLElement;
+  private readonly tabs: HTMLElement;
   private readonly body: HTMLElement;
   private lastUpdate: Date | null = null;
   private lastErrors: string[] = [];
+  private last: Snapshot | null = null;
+  private tab: string = readTab();
 
   constructor(root: HTMLElement) {
     this.status = h("p", { class: "status", "aria-live": "polite" });
-    this.body = h("div", { class: "body" });
+    this.tabs = h("nav", { class: "tabs", role: "tablist", "aria-label": "Qué estadísticas ver" });
+    this.body = h("div", { class: "body", role: "tabpanel" });
     // Abierto aparte (/panel/): botón para volver a la consola. Dentro de la
     // consola esta cabecera no se muestra (allí el panel se cierra con ✕).
     const back = h("a", { class: "back-link", href: "/", title: "Volver a la consola de juegos" },
       h("span", { class: "btn-icon", "aria-hidden": "true" }, "←"), "Volver a DnD Games");
     root.append(
       appHeader("Estadísticas", "La lista de Santa: calculadas por GameStats · se actualizan cada 3 s", back, this.status),
+      this.tabs,
       this.body,
     );
     // "hace N s" avanza aunque no llegue una foto nueva.
@@ -46,43 +56,43 @@ export class PanelView {
   }
 
   render(s: Snapshot): void {
+    this.last = s;
     this.lastUpdate = s.updatedAt;
     this.lastErrors = s.errors;
     this.renderStatus();
 
     const rows = buildRows(s.registry, s.overview, s.live);
-    const playing = rows.reduce((n, r) => n + r.inProgress, 0);
-    const o = s.overview;
+    if (this.tab !== GENERAL && !rows.some((r) => r.gameId === this.tab)) this.tab = GENERAL;
+    this.renderTabs(rows);
 
-    const sections: Child[] = [
-      o ? null : h("p", { class: "notice" },
-        "Este GameStats todavía no tiene estadísticas por juego (llegan con la versión 1.1). Por ahora se muestran las partidas en curso."),
-
-      h("section", { class: "tiles", "aria-label": "Totales" },
-        tile("Jugándose ahora", String(playing), playing === 1 ? "partida abierta en este momento" : "partidas abiertas en este momento", "live"),
-        tile("Partidas terminadas", o ? String(o.matches) : "—", "desde que se encendió el sistema"),
-        tile("Jugadores", o ? String(o.players) : "—", "contando a la computadora"),
-        tile("Una partida dura", o ? duration(o.avgDurationSeconds) : "—", "en promedio")),
-
-      o && h("section", { class: "split" },
-        h("div", { class: "card" },
-          sectionHead("Clasificación general", "Todos los juegos juntos. Gana posiciones quien tiene más victorias; si empatan, el de mejor porcentaje."),
-          leaderboard(o.standings ?? [], null)),
-        h("div", { class: "card" },
-          sectionHead("Jugadas destacadas", "Lo que GameStats encontró en las partidas."),
-          highlights(o.topPatterns))),
-
-      h("section", { "aria-label": "Juegos" },
-        h("h2", { class: "section-title" }, "Por juego"),
-        rows.length
-          ? h("div", { class: "games" }, ...rows.map(gameCard))
-          : h("p", { class: "empty" }, "Todavía no hay juegos registrados ni partidas.")),
-
-      h("section", { class: "card", "aria-label": "Partidas en curso" },
-        sectionHead("Partidas que se están jugando", "Se actualiza sola mientras la gente juega."),
-        liveTable(liveMatches(s.matches), rows)),
-    ];
+    const row = rows.find((r) => r.gameId === this.tab);
+    const sections = row ? gamePage(row, s) : generalPage(rows, s);
     this.body.replaceChildren(...sections.filter((x): x is Node => x instanceof Node));
+  }
+
+  /** Una pestaña por juego, con cuántas partidas tiene (y un punto si se está jugando). */
+  private renderTabs(rows: GameRow[]): void {
+    const total = rows.reduce((n, r) => n + r.finished, 0);
+    const button = (id: string, label: string, count: number, live: boolean, icon: string | null) => {
+      const selected = this.tab === id;
+      const b = h("button", { type: "button", role: "tab", class: `tab${selected ? " active" : ""}`, "aria-selected": String(selected) },
+        icon ? h("img", { src: icon, alt: "", width: "22", height: "22" }) : h("span", { class: "tab-icon", "aria-hidden": "true" }, "★"),
+        label,
+        h("span", { class: "tab-count", title: plural(count, "partida terminada", "partidas terminadas") }, String(count)),
+        live ? h("span", { class: "live-dot", title: "Se está jugando ahora" }) : null);
+      b.addEventListener("click", () => this.select(id));
+      return b;
+    };
+    this.tabs.replaceChildren(
+      button(GENERAL, "General", total, rows.some((r) => r.inProgress > 0), null),
+      ...rows.map((r) => button(r.gameId, r.name, r.finished, r.inProgress > 0, r.icon)));
+  }
+
+  private select(id: string): void {
+    this.tab = id;
+    try { sessionStorage.setItem(TAB_KEY, id); } catch { /* sin almacenamiento: igual cambia */ }
+    if (this.last) this.render(this.last);
+    (this.tabs.querySelector(".tab.active") as HTMLElement | null)?.focus();
   }
 
   private renderStatus(): void {
@@ -96,6 +106,78 @@ export class PanelView {
     );
     this.status.title = this.lastErrors.join("\n");
   }
+}
+
+function readTab(): string {
+  try { return sessionStorage.getItem(TAB_KEY) ?? GENERAL; } catch { return GENERAL; }
+}
+
+// ---------------------------------------------------------------------------
+// Páginas
+// ---------------------------------------------------------------------------
+
+/** General: todos los juegos juntos. */
+function generalPage(rows: GameRow[], s: Snapshot): Child[] {
+  const o = s.overview;
+  const playing = rows.reduce((n, r) => n + r.inProgress, 0);
+  return [
+    o ? null : h("p", { class: "notice" },
+      "Este GameStats todavía no tiene estadísticas por juego (llegan con la versión 1.1). Por ahora se muestran las partidas en curso."),
+
+    h("section", { class: "tiles", "aria-label": "Totales" },
+      tile("Jugándose ahora", String(playing), playing === 1 ? "partida abierta en este momento" : "partidas abiertas en este momento", "live"),
+      tile("Partidas terminadas", o ? String(o.matches) : "—", "en todos los juegos"),
+      tile("Jugadores", o ? String(o.players) : "—", "contando a la computadora"),
+      tile("Una partida dura", o ? duration(o.avgDurationSeconds) : "—", "en promedio")),
+
+    o && h("section", { class: "split" },
+      h("div", { class: "card" },
+        sectionHead("Clasificación general", "Todos los juegos juntos. Va primero quien tiene más victorias; si empatan, el de mejor porcentaje."),
+        leaderboard(o.standings ?? [], null)),
+      h("div", { class: "card" },
+        sectionHead("Jugadas destacadas", "Lo que GameStats encontró en las partidas de todos los juegos."),
+        highlights(o.topPatterns, "Todavía no pasó nada destacado."))),
+
+    h("section", { class: "card", "aria-label": "Partidas en curso" },
+      sectionHead("Partidas que se están jugando", "Se actualiza sola mientras la gente juega."),
+      liveTable(liveMatches(s.matches), rows)),
+  ];
+}
+
+/** Un juego: sus totales, su clasificación, sus jugadas destacadas y sus números. */
+function gamePage(r: GameRow, snap: Snapshot): Child[] {
+  const s = r.summary;
+  const live = liveMatches(snap.matches).filter((m) => m.gameId === r.gameId);
+  return [
+    h("section", { class: "game-head card" },
+      r.icon ? h("img", { src: r.icon, alt: "", width: "48", height: "48" }) : h("span", { class: "noicon" }),
+      h("div", { class: "game-title" },
+        h("h2", {}, r.name),
+        h("span", { class: `badge ${r.available ? "on" : "off"}` }, r.available ? "se puede jugar" : "apagado"))),
+
+    h("section", { class: "tiles", "aria-label": `Totales de ${r.name}` },
+      tile("Jugándose ahora", String(r.inProgress), r.inProgress === 1 ? "partida abierta" : "partidas abiertas", "live"),
+      tile("Partidas terminadas", String(r.finished), "de este juego"),
+      tile("Una partida dura", s ? duration(s.avgDurationSeconds) : "—", "en promedio")),
+
+    !s || s.matches === 0
+      ? h("p", { class: "empty card" }, "Todavía no se terminó ninguna partida de este juego. ¡Juega una para ver sus estadísticas!")
+      : h("section", { class: "card" },
+          sectionHead("Clasificación", "Va primero quien tiene más victorias en este juego; si empatan, el de mejor porcentaje."),
+          leaderboard(s.standings ?? [], r.gameId),
+          s.matchesWithoutWinner > 0 && h("p", { class: "foot" },
+            `${plural(s.matchesWithoutWinner, "partida terminó", "partidas terminaron")} sin ganador: empate, se cerró antes o era de una sola persona.`)),
+
+    s && s.matches > 0 && h("section", { class: "pair" },
+      h("div", { class: "card" },
+        sectionHead("Jugadas destacadas", `Lo que GameStats encontró en las partidas de ${r.name}.`),
+        highlights(s.patterns, "Todavía no pasó nada destacado en este juego.")),
+      gameNumbers(r.gameId, s)),
+
+    live.length > 0 && h("section", { class: "card", "aria-label": "Partidas en curso" },
+      sectionHead("Jugándose ahora", "Se actualiza sola mientras la gente juega."),
+      liveTable(live, [r])),
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -150,7 +232,7 @@ function leaderboard(standings: Standing[], game: string | null): HTMLElement {
     h("th", { class: "num" }, "Perdidas"),
     h("th", { class: "num c-nores", title: "Empates, partidas que se cerraron antes o de un solo jugador" }, "Sin ganador"),
     showExtra && h("th", { class: "num c-extra" }, extra!.label),
-    h("th", { class: "c-rate" }, "Victorias"));
+    h("th", { class: "c-rate" }, "% de victorias"));
 
   const body = standings.map((s, i) => {
     const name = playerName(s.playerId);
@@ -171,17 +253,17 @@ function leaderboard(standings: Standing[], game: string | null): HTMLElement {
     h("table", { class: "leaderboard" }, h("thead", {}, head), h("tbody", {}, ...body)));
 }
 
-/** Porcentaje de victorias: el número y una barra corta de un solo color. */
+/** Porcentaje de victorias: el número arriba y debajo una barra corta (no se mezcla con la columna de al lado). */
 function rateMeter(rate: number, label: string): HTMLElement {
   return h("span", { class: "rate", title: label },
+    h("span", { class: "rate-num" }, percent(rate)),
     h("span", { class: "rate-track", "aria-hidden": "true" },
-      h("span", { class: "rate-fill", style: `width:${Math.max(0, Math.min(1, rate)) * 100}%` })),
-    h("span", { class: "rate-num" }, percent(rate)));
+      h("span", { class: "rate-fill", style: `width:${Math.max(0, Math.min(1, rate)) * 100}%` })));
 }
 
 /** Patrones como lista: cuántas veces, el nombre y qué significa. */
-function highlights(patterns: { rule: string; count: number }[]): HTMLElement {
-  if (!patterns.length) return h("p", { class: "empty" }, "Todavía no pasó nada destacado.");
+function highlights(patterns: { rule: string; count: number }[], empty: string): HTMLElement {
+  if (!patterns.length) return h("p", { class: "empty" }, empty);
   return h("ul", { class: "highlights" }, ...patterns.map((p) =>
     h("li", {},
       h("span", { class: "hl-count", title: plural(p.count, "vez", "veces") }, String(p.count)),
@@ -190,34 +272,23 @@ function highlights(patterns: { rule: string; count: number }[]): HTMLElement {
         PATTERN_HELP[p.rule] ? h("small", {}, PATTERN_HELP[p.rule]) : null))));
 }
 
-function gameCard(r: GameRow): HTMLElement {
-  const s = r.summary;
-  const metricNames = s ? [...(KEY_METRICS[r.gameId] ?? []), ...Object.keys(s.metrics)].filter((m, i, a) => s.metrics[m] && a.indexOf(m) === i).slice(0, 4) : [];
-  return h("article", { class: "game card" },
-    h("header", {},
-      r.icon ? h("img", { src: r.icon, alt: "", width: "40", height: "40" }) : h("span", { class: "noicon" }),
-      h("h3", {}, r.name),
-      h("span", { class: `badge ${r.available ? "on" : "off"}` }, r.available ? "se puede jugar" : "apagado")),
-    h("div", { class: "counts" },
-      h("div", {}, h("strong", {}, String(r.inProgress)), h("span", {}, "jugándose")),
-      h("div", {}, h("strong", {}, String(r.finished)), h("span", {}, "terminadas")),
-      h("div", {}, h("strong", {}, s ? duration(s.avgDurationSeconds) : "—"), h("span", {}, "dura en promedio"))),
-    s && s.matches > 0 && h("div", { class: "game-body" },
-      h("div", {},
-        h("h4", {}, "Clasificación"),
-        leaderboard(s.standings ?? [], r.gameId),
-        s.matchesWithoutWinner > 0 && h("p", { class: "foot" },
-          `${plural(s.matchesWithoutWinner, "partida terminó", "partidas terminaron")} sin ganador: empate, se cerró antes o era de una sola persona.`)),
-      metricNames.length > 0 && h("div", {},
-        h("h4", {}, "Los números de una partida"),
-        h("table", { class: "metrics" },
-          h("thead", {}, h("tr", {},
-            h("th", {}, "Cada jugador, en una partida"), h("th", { class: "num" }, "Normalmente"), h("th", { class: "num" }, "Récord"))),
-          h("tbody", {}, ...metricNames.map((m) => h("tr", {},
-            h("td", {}, METRIC_LABELS[m] ?? m, METRIC_HELP[m] ? h("small", {}, METRIC_HELP[m]) : null),
-            h("td", { class: "num" }, metricValue(m, s.metrics[m].avg)),
-            h("td", { class: "num" }, metricValue(m, s.metrics[m].max)))))))),
-  );
+/**
+ * Los números del juego: qué hace un jugador en una partida, en promedio y
+ * como máximo (récord). Son métricas que calcula GameStats.
+ */
+function gameNumbers(gameId: string, s: GameSummary): HTMLElement | null {
+  const names = [...(KEY_METRICS[gameId] ?? []), ...Object.keys(s.metrics)]
+    .filter((m, i, a) => s.metrics[m] && a.indexOf(m) === i).slice(0, 4);
+  if (!names.length) return null;
+  return h("div", { class: "card" },
+    sectionHead("Números del juego", "Lo que hace un jugador en una partida: el promedio de todas y la mejor marca."),
+    h("table", { class: "metrics" },
+      h("thead", {}, h("tr", {},
+        h("th", {}, "Qué se mide"), h("th", { class: "num" }, "Promedio"), h("th", { class: "num" }, "Récord"))),
+      h("tbody", {}, ...names.map((m) => h("tr", {},
+        h("td", {}, METRIC_LABELS[m] ?? m, METRIC_HELP[m] ? h("small", {}, METRIC_HELP[m]) : null),
+        h("td", { class: "num" }, metricValue(m, s.metrics[m].avg)),
+        h("td", { class: "num record" }, metricValue(m, s.metrics[m].max)))))));
 }
 
 function liveTable(matches: MatchInfo[], rows: GameRow[]): HTMLElement {

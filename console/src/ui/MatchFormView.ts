@@ -19,12 +19,12 @@ interface NameRow {
 }
 
 /**
- * Es un panel lateral (no modal): las partidas abiertas siguen a la vista y
- * siguen corriendo mientras se arma la siguiente. Antes del formulario muestra
- * el "Cómo se juega" del manifiesto (howToPlay).
+ * Ocupa toda la pantalla (diálogo modal): a la izquierda el "Cómo se juega"
+ * del manifiesto y a la derecha las opciones y los nombres, con «Jugar» abajo.
+ * Las partidas abiertas siguen corriendo detrás. Esc o «Cancelar» lo cierran.
  */
 export class MatchFormView {
-  readonly element = el("dialog", { class: "drawer match-drawer", "aria-labelledby": "match-title" });
+  readonly element = el("dialog", { class: "match-modal", "aria-labelledby": "match-title" });
   private setup: MatchSetup | null = null;
   private rows: NameRow[] = [];
   private submitted = false;
@@ -43,23 +43,26 @@ export class MatchFormView {
   private readonly modeBox = el("fieldset", { class: "field-group" });
   private readonly optionsBox = el("div", { class: "field-group" });
   private readonly playersBox = el("fieldset", { class: "field-group" });
-  private readonly startButton = el("button", { type: "submit", class: "btn primary", text: "Jugar" });
+  private readonly startButton = el("button", { type: "submit", class: "btn primary big" });
 
   constructor(private readonly onStart: (ctx: MatchContext, manifest: GameManifest) => void) {
-    const cancel = el("button", { type: "button", class: "btn", text: "Cancelar" });
+    const cancel = el("button", { type: "button", class: "btn big", text: "Cancelar" });
     cancel.addEventListener("click", () => this.close());
     const x = el("button", { type: "button", class: "icon-btn", "aria-label": "Cerrar", title: "Cerrar (Esc)", text: "✕" });
     x.addEventListener("click", () => this.close());
+    this.startButton.append(el("span", { class: "btn-icon", "aria-hidden": "true", text: "▶" }), "Jugar");
     this.form.append(
-      el("header", { class: "drawer-head" }, el("div", {}, this.kicker, this.title, this.subtitle), x),
-      this.howTo,
-      this.unavailable, this.modeBox, this.optionsBox, this.playersBox,
-      el("footer", {}, cancel, this.startButton),
+      el("header", { class: "match-form-head" }, el("div", {}, this.kicker, this.title, this.subtitle), x),
+      el("div", { class: "match-form-body" },
+        this.howTo,
+        el("div", { class: "match-form-fields" },
+          this.unavailable, this.modeBox, this.optionsBox, this.playersBox)),
+      el("footer", { class: "match-form-foot" }, cancel, this.startButton),
     );
     this.form.addEventListener("submit", (e) => { e.preventDefault(); this.submit(); });
     this.element.append(this.form);
-    // No es modal, así que Esc no lo cierra solo.
-    this.element.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); this.close(); } });
+    // Clic en el fondo oscuro (fuera de la tarjeta): cierra, como Cancelar.
+    this.element.addEventListener("click", (e) => { if (e.target === this.element) this.close(); });
     this.element.addEventListener("close", () => { this.setup = null; this.onToggle(false); });
   }
 
@@ -75,8 +78,8 @@ export class MatchFormView {
     this.setAvailable(true);
     this.renderModes();
     this.renderModeDependent();
-    if (!this.element.open) { this.element.show(); this.onToggle(true); }
-    this.element.scrollTop = 0;
+    if (!this.element.open) { this.element.showModal(); this.onToggle(true); }
+    this.element.querySelectorAll(".how-to, .match-form-fields").forEach((p) => { p.scrollTop = 0; });
     this.rows[0]?.input.focus();
   }
 
@@ -85,7 +88,7 @@ export class MatchFormView {
     const h = manifest.instructions ?? manifest.howToPlay;
     this.howTo.hidden = !hasHowTo(h);
     if (!hasHowTo(h)) return;
-    this.howTo.replaceChildren(el("h3", { text: "Cómo se juega" }), el("p", { class: "howto-hint", text: "Toca cada parte para verla." }), renderHowTo(h, false));
+    this.howTo.replaceChildren(el("h3", { text: "Cómo se juega" }), renderHowTo(h, true));
   }
 
   close(): void {

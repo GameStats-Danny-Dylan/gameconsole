@@ -9,8 +9,8 @@
  * va del registry, el formulario lo marca como no disponible, pero sus
  * partidas abiertas siguen).
  *
- * Los paneles laterales no son modales: mientras están abiertos, las partidas
- * se corren a un lado y siguen jugándose (no se pausan).
+ * Estadísticas es un panel lateral: mientras está abierto, las partidas se
+ * corren a un lado y siguen jugándose. Nueva partida ocupa toda la pantalla.
  */
 import type { GameManifest, MatchContext } from "@gameconsole/sdk";
 import { appHeader } from "@gameconsole/sdk/theme";
@@ -86,9 +86,11 @@ export class ConsoleShell {
         : "GameStats volvió: se mandó todo lo pendiente.", failing ? "warn" : "good");
     });
 
-    // Un solo panel lateral a la vez; mientras hay uno, la página le deja lugar.
+    // Estadísticas: panel lateral (la página le deja lugar). Nueva partida:
+    // pantalla completa (la página de atrás no se desplaza mientras está abierta).
     const sync = () => {
-      document.body.classList.toggle("drawer-open", this.form.element.open || this.stats.isOpen);
+      document.body.classList.toggle("drawer-open", this.stats.isOpen);
+      document.body.classList.toggle("modal-open", this.form.element.open);
       statsButton.classList.toggle("active", this.stats.isOpen);
       statsButton.setAttribute("aria-expanded", String(this.stats.isOpen));
     };

@@ -51,7 +51,8 @@ export class MatchGrid {
     this.grid.append(tile.element);
     this.watcher.watch(tile.stage, session);
     this.update();
-    tile.element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // La partida nueva queda a la vista entera: arriba de la pantalla.
+    tile.element.scrollIntoView({ behavior: "smooth", block: "start" });
     // La partida nueva recibe el teclado: se puede jugar sin hacer clic antes.
     setTimeout(() => tile.focusGame(), 400);
     this.toasts?.show(`Se abrió ${manifest.name}: ${context.players.map((p) => p.name).join(" vs ")}.`, "info");
