@@ -29,6 +29,8 @@ Arriba hay una **pestaña por juego** y una **General** (cada una con cuántas p
 | **General** | Totales (partidas jugándose ahora, terminadas, jugadores contando a la computadora, duración promedio); **clasificación general** de todos los juegos (partidas, ganadas, perdidas, sin ganador y % de victorias con una barra; medallas para los 3 primeros); **jugadas destacadas** de todos los juegos; y las **partidas que se están jugando**, en vivo |
 | **Un juego** | Sus totales (partidas jugándose y terminadas = **instancias del juego**, duración promedio); su **clasificación** a todo el ancho, con una columna propia del juego (por ejemplo "Amenazas por partida" en el 4 en línea); debajo, sus **jugadas destacadas** y los **números del juego** (el promedio y el récord de cada métrica en una partida); y sus partidas en curso |
 
+**Juegos sin ganador (Tetris):** es de un jugador y termina cuando las piezas llegan arriba, así que nadie gana ni pierde. Su pestaña muestra una **clasificación por puntaje** (Partidas, Mejor puntaje y Puntos por partida), sin las columnas de ganadas, perdidas y % de victorias, que siempre serían 0. El panel solo reordena lo que devuelve GameStats (`rankByScore` en `model.ts`), no calcula nada nuevo.
+
 En las tablas cada número va centrado bajo su título, y la columna del juego y el % de victorias van separadas con una línea para que no se lean como una sola.
 
 ## 2. De dónde sale cada dato

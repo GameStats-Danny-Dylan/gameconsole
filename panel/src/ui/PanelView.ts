@@ -9,7 +9,7 @@
  */
 import {
   buildRows, duration, KEY_METRICS, liveMatches, METRIC_HELP, METRIC_LABELS, metricValue, PATTERN_HELP,
-  PATTERN_LABELS, playerName, STANDING_METRIC, type GameRow, type GameSummary, type MatchInfo, type Standing,
+  PATTERN_LABELS, playerName, rankByScore, SCORE_RANKED, STANDING_METRIC, type GameRow, type GameSummary, type MatchInfo, type Standing,
 } from "../model";
 import type { Snapshot } from "../store/PanelStore";
 import { appHeader } from "@gameconsole/sdk/theme";
@@ -162,7 +162,12 @@ function gamePage(r: GameRow, snap: Snapshot): Child[] {
 
     !s || s.matches === 0
       ? h("p", { class: "empty card" }, "Todavía no se terminó ninguna partida de este juego. ¡Juega una para ver sus estadísticas!")
-      : h("section", { class: "card" },
+      : SCORE_RANKED[r.gameId]
+        ? h("section", { class: "card" },
+            sectionHead("Clasificación por puntaje",
+              `En ${r.name} no se gana ni se pierde: cada partida termina cuando las piezas llegan arriba. Va primero quien hizo la mejor partida; si empatan, el de mejor promedio.`),
+            scoreBoard(s.standings ?? [], SCORE_RANKED[r.gameId]))
+        : h("section", { class: "card" },
           sectionHead("Clasificación", "Va primero quien tiene más victorias en este juego; si empatan, el de mejor porcentaje."),
           leaderboard(s.standings ?? [], r.gameId),
           s.matchesWithoutWinner > 0 && h("p", { class: "foot" },
@@ -251,6 +256,36 @@ function leaderboard(standings: Standing[], game: string | null): HTMLElement {
 
   return h("div", { class: "table-scroll" },
     h("table", { class: "leaderboard" }, h("thead", {}, head), h("tbody", {}, ...body)));
+}
+
+/**
+ * Clasificación de un juego sin ganador (Tetris): por puntaje, sin las
+ * columnas de ganadas, perdidas y % de victorias, que siempre serían 0.
+ */
+function scoreBoard(standings: Standing[], cfg: { metric: string; best: string; average: string }): HTMLElement {
+  if (!standings.length) return h("p", { class: "empty" }, "Todavía nadie terminó una partida. ¡Juega una para aparecer aquí!");
+  const rows = rankByScore(standings, cfg.metric);
+  const value = (s: Standing, use: "max" | "avg") => {
+    const m = s.metrics[cfg.metric];
+    return m ? metricValue(cfg.metric, m[use]) : "—";
+  };
+  return h("div", { class: "table-scroll" },
+    h("table", { class: "leaderboard score-board" },
+      h("thead", {}, h("tr", {},
+        h("th", { class: "c-pos" }, "#"),
+        h("th", {}, "Jugador"),
+        h("th", { class: "num" }, "Partidas"),
+        h("th", { class: "num c-extra" }, cfg.best),
+        h("th", { class: "num c-avg" }, cfg.average))),
+      h("tbody", {}, ...rows.map((s, i) => {
+        const name = playerName(s.playerId);
+        return h("tr", { class: i === 0 ? "leader" : "" },
+          h("td", { class: "c-pos" }, position(i + 1)),
+          h("td", {}, h("span", { class: "who" }, avatar(s.playerId), h("span", { class: "who-name" }, name))),
+          h("td", { class: "num" }, String(s.played)),
+          h("td", { class: "num c-extra best" }, value(s, "max")),
+          h("td", { class: "num c-avg" }, value(s, "avg")));
+      }))));
 }
 
 /** Porcentaje de victorias: el número arriba y debajo una barra corta (no se mezcla con la columna de al lado). */

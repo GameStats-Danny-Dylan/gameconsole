@@ -140,6 +140,27 @@ export const STANDING_METRIC: Record<string, { metric: string; use: "avg" | "max
   fighting: { metric: "damageDealt", use: "avg", label: "Daño por partida" },
 };
 
+/**
+ * Juegos sin ganador (de un jugador, como Tetris): nadie gana ni pierde, así
+ * que su clasificación va por puntaje. `best` = la mejor partida (max) y
+ * `average` = el promedio por partida (avg); los dos los calcula GameStats.
+ */
+export const SCORE_RANKED: Record<string, { metric: string; best: string; average: string }> = {
+  tetris: { metric: "score", best: "Mejor puntaje", average: "Puntos por partida" },
+};
+
+/**
+ * Ordena la clasificación de un juego por puntaje: mejor marca, después
+ * promedio y después más partidas. Solo reordena lo que devolvió GameStats
+ * (no calcula estadísticas nuevas). Quien no tiene la métrica va al final.
+ */
+export function rankByScore(standings: Standing[], metric: string): Standing[] {
+  const best = (s: Standing) => s.metrics[metric]?.max ?? -Infinity;
+  const avg = (s: Standing) => s.metrics[metric]?.avg ?? -Infinity;
+  return [...standings].sort((a, b) =>
+    best(b) - best(a) || avg(b) - avg(a) || b.played - a.played || a.playerId.localeCompare(b.playerId, "es"));
+}
+
 /** Las métricas que se muestran primero en cada juego. */
 export const KEY_METRICS: Record<string, string[]> = {
   connect4: ["discs", "threatsCreated", "threatsBlocked", "centerControl"],

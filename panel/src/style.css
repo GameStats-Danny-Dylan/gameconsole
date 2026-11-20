@@ -386,3 +386,7 @@ th, td { padding-top: 14px; padding-bottom: 14px; }
   .section-head p { text-align: left; }
 }
 
+/* Clasificación por puntaje (Tetris): el mejor puntaje resaltado, el promedio al lado. */
+.score-board .c-avg { border-left: 1px solid var(--grid); padding-left: 14px; }
+.score-board td.best { font-size: 17px; }
+.score-board td.c-avg { color: var(--ink-2); }
