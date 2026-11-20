@@ -29,6 +29,8 @@ export interface GameManifest {
   name: string;
   version: string;
   description?: string;
+  /** Texto corto con controles y objetivo; la consola lo muestra antes de empezar. */
+  howToPlay?: string;
   /** El gameId que va en cada evento hacia GameStats. */
   gameStatsId: string;
   gameVersion: string;
