@@ -281,3 +281,117 @@ th { font-size: 12px; }
 .back-link:active { transform: translateY(1px); box-shadow: none; }
 .back-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
 .back-link .btn-icon { font-size: 1.1em; }
+/* ============================================================
+   v4 (20-nov) — pestañas y tablas más claras
+   ============================================================ */
+/* Pestañas: General y una por juego. Son botones: cambian de color al pasar el mouse. */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab {
+  display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer;
+  font: 700 15px/1 var(--font-display); color: var(--ink-2);
+  background: var(--surface); border: 1.5px solid var(--border); box-shadow: 0 2px 0 var(--border);
+  transition: transform .12s, background .12s, border-color .12s, color .12s, box-shadow .12s;
+}
+.tab img { width: 22px; height: 22px; border-radius: 6px; }
+.tab-icon { color: var(--accent-2); }
+.tab-count {
+  min-width: 26px; padding: 3px 7px; border-radius: 999px; text-align: center;
+  font: 800 12px/1 var(--font-body); color: var(--ink-2); background: var(--surface-2);
+}
+.tab:hover {
+  transform: translateY(-2px); color: var(--ink); border-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent-2) 22%, var(--surface));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent-2) 70%, #000);
+}
+.tab.active {
+  color: #fff; border-color: transparent; transform: none;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--series) 85%, #fff), var(--series));
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--series) 55%, #000);
+}
+.tab.active .tab-count { color: var(--series); background: #fff; }
+.tab:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+.tab .live-dot { margin: 0; }
+
+/* Cabecera de un juego */
+.game-head { display: flex; align-items: center; gap: 14px; padding: 16px 20px; }
+.game-head img { width: 52px; height: 52px; padding: 8px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border); }
+.game-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.game-title h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+.side { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.empty.card { padding: 22px; }
+.split { grid-template-columns: minmax(0, 1.75fr) minmax(280px, 1fr); }
+
+/* Tablas: cada número centrado bajo su título, y las dos últimas columnas
+   separadas con una línea para que no parezcan una sola. */
+.leaderboard th.num, .leaderboard td.num { text-align: center; padding-left: 8px; padding-right: 8px; }
+.leaderboard th { white-space: normal; line-height: 1.25; vertical-align: bottom; }
+.leaderboard .c-extra, .leaderboard .c-rate { border-left: 1px solid var(--grid); padding-left: 14px; }
+.leaderboard td.c-extra { color: var(--accent-2); font-weight: 800; }
+.leaderboard th.c-rate { text-align: center; }
+.c-rate { width: 130px; }
+.rate { display: grid; justify-items: center; gap: 5px; }
+.rate-num { width: auto; text-align: center; font-size: 15px; }
+.rate-track { flex: none; width: 90px; min-width: 0; height: 7px; }
+.metrics th.num, .metrics td.num { text-align: center; width: 110px; }
+.metrics td.record { color: var(--accent-2); }
+.metrics td { padding-right: 8px; }
+@media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+@media (max-width: 560px) {
+  .tab { height: 40px; padding: 0 12px; font-size: 14px; }
+  .rate-track { display: block; width: 60px; }
+  .c-rate { width: 80px; }
+  .leaderboard th.num, .leaderboard td.num { padding-left: 4px; padding-right: 4px; }
+  .game-title h2 { font-size: 22px; }
+}
+/* Debajo de la clasificación de un juego: jugadas destacadas | números del juego. */
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 860px) { .pair { grid-template-columns: 1fr; } }
+.metrics th.num, .metrics td.num { width: 96px; }
+
+/* ============================================================
+   v5 (20-nov) — más aire y jerarquía clara de textos:
+   etiqueta (mayúsculas, color) · título (Poppins 800) ·
+   descripción (gris, interlineado 1.75, justificada).
+   ============================================================ */
+html { hyphens: auto; -webkit-hyphens: auto; }
+body { line-height: 1.7; }
+#app { gap: 30px; }
+.body { gap: 30px; }
+.card { padding: 26px 26px 28px; }
+.section-head { margin-bottom: 20px; }
+.section-head h2 { font-size: 23px; line-height: 1.2; }
+.section-head p {
+  margin: 8px 0 0; max-width: 78ch; font-size: 15px; line-height: 1.75; color: var(--ink-2);
+  text-align: justify; text-wrap: pretty;
+}
+.foot, .notice, .empty, .hl-text small, .metrics td small { text-align: justify; text-wrap: pretty; }
+.foot { margin-top: 16px; line-height: 1.7; }
+.tabs { gap: 10px; }
+.tiles { gap: 18px; }
+.tile { gap: 8px; padding: 22px 22px 20px; }
+.tile .label { letter-spacing: .1em; }
+.tile .hint { line-height: 1.5; }
+.split, .pair { gap: 20px; }
+.highlights { gap: 12px; }
+.highlights li { gap: 16px; padding: 14px 16px; }
+.hl-text { gap: 3px; }
+.hl-text small { line-height: 1.55; }
+th, td { padding-top: 14px; padding-bottom: 14px; }
+.metrics td small { margin-top: 4px; line-height: 1.5; }
+.game-head { padding: 20px 24px; gap: 18px; }
+.who { gap: 12px; }
+.brand-sub { line-height: 1.5; }
+@media (max-width: 560px) {
+  .card { padding: 18px; }
+  .section-head p { text-align: left; }
+}
+
+/* Clasificación por puntaje (Tetris): el mejor puntaje resaltado, el promedio al lado. */
+.score-board .c-avg { border-left: 1px solid var(--grid); padding-left: 14px; }
+.score-board td.best { font-size: 17px; }
+.score-board td.c-avg { color: var(--ink-2); }
+
+/* Texto dorado legible en claro (contraste 5,1 a 6 sobre los cremas). */
+:root { --gold-text: #7a5100; }
+:root[data-theme="dark"] { --gold-text: #f6c453; }
+.leaderboard td.c-extra, .metrics td.record { color: var(--gold-text); }

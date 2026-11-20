@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { GameStatsClient, type Fetch } from "../src/api/GameStatsClient";
-import { buildRows, duration, liveMatches, metricValue, type Overview } from "../src/model";
+import { buildRows, duration, liveMatches, metricValue, rankByScore, type Overview, type Standing } from "../src/model";
 import { PanelStore } from "../src/store/PanelStore";
 
 /** fetch falso: ruta -> respuesta (número = solo el status). */
@@ -81,6 +81,15 @@ describe("PanelStore (Observer)", () => {
     expect(snap.errors[0]).toMatch(/registry/);
     expect(snap.live).toEqual([{ gameId: "connect4", inProgress: 2 }, { gameId: "tetris", inProgress: 1 }]);
   });
+});
+
+test("Tetris se clasifica por puntaje: mejor marca, después promedio", () => {
+  const st = (playerId: string, max: number | null, avg = 0, played = 1): Standing => ({
+    playerId, played, wins: 0, losses: 0, noResult: played, winRate: 0,
+    metrics: max === null ? {} : { score: { avg, min: 0, max } },
+  });
+  const order = rankByScore([st("ana", 300, 120), st("beto", null), st("dylan", 900, 400), st("danny", 300, 200)], "score");
+  expect(order.map((s) => s.playerId)).toEqual(["dylan", "danny", "ana", "beto"]);
 });
 
 test("partidas en vivo, duración y métricas en porcentaje", () => {

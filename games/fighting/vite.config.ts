@@ -6,5 +6,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   base: "/games/fighting/",
   server: { port: 5175 },
-  test: { environment: "node" },
+  // Las peleas al azar (events, render) tardan 2-4 s con la máquina libre; con
+  // docker construyendo varias imágenes a la vez pasaban de los 5 s por defecto.
+  test: { environment: "node", testTimeout: 30_000 },
 });

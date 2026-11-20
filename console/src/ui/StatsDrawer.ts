@@ -39,6 +39,9 @@ export class StatsDrawer {
     if (!this.frame) {   // se carga la primera vez que se abre
       this.frame = el("iframe", { class: "stats-frame", src: this.src, title: "Panel de estadísticas de GameStats" });
       this.element.querySelector(".stats-stage")!.append(this.frame);
+    } else {
+      // Ya estaba cargado: que vuelva a empezar en la pestaña General (ver panel/PanelView).
+      this.frame.contentWindow?.postMessage("gameconsole:panel:general", location.origin);
     }
     this.element.hidden = false;
     this.onToggle(true);

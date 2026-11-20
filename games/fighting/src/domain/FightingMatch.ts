@@ -7,6 +7,10 @@
  * Un golpe que conecta sale como ATTACK, o como parte de un COMBO si lo
  * siguen otros (ver "Golpes que conectan y combos").
  *
+ * Aparte, `impacts` avisa en el mismo cuadro en que un golpe toca (conecta o
+ * lo bloquean), con el punto de contacto. Es solo para la presentación
+ * (chispas, sonido, congelado de impacto): no es un hecho ni sale a GameStats.
+ *
  * Un round termina por KO (vida en 0) o por tiempo; con los dos en 0 a la vez,
  * o con la misma vida al acabarse el tiempo, es empate y no suma para nadie.
  * La pelea termina cuando alguien llega a la mayoría de los rounds o cuando se
@@ -15,6 +19,7 @@
  */
 import { Arena } from "./Arena";
 import { CombatRules, type Move } from "./CombatRules";
+import type { HitBox } from "./HitBox";
 import type { Fighter } from "./fighter/Fighter";
 import { FighterFactory, type Contender } from "./fighter/FighterFactory";
 import { NO_INTENT, type Intent } from "./fighter/Intent";
@@ -22,6 +27,8 @@ import { Round, type RoundResult } from "./Round";
 import { Emitter } from "../util/Emitter";
 
 export const ROUND_OPTIONS = [1, 3, 5] as const;
+/** Espacio (px) contra la pared desde el que el empuje de un golpe pasa al que pega. */
+const WALL_ROOM = 30;
 export type RoundsOption = (typeof ROUND_OPTIONS)[number];
 
 /** Lo que pasa en la pelea, en términos del juego (el adapter lo traduce para GameStats). */
@@ -33,6 +40,22 @@ export type FightFact =
   | { kind: "roundWon"; winner: string; round: number; remainingHealth: number; method: "ko" | "timeout" }
   | { kind: "roundDraw"; player: string; other: string; round: number; method: "double_ko" | "timeout" }
   | { kind: "matchOver"; winner: string | null };
+
+/** Un golpe que tocó al rival en este cuadro (para la presentación, no es un evento). */
+export interface Impact {
+  kind: "hit" | "blocked";
+  attacker: Fighter;
+  defender: Fighter;
+  move: Move;
+  damage: number;
+  /** Golpes conectados seguidos del atacante, contando este (1 = suelto; 2 o más = combo en curso). */
+  chain: number;
+  /** Este golpe dejó al rival sin vida. */
+  ko: boolean;
+  /** Punto de contacto, en coordenadas de la arena. */
+  x: number;
+  y: number;
+}
 
 /** Golpes conectados de un jugador que todavía pueden ser combo. */
 interface Chain {
@@ -46,6 +69,8 @@ interface Chain {
 
 export class FightingMatch {
   readonly facts = new Emitter<FightFact>();
+  /** Observer de la presentación: un aviso por golpe que toca (ver Impact). */
+  readonly impacts = new Emitter<Impact>();
   readonly fighters: readonly [Fighter, Fighter];
   readonly roundsToWin: number;
 
@@ -126,23 +151,46 @@ export class FightingMatch {
       const box = att.activeAttackBox();
       const move = att.attack?.move;
       if (!box || !move || !def.vulnerable || !box.intersects(def.body)) return [];
-      return [{ att, def, move, outcome: this.rules.resolve(move, att, def) }];
+      return [{ att, def, move, box, outcome: this.rules.resolve(move, att, def) }];
     });
     for (const p of pending) p.att.markConnected();
 
     const round = this.round.number;
-    for (const { att, def, move, outcome } of pending) {
+    for (const { att, def, move, box, outcome } of pending) {
       if (outcome.kind === "blocked") {
         def.receiveBlock(att.x);
+        this.pushOffWall(att, def);
         this.flushChain(att.playerId); // un golpe bloqueado corta el combo (sale antes, en orden)
         this.emit({ kind: "attack", attacker: att.playerId, target: def.playerId, move, hit: false, damage: 0, round });
         this.emit({ kind: "block", defender: def.playerId, attacker: att.playerId, round });
+        this.impact("blocked", att, def, move, box, 0, 0);
         continue;
       }
       def.receiveHit(outcome.damage, att.x);
+      this.pushOffWall(att, def);
       this.flushChain(def.playerId); // al que le pegan se le corta el combo
-      this.extendChain(att.playerId, def.playerId, move, outcome.damage);
+      const chain = this.extendChain(att.playerId, def.playerId, move, outcome.damage);
+      this.impact("hit", att, def, move, box, outcome.damage, chain);
     }
+  }
+
+  private impact(kind: Impact["kind"], att: Fighter, def: Fighter, move: Move, box: HitBox, damage: number, chain: number): void {
+    const body = def.body;
+    const x = att.facing === 1 ? Math.max(box.left, body.left) : Math.min(box.right, body.right);
+    this.impacts.emit({ kind, attacker: att, defender: def, move, damage, chain, ko: def.knockedOut, x, y: box.y + box.height / 2 });
+  }
+
+  /**
+   * Contra la pared el golpeado no puede retroceder: el empuje lo absorbe el
+   * que pega, que se aleja. Así un golpe tras otro en la esquina deja de
+   * alcanzar y no hay combos infinitos.
+   */
+  private pushOffWall(att: Fighter, def: Fighter): void {
+    const w = def.physics.width;
+    const away: -1 | 1 = def.x >= att.x ? 1 : -1; // hacia dónde lo empujan
+    const room = away === 1 ? this.arena.maxX(w) - def.x : def.x - this.arena.minX(w);
+    if (room >= WALL_ROOM) return;
+    att.vx = -away * this.rules.config.knockback * (1 - room / WALL_ROOM);
   }
 
   /** Golpes que terminaron sin tocar a nadie: ATTACK fallado. */
@@ -168,16 +216,18 @@ export class FightingMatch {
   // anterior), sale un solo COMBO con todos.
   // ------------------------------------------------------------------
 
-  private extendChain(attacker: string, target: string, move: Move, damage: number): void {
+  /** Suma el golpe a la cadena del atacante. Devuelve cuántos golpes lleva la cadena. */
+  private extendChain(attacker: string, target: string, move: Move, damage: number): number {
     const c = this.chains.get(attacker);
     if (c && this.time - c.lastAt <= this.rules.config.comboWindow) {
       c.hits++;
       c.damage += damage;
       c.lastAt = this.time;
-      return;
+      return c.hits;
     }
     this.flushChain(attacker);
     this.chains.set(attacker, { target, move, hits: 1, damage, lastAt: this.time });
+    return 1;
   }
 
   private expireChains(): void {

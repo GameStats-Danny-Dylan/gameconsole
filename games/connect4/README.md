@@ -66,9 +66,9 @@ En cada turno de la computadora, el juego manda a Prolog el tablero, el color qu
 
 | Dificultad | Jugadas que mira | Cómo juega | Contra un jugador "casual" simulado, la computadora gana… |
 |---|---|---|---|
-| Fácil | 1 | Busca el centro; gana si ve el 4 en línea, pero no tapa | ~10 % |
-| Media | 1 (mirando las líneas de los dos) | Arma líneas y tapa lo que ve, pero no planea trampas | ~50 % |
-| Difícil | 6 | Ve y arma trampas de dos amenazas a la vez | ~95 % |
+| Fácil | 1 | Juega al centro y arma alguna línea; gana si ve el 4 en línea, pero nunca tapa | ~15 % |
+| Media | 1 | A la defensiva: tapa tus líneas de 3, pero no arma las suyas ni planea | ~50 % |
+| Difícil | 3 | Tapa, arma amenazas dobles y no cae en trampas cortas | ~85 % |
 
 **Cómo lo usa el juego** (`src/ai/MoveStrategy.ts`):
 
@@ -174,7 +174,7 @@ Usa las acciones del 4 en línea que GameStats ya conocía desde el Proyecto 1, 
 ```json
 { "type": "PLAYER_ACTION", "action": "DISC_DROPPED", "playerId": "cpu",
   "data": { "column": 4, "row": 2,
-            "ai": { "engine": "prolog-minimax", "depth": 6, "score": 12, "nodes": 4821, "ms": 85 } } }
+            "ai": { "engine": "prolog-minimax", "depth": 3, "score": 12, "nodes": 81, "ms": 35 } } }
 ```
 
 **Validación:** GameStats descarta los eventos que rompen sus reglas de contexto (turnos, gravedad, nada durante la pausa…). Este juego se prueba contra una copia de esas reglas (`test/support/scalaRules.ts`) con **3000 partidas al azar**, sin ningún descarte, y contra GameStats real en el CD.

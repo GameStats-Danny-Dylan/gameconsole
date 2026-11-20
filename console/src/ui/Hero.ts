@@ -10,11 +10,12 @@
  * pasos (heurística 10 de Nielsen: ayuda siempre disponible).
  */
 import { el } from "./dom";
+import { icon, type IconName } from "./icons";
 
-const STEPS: [string, string, string][] = [
-  ["🎮", "Elige un juego", "Lee cómo se juega, escribe los nombres y elige las opciones."],
-  ["🪟", "Juega varias a la vez", "Cada partida va en su propio cuadro, con sus botones. Si deja de verse, se pausa."],
-  ["📊", "Mira las estadísticas", "Cada jugada llega a GameStats: resultados y clasificación en vivo."],
+const STEPS: [IconName, string, string][] = [
+  ["gift", "Elige un juego", "Abre su regalo, lee cómo se juega, escribe los nombres y elige las opciones antes de empezar."],
+  ["windows", "Juega varias a la vez", "Cada partida va en su propio cuadro, con sus botones. Si una deja de verse, se pausa sola."],
+  ["trophy", "Mira quién va ganando", "Cada jugada llega a GameStats, que arma los resultados y la clasificación en vivo."],
 ];
 
 /** Paisaje nevado de noche (decorativo). Todo es fijo: no lleva datos de nadie. */
@@ -57,26 +58,31 @@ export class Hero {
   private readonly steps: HTMLElement;
 
   constructor(status: HTMLElement, onSeeGames: () => void) {
-    const cta = el("button", { type: "button", class: "btn primary big" },
-      el("span", { class: "btn-icon", "aria-hidden": "true", text: "🎁" }), "Ver los juegos");
+    const cta = el("button", { type: "button", class: "btn primary big" }, icon("gift", "btn-svg"), "Ver los juegos");
     cta.addEventListener("click", onSeeGames);
 
+    // Cada paso es una tarjeta: número y dibujo arriba, título y explicación debajo.
     this.steps = el("ol", { class: "hero-steps", "aria-label": "Cómo funciona" },
-      ...STEPS.map(([icon, title, text], i) => el("li", {},
-        el("span", { class: "step-num", "aria-hidden": "true", text: String(i + 1) }),
-        el("div", {},
-          el("strong", {}, el("span", { "aria-hidden": "true", text: `${icon} ` }), title),
-          el("p", { text })))));
+      ...STEPS.map(([name, title, text], i) => el("li", { class: "step-card" },
+        el("div", { class: "step-top" },
+          el("span", { class: "step-icon" }, icon(name)),
+          el("span", { class: "step-num", text: `Paso ${i + 1}` })),
+        el("h4", { text: title }),
+        el("p", { text }))));
 
     this.element.append(
       el("div", { class: "hero-text" },
-        el("span", { class: "eyebrow", text: "❄ Bienvenido a DnD Games" }),
+        el("span", { class: "eyebrow" }, icon("snow", "eyebrow-svg"), "Bienvenido a DnD Games"),
         el("h2", { id: "hero-title", text: "¿Qué jugamos hoy?" }),
         el("p", { class: "lead", text: "Elige un juego, abre varias partidas al mismo tiempo y mira en vivo quién va ganando." }),
         status,
         el("div", { class: "hero-actions" }, cta)),
       el("div", { class: "hero-art" }),
-      el("div", { class: "hero-how" }, el("h3", { text: "Cómo funciona" }), this.steps),
+      el("div", { class: "hero-how" },
+        el("header", { class: "hero-how-head" },
+          el("span", { class: "kicker", text: "Primera vez" }),
+          el("h3", { text: "Cómo funciona" })),
+        this.steps),
     );
     (this.element.querySelector(".hero-art") as HTMLElement).innerHTML = SCENE;   // SVG fijo, sin datos externos
 

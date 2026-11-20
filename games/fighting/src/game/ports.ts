@@ -5,6 +5,7 @@
  * manejan a mano.
  */
 import type { FightingMatch } from "../domain/FightingMatch";
+import type { EffectsSystem } from "../fx/EffectsSystem";
 import type { KeySource } from "../input/ControlScheme";
 
 export type Status = "loading" | "ready" | "playing" | "paused" | "finished";
@@ -35,6 +36,10 @@ export interface ViewModel {
   winnerName: string | null;
   /** La partida se cerró antes de terminar. */
   stopped: boolean;
+  /** Lo que se anima en la presentación (estela de vida, reloj de animaciones...). */
+  fx: EffectsSystem | null;
+  /** El sonido está silenciado (tecla M). */
+  muted: boolean;
 }
 
 export interface FightView {

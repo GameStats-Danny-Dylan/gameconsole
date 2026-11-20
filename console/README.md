@@ -27,9 +27,9 @@ De arriba hacia abajo:
 |---|---|
 | **Cabecera** | El logo y "**DnD** Games"; los botones **? Guía**, **📊 Estadísticas** y el de tema claro/oscuro; una guirnalda de luces |
 | **Portada** | "¿Qué jugamos hoy?", una frase de qué es, el estado del sistema ("3 juegos disponibles", "GameStats al día"), el botón **🎁 Ver los juegos**, un paisaje nevado y "Cómo funciona" en 3 pasos |
-| **Tus partidas** | Las partidas abiertas, una al lado de la otra, cada una con su estado y sus botones (aparece cuando hay al menos una) |
+| **Tus partidas** | Las partidas abiertas, una al lado de la otra (aparece cuando hay al menos una). Cada una ocupa el alto de la pantalla: arriba el nombre, el estado y los botones; el resto es el juego, que entra entero sin barra de desplazamiento |
 | **Elige un juego** | Una tarjeta por juego, como un regalo envuelto: descripción, modos, un marcador de GameStats (en curso, jugadas, líder) y el botón **🎁 ¡A jugar!** |
-| **Panel lateral "Nueva partida"** | "Cómo se juega" (objetivo, paso a paso, controles, consejos), modo, opciones y nombres |
+| **"Nueva partida" (pantalla completa)** | A la izquierda, "Cómo se juega" (objetivo, paso a paso, controles, consejos); a la derecha, modo, opciones y nombres; abajo, **Cancelar** y **▶ Jugar** |
 | **Panel lateral "Estadísticas"** | El panel de GameStats, al lado de las partidas, que siguen corriendo |
 | **Avisos** | Mensajes breves abajo: partida abierta, quién ganó, si GameStats deja de responder |
 
@@ -53,7 +53,7 @@ De arriba hacia abajo:
 | `ui/` | `ConsoleShell` | Arma la página y conecta todas las piezas |
 | | `Hero` | La portada con el paisaje y "Cómo funciona" |
 | | `GameMenu` | Las tarjetas de juegos |
-| | `MatchFormView`, `howTo` | El panel "Nueva partida" y el "Cómo se juega" por partes |
+| | `MatchFormView`, `howTo` | La pantalla "Nueva partida" y el "Cómo se juega" por partes |
 | | `MatchGrid`, `MatchTile` | Las partidas abiertas y sus botones |
 | | `StatsDrawer` | El panel lateral de estadísticas |
 | | `SendIndicator`, `Toasts` | El estado del envío y los avisos |
@@ -96,7 +96,11 @@ DnD Games (por **D**anny a**n**d **D**ylan) tiene una temática navideña propia
 | **Modo oscuro** | Noche de invierno: cielo azul noche con estrellas |
 | **Modo claro** | Cabaña: papel kraft y crema (sin fondo blanco) |
 | **Decoración** | Nieve que cae, colinas nevadas, guirnalda de luces que titilan, nieve acumulada sobre las tarjetas, juegos como regalos con cinta y moño, y un paisaje con pinos en la portada |
-| **Botones vs. información** | Los botones tienen relieve, ícono y se levantan al pasar el mouse. La información es texto plano con un punto de color o un ícono, sin forma de botón |
+| **Botones vs. información** | Los botones tienen relieve e ícono; al pasar el mouse **cambian de color de fondo** y se levantan, así se nota que se pueden pulsar. La información es texto plano con un punto de color o un ícono, sin forma de botón |
+| **Íconos** | Dibujados en SVG (`ui/icons.ts`), todos con el mismo trazo y el color del tema, en vez de emojis: regalo, ventanas, trofeo, control de juego, nube, computadora, personas, objetivo, teclado, foco |
+| **Textos** | Tres niveles que no se confunden: etiqueta (pequeña, en mayúsculas y en color), título (Poppins, grueso) y descripción (Inter, gris, interlineado amplio y **justificada**). Más espacio entre secciones, tarjetas y renglones |
+| **Portada** | El estado del sistema en dos recuadros ("Juegos · 3 disponibles" y "GameStats · Al día") y "Cómo funciona" en tres tarjetas con su paso, su dibujo, título y explicación |
+| **Jerarquía de botones** | Ayuda ("? Cómo se juega"): sin caja hasta pasar el mouse. Normales (Pausar, Nueva partida, Cancelar): dorado al pasar el mouse. Principal (Jugar, Reanudar, Jugar otra): verde. Peligro (Cerrar): rojo, que se rellena al pasar el mouse |
 
 El tema (claro u oscuro) se elige con el botón de la cabecera y se comparte con el panel y los juegos.
 
@@ -108,12 +112,12 @@ La consola está pensada para alguien que la abre por primera vez. Se revisó co
 |---|---|---|
 | 1 | Visibilidad del estado del sistema | La portada muestra los juegos disponibles y el estado del envío a GameStats. Cada partida muestra su estado (Cargando, Jugando, En pausa, Terminada). Avisos breves al abrir una partida, cuando alguien gana o si GameStats deja de responder. Las tarjetas muestran las partidas en curso en vivo |
 | 2 | Relación con el mundo real | Todo en español y con palabras de jugador: "¿Qué jugamos hoy?", "Cómo se juega", "Computadora", "En las estadísticas aparecerás como…" |
-| 3 | Control y libertad | Los paneles laterales se cierran con ✕, "Cancelar" o Esc. Pausar/Reanudar, Reiniciar, Nueva partida y Cerrar en cada partida |
+| 3 | Control y libertad | "Nueva partida" y Estadísticas se cierran con ✕, "Cancelar" o Esc. Pausar/Reanudar, Reiniciar, Nueva partida y Cerrar en cada partida; cada confirmación tiene "Cancelar" |
 | 4 | Consistencia y estándares | Los mismos botones, colores, letras y tema en la consola, los juegos y el panel. El botón principal siempre es el verde |
-| 5 | Prevención de errores | Nombres obligatorios, distintos y validados al escribir. Cerrar o reiniciar una partida en curso pide confirmar en el mismo botón ("¿Cerrar? Sí"), sin ventanas emergentes |
+| 5 | Prevención de errores | Nombres obligatorios, distintos y validados al escribir. Cerrar una partida (y reiniciarla si sigue en curso) pide confirmar: los botones se cambian por la pregunta "¿Cerrar la partida? Terminará sin ganador." con **Cancelar** o **Sí, cerrar**, sin ventanas emergentes (Esc cancela) |
 | 6 | Reconocer en vez de recordar | "Cómo se juega" por partes antes de empezar y también durante la partida (botón "? Cómo se juega"), con las teclas dibujadas. Si la partida no tiene el teclado, se avisa cómo dárselo; la partida nueva lo recibe sola |
-| 7 | Flexibilidad y eficiencia | Teclado en los juegos, Esc para cerrar paneles, Reiniciar juega otra igual sin volver a llenar el formulario, varias partidas a la vez |
-| 8 | Diseño estético y minimalista | Una tarjeta por juego con lo justo; el "Cómo se juega" muestra el objetivo y lo demás se abre con un clic; los paneles se abren solo cuando se piden |
+| 7 | Flexibilidad y eficiencia | Teclado en los juegos, Esc para cerrar, "Jugar otra" repite la partida sin volver a llenar el formulario, varias partidas a la vez |
+| 8 | Diseño estético y minimalista | Una tarjeta por juego con lo justo; cada partida usa toda la pantalla y solo hay desplazamiento donde hace falta (el "Cómo se juega" largo), no dentro de los juegos |
 | 9 | Reconocer, diagnosticar y recuperarse de errores | Los mensajes dicen qué pasó y qué hacer ("El juego no respondió a tiempo. Pulsa «Reintentar»"). Si GameStats no responde, se avisa que no se pierde nada y se reintenta solo |
 | 10 | Ayuda y documentación | "Cómo funciona" en 3 pasos en la portada (el botón "? Guía" lleva ahí), "Cómo se juega" de cada juego y explicaciones al pasar el mouse sobre los indicadores |
 

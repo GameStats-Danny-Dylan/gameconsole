@@ -291,7 +291,7 @@ Se mandan como **datos extra** en el `DISC_DROPPED` de la computadora. El contra
 ```json
 { "type": "PLAYER_ACTION", "action": "DISC_DROPPED", "playerId": "cpu",
   "data": { "column": 4, "row": 2,
-            "ai": { "engine": "prolog-minimax", "depth": 6, "score": 12, "nodes": 4821, "ms": 85 } } }
+            "ai": { "engine": "prolog-minimax", "depth": 3, "score": 12, "nodes": 81, "ms": 35 } } }
 ```
 
 > ✅ Probado contra GameStats `v1.0`: Scala ignora el campo `ai` y no descarta el evento (sección 10).
@@ -323,12 +323,12 @@ Vive en la consola. Hay **una cola por partida**, así una partida no frena a ot
 
 - `board`: **7 columnas**, de la 1 a la 7. Cada una es la lista de fichas **de abajo hacia arriba** (máximo 6). Así es como piensa Prolog: soltar una ficha es agregarla al final de su columna.
 - `player`: el color que mueve (la computadora).
-- `difficulty`: `easy` = profundidad 1 y solo busca el centro (no tapa), `medium` = profundidad 1 mirando las líneas de los dos (tapa lo que ve, no planea), `hard` = 6 (ver [`prolog/README.md`](../prolog/README.md)). Las pistas del juego piden `hard`.
+- `difficulty`: `easy` = profundidad 1 mirando solo sus líneas con poco peso (no tapa), `medium` = profundidad 1 mirando solo las líneas de 3 del rival (tapa, no arma ni planea), `hard` = profundidad 3 mirando sus líneas (tapa y arma amenazas dobles) (ver [`prolog/README.md`](../prolog/README.md)). Las pistas del juego piden `hard`.
 
 Respuesta `200`:
 
 ```json
-{ "column": 4, "score": 12, "depth": 6, "nodes": 4821, "ms": 85 }
+{ "column": 4, "score": 12, "depth": 3, "nodes": 81, "ms": 35 }
 ```
 
 - `column` va de 1 a 7. `400` si el tablero es inválido o está lleno.
