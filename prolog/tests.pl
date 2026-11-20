@@ -80,13 +80,12 @@ test(dificil_tapa) :-
 test(facil_gana_si_puede) :-
     jugada(easy, [[yellow, yellow, yellow], [red], [red], [], [], [], [red]], 1).
 
-% Media tapa lo que se ve en el tablero (dos rojas con espacio a los lados).
-test(media_tapa_dos_abiertas) :-
-    jugada(medium, [[], [], [red], [red], [], [yellow], [yellow]], M),
-    memberchk(M, [2, 5]).
+% Media tapa una línea de 3 aunque tenga un hueco en medio (rojas en 1, 2 y 4).
+test(media_tapa_tres_con_hueco) :-
+    jugada(medium, [[red], [red], [], [red], [yellow], [yellow], []], 3).
 
 % Victoria forzada a varias jugadas: jugando en la 5, yellow arma amenazas
-% que red no alcanza a tapar todas. Difícil (6 jugadas) la ve; media, que
+% que red no alcanza a tapar todas. Difícil (3 jugadas) la ve; media, que
 % mira 1, juega otra cosa.
 test(dificil_ve_la_victoria_forzada_y_media_no) :-
     B = [[red, red], [], [], [red, yellow, red, yellow, yellow], [yellow, yellow], [red], []],

@@ -30,7 +30,7 @@ Por el gateway: `POST /api/ai/connect4/move` (contrato en [`docs/protocolo.md` �
 ```
 
 - `board`: 7 columnas, cada una con sus fichas **de abajo hacia arriba**.
-- Respuesta: `{"column": 4, "score": 12, "depth": 6, "nodes": 4821, "ms": 85}` (columna elegida, puntaje, profundidad, posiciones revisadas y tiempo). Con un pedido inválido responde `400` con el motivo.
+- Respuesta: `{"column": 4, "score": 12, "depth": 3, "nodes": 81, "ms": 35}` (columna elegida, puntaje, profundidad, posiciones revisadas y tiempo). Con un pedido inválido responde `400` con el motivo.
 
 ## Cómo decide la computadora
 
@@ -41,24 +41,30 @@ Por el gateway: `POST /api/ai/connect4/move` (contrato en [`docs/protocolo.md` �
 
    | Dificultad | Jugadas que mira | Qué evalúa | Cómo se nota al jugar |
    |---|---|---|---|
-   | Fácil | 1 (solo la suya) | solo estar cerca del centro (`basic`) | Gana si ve un 4 en línea, pero **no lo arma a propósito ni tapa los tuyos**: como un principiante |
-   | Media | 1 (solo la suya) | las de los dos (`full`) | Arma líneas y **tapa las amenazas que se ven en el tablero**, pero no planea: **no ve trampas** de varias jugadas |
-   | Difícil | 6 | las de los dos (`full`) | Ve esas trampas: las esquiva y te las arma |
+   | Fácil | 1 (solo la suya) | solo **sus** líneas, con poco peso (`lines(1, 1)`) | Casi siempre juega al centro y arma alguna línea sin querer. Gana si ve un 4 en línea, pero **nunca tapa los tuyos**: como un principiante |
+   | Media | 1 (solo la suya) | solo las líneas de 3 **del rival** (`block`) | Juega a la defensiva: **tapa cualquier línea de 3 tuya**, aunque tenga un hueco, pero no arma las suyas a propósito ni ve trampas |
+   | Difícil | 3 (la suya, la tuya y otra suya) | sus líneas (`lines(5, 2)`) | Ve lo que pasa a 2 jugadas: tapa, **arma amenazas dobles** y no cae en las trampas cortas |
 
-   Las tres deciden con las mismas reglas y la misma búsqueda, sin azar: cambian solo la profundidad y la evaluación. Las pruebas `dificultades` de `tests.pl` lo comprueban con posiciones concretas.
+   Las tres deciden con las mismas reglas y la misma búsqueda, sin azar: cambian solo la profundidad y qué cuenta la evaluación. Las pruebas `dificultades` de `tests.pl` lo comprueban con posiciones concretas.
 
-   **Cómo se calibró (19-nov).** Con media mirando 3 jugadas, a una persona normal le ganaba casi siempre y no se distinguía de difícil. Se midió cada dificultad contra un jugador simulado "casual" (gana si puede, tapa si debe, no regala una victoria y si no juega al azar cerca del centro), jugando la computadora en segundo lugar como en la consola:
+   **Cómo se calibró (20-nov).** La meta era que la computadora ganara más o menos el 15 %, el 50 % y el 85 % de las partidas. Se midió contra un jugador simulado "casual" (gana si puede, tapa si debe, no regala una victoria y si no juega al azar cerca del centro), jugando la computadora en segundo lugar como en la consola, 200 partidas por dificultad (dos semillas de 100):
 
    | Dificultad | La computadora gana | La persona gana |
    |---|---|---|
-   | Fácil | 10 % | 90 % |
-   | Media (1 jugada, `full`) | 50 % | 40 % (10 % empates) |
-   | Media anterior (3 jugadas) | 80 % | 15 % |
-   | Difícil | 95 % | 5 % |
+   | Fácil | 15–16 % | 84 % |
+   | Media | 46–48 % | 48–49 % (el resto, empates) |
+   | Difícil | 84–86 % | 14–16 % |
 
-   Entre ellas, con aperturas al azar: media le gana a fácil 22–7 y difícil a media 17–2.
+   Otras combinaciones que se probaron y por qué no quedaron:
 
-   Primero fácil era `attack` (solo armar sus líneas, sin tapar). Contra la IA perdía, pero a una persona la presionaba más que media: armaba una línea en cada turno y obligaba a defender todo el tiempo. Por eso se cambió a `basic`.
+   | Jugadas y evaluación | Gana | Por qué no |
+   |---|---|---|
+   | 1, solo el centro (fácil anterior) | 6–10 % | Demasiado fácil |
+   | 1, sus líneas con pesos 5 y 2 | 33 % | Fácil quedaba muy fuerte |
+   | 1, las de los dos (`full`, media anterior) | 60 % | Media un poco fuerte |
+   | 2, las de los dos | 96 % | Igual que mirar 3 o más: el jugador casual no ve trampas de 2 jugadas |
+   | 6, las de los dos (difícil anterior) | ~95 % | Difícil casi imposible |
+   | 4, sus líneas | 99 % | Igual |
 4. **Evaluación.** Cuando se acaba la profundidad, el tablero se puntúa recorriendo las 69 líneas posibles de 4 casillas:
 
    | En una línea hay… | Puntos |
@@ -76,11 +82,11 @@ Por el gateway: `POST /api/ai/connect4/move` (contrato en [`docs/protocolo.md` �
 
 | Dificultad | Tablero vacío | Hay que tapar | Mitad de partida | Trampa de dos amenazas |
 |---|---|---|---|---|
-| Fácil (1 jugada) | 7 posiciones, ~10 ms | 7, ~2 ms | 7, ~3 ms | 7, ~2 ms |
-| Media (1 jugada) | 7 posiciones, ~10 ms | 7, ~7 ms | 7, ~6 ms | 7, ~5 ms |
-| Difícil (6 jugadas) | 1 380, ~0,5 s | 993, ~0,4 s | 1 276, ~0,7 s | 4 429, ~1,7 s |
+| Fácil (1 jugada) | 7 posiciones, ~4 ms | 7, ~4 ms | 7, ~3 ms | 7, ~2 ms |
+| Media (1 jugada) | 7 posiciones, ~2 ms | 7, ~3 ms | 7, ~2 ms | 7, ~3 ms |
+| Difícil (3 jugadas) | 81, ~35 ms | 27, ~15 ms | 123, ~55 ms | 111, ~45 ms |
 
-Fácil y media responden casi al instante, así que el juego espera al menos 0,7 s antes de mostrar la ficha (`MinThinkTime`, un Decorator de la estrategia en `games/connect4/src/ai/MoveStrategy.ts`): si no, la ficha aparecería de golpe. Difícil ya tarda más y casi no espera de más.
+Las tres responden casi al instante, así que el juego espera al menos 0,7 s antes de mostrar la ficha (`MinThinkTime`, un Decorator de la estrategia en `games/connect4/src/ai/MoveStrategy.ts`): si no, la ficha aparecería de golpe. (Cuando difícil miraba 6 jugadas tardaba hasta 1,7 s.)
 
 ## Cómo correrlo
 
