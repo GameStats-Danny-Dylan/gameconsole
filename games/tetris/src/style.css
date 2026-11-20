@@ -92,7 +92,7 @@ body {
 }
 .tetris.card { display: flex; gap: 16px; padding: 14px; justify-content: center; align-items: flex-start; outline: none; }
 .tetris-board-wrap { position: relative; flex: none; }
-.tetris-board { display: block; width: min(300px, 52vw); height: auto; aspect-ratio: 1 / 2; border-radius: 10px; border: 2px solid var(--line); }
+.tetris-board { display: block; height: min(600px, calc(100vh - 60px)); width: auto; aspect-ratio: 1 / 2; border-radius: 10px; border: 2px solid var(--line); }
 .tetris-overlay {
   position: absolute; inset: 0; display: grid; place-items: center; border-radius: 10px;
   font-size: 22px; font-weight: 800; color: #fff; background: rgb(9 13 24 / .62); text-align: center;
