@@ -26,7 +26,7 @@ import { sendIndicator } from "./SendIndicator";
 import { StatsDrawer } from "./StatsDrawer";
 import { Toasts } from "./Toasts";
 import { VisibilityWatcher } from "./VisibilityWatcher";
-import { WelcomeGuide } from "./WelcomeGuide";
+import { Hero } from "./Hero";
 
 export interface ShellDeps {
   catalog: GameCatalog;
@@ -42,7 +42,6 @@ export class ConsoleShell {
   private readonly menu = new GameMenu((id) => this.openForm(id));
   private readonly form = new MatchFormView((ctx, m) => this.startMatch(ctx, m));
   private readonly stats = new StatsDrawer("/panel/");
-  private readonly guide = new WelcomeGuide();
   private readonly watcher = new VisibilityWatcher();
   private readonly toasts = new Toasts();
   private readonly grid: MatchGrid;
@@ -59,19 +58,19 @@ export class ConsoleShell {
     statsButton.addEventListener("click", () => { this.form.close(); this.stats.toggle(); });
     this.stats.element.id = "stats";
 
+    // Estado del sistema: información (texto con punto de color), dentro de la portada.
     const statusbar = el("div", { class: "statusbar", "aria-label": "Estado del sistema" },
       this.status,
-      ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []),
-      el("p", { class: "signal hint-signal", text: "Cada jugada se guarda en GameStats" }));
+      ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []));
 
-    // La marca va grande (DnD Games) y "Consola de juegos" como antetítulo.
-    const header = appHeader("DnD Games", "Juegos independientes · partidas en paralelo · estadísticas en vivo",
-      this.guide.button, statsButton);
-    header.querySelector(".brand-kicker")!.textContent = "🎄 Consola de juegos navideña";
+    const hero = new Hero(statusbar, () => this.menu.element.scrollIntoView({ behavior: "smooth", block: "start" }));
+
+    // Cabecera: la marca "DnD Games" (DnD en rojo) y solo botones a la derecha.
+    const header = appHeader("DnD Games", "", hero.button, statsButton);
+    header.querySelector("h1")!.replaceChildren(el("span", { class: "brand-dnd", text: "DnD" }), " Games");
     this.root.append(
       header,
-      statusbar,
-      this.guide.element,
+      hero.element,
       this.grid.element,
       this.menu.element,
     );
