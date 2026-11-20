@@ -16,6 +16,7 @@ import type { GameHost, MatchContext, PauseReason, StopReason } from "@gameconso
 import { GameStatsAdapter } from "../adapter/GameStatsAdapter";
 import { FightingMatch, ROUND_OPTIONS, type RoundsOption } from "../domain/FightingMatch";
 import { NO_INTENT, type Intent } from "../domain/fighter/Intent";
+import { EffectsSystem } from "../fx/EffectsSystem";
 import { controlsForSlot, type ControlStrategy } from "../input/ControlScheme";
 import { animationFrames, type FightView, type FrameScheduler, type InputPort, type Status } from "./ports";
 
@@ -29,6 +30,8 @@ export class FightingGame {
   private match!: FightingMatch;
   private controls: [ControlStrategy, ControlStrategy] = [controlsForSlot(1), controlsForSlot(2)];
   private readonly adapter = new GameStatsAdapter();
+  /** Lo que se anima en la presentación; avanza con el mismo dt que la pelea (en la pausa, nada). */
+  private readonly fx = new EffectsSystem();
 
   private frameId: number | null = null;
   private lastTime: number | null = null;
@@ -142,8 +145,10 @@ export class FightingGame {
     if (this.status === "playing") {
       const intents = this.controls.map((c) => c.read(this.input)) as [Intent, Intent];
       this.match.step(dt, intents);
+      this.fx.update(dt, this.match);
     } else if (this.status === "finished" && !this.stopped) {
       this.match.step(dt, [NO_INTENT, NO_INTENT]); // final: solo la animación
+      this.fx.update(dt, this.match);
       this.outroLeft -= dt;
     }
     this.input.endFrame();
@@ -170,6 +175,7 @@ export class FightingGame {
       status: this.status,
       winnerName: w ? this.match.fighters.find((f) => f.playerId === w)?.name ?? w : null,
       stopped: this.stopped,
+      fx: this.fx,
     });
   }
 }

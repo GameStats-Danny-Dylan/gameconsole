@@ -1,6 +1,6 @@
 # Pelea (fighting)
 
-Pelea 1 contra 1 para 2 personas en el mismo teclado (modo `local-2p`), al mejor de 1, 3 o 5 rounds. Se dibuja en un `<canvas>` con rectángulos.
+Pelea 1 contra 1 para 2 personas en el mismo teclado (modo `local-2p`), al mejor de 1, 3 o 5 rounds. Todo se dibuja por código en un `<canvas>` (sin imágenes ni bibliotecas): luchadores articulados, escenario por capas y marcador clásico.
 
 | Jugador | Caminar | Saltar | Golpe | Patada | Bloqueo |
 |---|---|---|---|---|---|
@@ -25,7 +25,13 @@ npm run build
 | `src/input/` | Mapeo de teclas por jugador (`KeyboardControls`) y el teclado del navegador | Strategy |
 | `src/adapter/` | `GameStatsAdapter`: hechos de la pelea → eventos del contrato | Adapter |
 | `src/game/` | `FightingGame` (ciclo con `requestAnimationFrame` y tiempo delta, pausa, cierre) y `FightingApp extends GameApp` | Template Method |
-| `src/ui/` | `CanvasView`: arena, luchadores, barras de vida, reloj y marcador | — |
+| `src/ui/` | `CanvasView` coordina a `StageRenderer` (cielo, montañas, patio del dojo y piso, con parallax), `FighterRenderer` (luchadores articulados con ropa por personaje, sombra y destello) y `HudRenderer` (barras con estela de daño, retratos, medallones de rounds, reloj y carteles animados) | Facade (`CanvasView`) |
+| `src/ui/pose/` | `Skeleton` (huesos y cinemática directa) y `PoseAnimator` (la pose de cada estado: respiración, ciclo de piernas, salto, puño, patada, bloqueo, golpeado, caída del KO) | State (lee el estado del luchador) |
+| `src/fx/` | `EffectsSystem`: lo que se anima con el tiempo de la pelea (reloj de animaciones, estela de vida, aterrizaje, festejo) | — |
+
+## Personajes
+
+Diseños propios del juego (`src/ui/looks.ts`): **Brasa** (camiseta sin mangas carmesí con ribete naranja, faja ámbar con puntas al viento, pelo en cresta) y **Marea** (chaqueta corta turquesa cruzada, vendas blancas, canilleras y coleta larga). Las animaciones solo leen al luchador: nunca mueven una HitBox (`test/render.test.ts` lo revisa cuadro por cuadro, y que el puño o el pie dibujados lleguen a la zona del golpe).
 
 ## Eventos
 

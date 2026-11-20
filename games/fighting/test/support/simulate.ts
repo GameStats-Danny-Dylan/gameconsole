@@ -10,6 +10,7 @@ import type { Fighter } from "../../src/domain/fighter/Fighter";
 import { intent, type Intent } from "../../src/domain/fighter/Intent";
 import { FightingGame } from "../../src/game/FightingGame";
 import type { ControlStrategy } from "../../src/input/ControlScheme";
+import type { FightView } from "../../src/game/ports";
 import { FakeInput, FakeView, ManualFrames, StampHost } from "./fakes";
 
 /** Generador pseudoaleatorio con semilla (mulberry32): mismas peleas en cada corrida. */
@@ -53,12 +54,14 @@ export interface Simulated {
   finishes: { winner: string | null; reason: string }[];
 }
 
-export function simulate(seed: number, rounds: 1 | 3 | 5, matchId = `fighting-sim-${rounds}-${seed}`): Simulated {
+/** view: la vista que recibe cada cuadro (por defecto, una que no dibuja). */
+export function simulate(seed: number, rounds: 1 | 3 | 5, matchId = `fighting-sim-${rounds}-${seed}`,
+                         view: FightView = new FakeView()): Simulated {
   const rand = rng(seed);
   let clock = Date.parse("2026-11-19T12:00:00Z");
   const host = new StampHost(matchId, () => (clock += 1 + Math.floor(rand() * 40)));
   const frames = new ManualFrames();
-  const game = new FightingGame(host, new FakeView(), new FakeInput(), frames);
+  const game = new FightingGame(host, view, new FakeInput(), frames);
 
   const me = (i: 0 | 1) => () => game.fight.fighters[i];
   // Algunas peleas son "pasivas": nadie pega y los rounds terminan empatados por tiempo.
