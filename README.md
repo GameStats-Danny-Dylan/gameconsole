@@ -131,7 +131,7 @@ docker compose -f docker-compose.deploy.yml up -d --wait
 ```
 
 - Descarga las imágenes ya construidas de GitHub Container Registry (la primera vez, alrededor de 1 GB; después arranca en segundos) y espera a que los 10 servicios estén sanos. Cuando termina, la terminal vuelve a quedar libre.
-- Sin variables levanta la **versión entregada, `v1.0.2`**, aunque después se publique algo más en `main`. Para otra versión (por ejemplo `latest`, lo último de `main`):
+- Sin variables levanta la **versión entregada, `v1.0.3`**, aunque después se publique algo más en `main`. Para otra versión (por ejemplo `latest`, lo último de `main`):
   - bash: `GAMECONSOLE_TAG=latest docker compose -f docker-compose.deploy.yml up -d --wait`
   - PowerShell: `$env:GAMECONSOLE_TAG="latest"; docker compose -f docker-compose.deploy.yml up -d --wait`
 
@@ -175,9 +175,9 @@ Se guardan en dos volúmenes: `analytics-results` (los resultados de Scala) y `i
 | Variable | Por defecto | Qué es |
 |---|---|---|
 | `GATEWAY_PORT` | `8000` | Puerto de la PC donde se publica todo |
-| `GAMESTATS_TAG` | `v1.2` | Versión de las imágenes de GameStats |
+| `GAMESTATS_TAG` | `v1.3` | Versión de las imágenes de GameStats |
 | `ANALYTICS_IMAGE`, `INGESTION_IMAGE` | las de GHCR | Usar una imagen local de GameStats (por ejemplo, una versión sin publicar) |
-| `GAMECONSOLE_TAG` | `v1.0.2` | Versión de las imágenes de GameConsole (solo en `docker-compose.deploy.yml`); `latest` = lo último de `main` |
+| `GAMECONSOLE_TAG` | `v1.0.3` | Versión de las imágenes de GameConsole (solo en `docker-compose.deploy.yml`); `latest` = lo último de `main` |
 
 ## 5. Cómo se usa
 
@@ -221,8 +221,8 @@ Igual que en GameStats: el CD publica las imágenes en **GitHub Container Regist
 | `ghcr.io/gamestats-danny-dylan/gameconsole-registry` | registry |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-prolog` | IA en Prolog |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-panel` | panel |
-| `ghcr.io/gamestats-danny-dylan/gamestats-analytics:v1.2` | GameStats: análisis en Scala ([release v1.2](https://github.com/GameStats-Danny-Dylan/gamestats/releases/tag/v1.2)) |
-| `ghcr.io/gamestats-danny-dylan/gamestats-ingestion:v1.2` | GameStats: ingesta en Go (mismo release) |
+| `ghcr.io/gamestats-danny-dylan/gamestats-analytics:v1.3` | GameStats: análisis en Scala ([release v1.3](https://github.com/GameStats-Danny-Dylan/gamestats/releases/tag/v1.3)) |
+| `ghcr.io/gamestats-danny-dylan/gamestats-ingestion:v1.3` | GameStats: ingesta en Go (mismo release) |
 
 Todas para `amd64` y `arm64` (también funcionan en una Mac con chip Apple).
 
@@ -302,6 +302,10 @@ Si `ingestion` (Go) se reinicia en medio de una partida, antes la perdía y Scal
 ### GameStats v1.2: una partida terminada siempre llega a Scala
 
 Si Scala está caído cuando termina una partida, Go hace 3 reintentos rápidos (1, 2 y 4 s) y, si siguen fallando, deja la partida como `reintentando` y la reenvía cada 30 s hasta que Scala la reciba. Mientras espera, conserva su archivo en `DATA_DIR`, así que tampoco se pierde si Go se reinicia. Con esto, los dos tramos del envío reintentan sin perder eventos: consola → Go (cola por partida en el `EventSender`) y Go → Scala. Probado: 30 partidas con Scala apagado y un reinicio de Go en el medio; al volver Scala llegaron las 30, con todos sus eventos.
+
+### GameStats v1.3: partidas cortadas
+
+Si una partida se cierra antes de terminar (botón **Cerrar** o la pestaña), el juego manda `MATCH_FINISHED` con `reason: "stopped"`. GameStats la marca como **cortada**: cuenta como jugada, pero no como ganada, perdida ni empate, y en la clasificación va en su propia columna (**Cortadas**). Así coincide con lo que dice la consola al cerrar ("termina sin ganador"). Antes, una pelea cerrada ganando 1 round de 3 se contaba como victoria.
 
 ### "Cómo se juega" de cada juego
 
@@ -395,6 +399,7 @@ Resultados del 20-nov:
 | `v1.0` publicada (clon limpio, imágenes de GHCR) | 36/38: una partida recién abierta podía pausarse sola antes de quedar a la vista |
 | `v1.0.1` publicada (clon limpio, imágenes de GHCR, GameStats `v1.2`) | **38/38** |
 | `v1.0.2` desde el código, entrando por la IP de la red (`http://<IP>:8000`) | **38/38** (antes, crear una partida por IP fallaba: ver la sección 5) |
+| `v1.0.3` desde el código, con GameStats `v1.3` (partidas cortadas) | **38/38**; además, una pelea cerrada tras ganar el round 1 queda sin ganador y en "Cortadas" |
 
 ## 12. Documentación de cada parte
 
@@ -422,5 +427,5 @@ Resultados del 20-nov:
 | Docker, CI/CD, deployment | ✅ |
 | Tetris y peleas | ✅ |
 | Diseño DnD Games y usabilidad (heurísticas de Nielsen) | ✅ |
-| GameStats v1.2 publicado y en los compose (`GAMESTATS_TAG=v1.2`) | ✅ |
+| GameStats v1.3 publicado y en los compose (`GAMESTATS_TAG=v1.3`) | ✅ |
 | Video de demostración | pendiente |

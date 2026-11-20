@@ -133,13 +133,14 @@ function generalPage(rows: GameRow[], s: Snapshot): Child[] {
       tile("Jugadores", o ? String(o.players) : "—", "contando a la computadora"),
       tile("Una partida dura", o ? duration(o.avgDurationSeconds) : "—", "en promedio")),
 
-    o && h("section", { class: "split" },
-      h("div", { class: "card" },
-        sectionHead("Clasificación general", "Todos los juegos juntos. Va primero quien tiene más victorias; si empatan, el de mejor porcentaje."),
-        leaderboard(o.standings ?? [], null)),
-      h("div", { class: "card" },
-        sectionHead("Jugadas destacadas", "Lo que GameStats encontró en las partidas de todos los juegos."),
-        highlights(o.topPatterns, "Todavía no pasó nada destacado."))),
+    // La clasificación a todo el ancho (así sus columnas se leen completas) y
+    // las jugadas destacadas debajo, en tarjetas que se acomodan al ancho.
+    o && h("section", { class: "card" },
+      sectionHead("Clasificación general", "Todos los juegos juntos. Va primero quien tiene más victorias; si empatan, el de mejor porcentaje."),
+      leaderboard(o.standings ?? [], null)),
+    o && h("section", { class: "card wide-highlights" },
+      sectionHead("Jugadas destacadas", "Lo que GameStats encontró en las partidas de todos los juegos."),
+      highlights(o.topPatterns, "Todavía no pasó nada destacado.")),
 
     h("section", { class: "card", "aria-label": "Partidas en curso" },
       sectionHead("Partidas que se están jugando", "Se actualiza sola mientras la gente juega."),
@@ -174,7 +175,7 @@ function gamePage(r: GameRow, snap: Snapshot): Child[] {
           sectionHead("Clasificación", "Va primero quien tiene más victorias en este juego; si empatan, el de mejor porcentaje."),
           leaderboard(s.standings ?? [], r.gameId),
           s.matchesWithoutWinner > 0 && h("p", { class: "foot" },
-            `${plural(s.matchesWithoutWinner, "partida terminó", "partidas terminaron")} sin ganador: empate, se cerró antes o era de una sola persona.`)),
+            `${plural(s.matchesWithoutWinner, "partida terminó", "partidas terminaron")} sin ganador: empate o se cerró antes de terminar. Las cortadas no cuentan como ganadas ni perdidas.`)),
 
     s && s.matches > 0 && h("section", { class: "pair" },
       h("div", { class: "card" },
@@ -235,12 +236,13 @@ function leaderboard(standings: Standing[], game: string | null): HTMLElement {
   const head = h("tr", {},
     h("th", { class: "c-pos" }, "#"),
     h("th", {}, "Jugador"),
-    h("th", { class: "num" }, "Partidas"),
-    h("th", { class: "num" }, "Ganadas"),
-    h("th", { class: "num" }, "Perdidas"),
-    h("th", { class: "num c-nores", title: "Empates, partidas que se cerraron antes o de un solo jugador" }, "Sin ganador"),
+    h("th", { class: "num", title: "Partidas jugadas" }, label("Partidas", "PJ")),
+    h("th", { class: "num", title: "Partidas ganadas" }, label("Ganadas", "PG")),
+    h("th", { class: "num", title: "Partidas perdidas" }, label("Perdidas", "PP")),
+    h("th", { class: "num c-nores", title: "Partidas jugadas hasta el final que terminaron sin ganador (empate)" }, "Sin ganador"),
+    h("th", { class: "num c-nores", title: "Partidas que se cerraron antes de terminar: no cuentan como ganadas ni perdidas" }, "Cortadas"),
     showExtra && h("th", { class: "num c-extra" }, extra!.label),
-    h("th", { class: "c-rate" }, "% de victorias"));
+    h("th", { class: "c-rate", title: "Porcentaje de victorias" }, label("% de victorias", "%")));
 
   const body = standings.map((s, i) => {
     const name = playerName(s.playerId);
@@ -253,12 +255,24 @@ function leaderboard(standings: Standing[], game: string | null): HTMLElement {
       h("td", { class: "num win" }, String(s.wins)),
       h("td", { class: "num" }, String(s.losses)),
       h("td", { class: "num c-nores muted-num" }, String(s.noResult)),
+      h("td", { class: "num c-nores muted-num" }, String(s.interrupted ?? 0)),
       showExtra && h("td", { class: "num c-extra" }, metric ? metricValue(extra!.metric, metric[extra!.use]) : "—"),
       h("td", { class: "c-rate" }, rateMeter(s.winRate, `${name}: ganó ${s.wins} de ${s.played}`)));
   });
 
-  return h("div", { class: "table-scroll" },
-    h("table", { class: "leaderboard" }, h("thead", {}, head), h("tbody", {}, ...body)));
+  return h("div", {},
+    h("div", { class: "table-scroll" },
+      h("table", { class: "leaderboard" }, h("thead", {}, head), h("tbody", {}, ...body))),
+    // Solo en pantallas angostas, donde los títulos se acortan.
+    h("p", { class: "short-legend" },
+      "PJ: partidas jugadas · PG: ganadas · PP: perdidas. En una pantalla más ancha se ven también las sin ganador y las cortadas."));
+}
+
+/** Título de columna con versión corta para pantallas angostas (el CSS elige cuál se ve). */
+function label(long: string, short: string): DocumentFragment {
+  const f = document.createDocumentFragment();
+  f.append(h("span", { class: "lbl-long" }, long), h("span", { class: "lbl-short", "aria-hidden": "true" }, short));
+  return f;
 }
 
 /**
@@ -272,12 +286,12 @@ function scoreBoard(standings: Standing[], cfg: { metric: string; best: string; 
     const m = s.metrics[cfg.metric];
     return m ? metricValue(cfg.metric, m[use]) : "—";
   };
-  return h("div", { class: "table-scroll" },
+  return h("div", {}, h("div", { class: "table-scroll" },
     h("table", { class: "leaderboard score-board" },
       h("thead", {}, h("tr", {},
         h("th", { class: "c-pos" }, "#"),
         h("th", {}, "Jugador"),
-        h("th", { class: "num" }, "Partidas"),
+        h("th", { class: "num", title: "Partidas jugadas" }, label("Partidas", "PJ")),
         h("th", { class: "num c-extra" }, cfg.best),
         h("th", { class: "num c-avg" }, cfg.average))),
       h("tbody", {}, ...rows.map((s, i) => {
@@ -288,7 +302,8 @@ function scoreBoard(standings: Standing[], cfg: { metric: string; best: string; 
           h("td", { class: "num" }, String(s.played)),
           h("td", { class: "num c-extra best" }, value(s, "max")),
           h("td", { class: "num c-avg" }, value(s, "avg")));
-      }))));
+      })))),
+    h("p", { class: "short-legend" }, "PJ: partidas jugadas."));
 }
 
 /** Porcentaje de victorias: el número arriba y debajo una barra corta (no se mezcla con la columna de al lado). */

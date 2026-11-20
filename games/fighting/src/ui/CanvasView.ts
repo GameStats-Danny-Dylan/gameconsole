@@ -23,6 +23,8 @@ import { StageRenderer, type Theme } from "./StageRenderer";
 
 const W = 960;
 const H = 540;
+/** Ancho interno máximo del canvas (ver resize). */
+const MAX_W = 1280;
 
 export class CanvasView implements FightView {
   private readonly canvas: HTMLCanvasElement;
@@ -84,7 +86,11 @@ export class CanvasView implements FightView {
 
   private resize(): void {
     const rect = this.canvas.getBoundingClientRect();
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    // Escala interna: la del monitor, pero sin pasar de MAX_W píxeles de ancho.
+    // El escenario se redibuja entero en cada cuadro; a pantalla completa en una
+    // laptop al 150 % el canvas llegaba a 2700 px y bajaba a ~34 cuadros por
+    // segundo. Con 1280 px va a ~50 y se ve casi igual (el navegador lo estira).
+    const dpr = Math.min(2, window.devicePixelRatio || 1, MAX_W / Math.max(1, rect.width));
     const w = Math.max(1, Math.round(rect.width * dpr));
     const h = Math.max(1, Math.round(rect.height * dpr));
     if (this.canvas.width !== w || this.canvas.height !== h) {
