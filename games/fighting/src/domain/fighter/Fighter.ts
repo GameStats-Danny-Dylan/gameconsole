@@ -9,9 +9,10 @@
 import type { Arena } from "../Arena";
 import type { CombatRules, Combatant, Move } from "../CombatRules";
 import { HitBox } from "../HitBox";
+import { InputBuffer } from "./InputBuffer";
 import type { Intent } from "./Intent";
 import {
-  AttackState, BlockState, HitState, IdleState, KoState,
+  AttackState, BlockState, HitState, IdleState, JumpState, KoState,
   type FighterState, type FighterStateName,
 } from "./states";
 
@@ -21,6 +22,16 @@ export interface Physics {
   walkSpeed: number;
   jumpSpeed: number;
   gravity: number;
+  /** Aceleración al caminar (px/s²): arranca en unos cuadros, no a velocidad plena de golpe. */
+  walkAccel: number;
+  /** Fricción (1/s) que frena los empujones: la velocidad se multiplica por e^(-friction·dt). */
+  friction: number;
+  /** Arco del salto: cerca de la cima (|vy| < apexSpeed) la gravedad baja a apexGravity y al caer sube a fallGravity. */
+  apexSpeed: number;
+  apexGravity: number;
+  fallGravity: number;
+  /** Segundos que se recuerda un golpe o salto pulsado antes de poder hacerlo (InputBuffer). */
+  inputBuffer: number;
 }
 
 export const DEFAULT_PHYSICS: Physics = {
@@ -29,6 +40,12 @@ export const DEFAULT_PHYSICS: Physics = {
   walkSpeed: 290,
   jumpSpeed: 820,
   gravity: 2400,
+  walkAccel: 2600,
+  friction: 10,
+  apexSpeed: 170,
+  apexGravity: 0.55,
+  fallGravity: 1.2,
+  inputBuffer: 0.1,
 };
 
 export type Side = "left" | "right";
@@ -67,6 +84,7 @@ export class Fighter implements Combatant {
   private hp: number;
   private current: FighterState = new IdleState();
   private readonly signals: FighterSignal[] = [];
+  private readonly buffer: InputBuffer;
 
   constructor(
     spec: FighterSpec,
@@ -82,6 +100,7 @@ export class Fighter implements Combatant {
     this.color = spec.color;
     this.facing = spec.side === "left" ? 1 : -1;
     this.hp = rules.config.maxHealth;
+    this.buffer = new InputBuffer(physics.inputBuffer);
     this.resetForRound();
   }
 
@@ -122,16 +141,27 @@ export class Fighter implements Combatant {
   /** Un paso de dt segundos: el estado decide, después la física mueve. */
   update(intent: Intent, dt: number): void {
     this.stateTime += dt;
-    const next = this.current.update(this, intent, dt);
-    if (next) this.changeState(next);
+    const next = this.current.update(this, this.buffer.feed(intent, dt), dt);
+    if (next) {
+      this.changeState(next);
+      if (next instanceof AttackState) this.buffer.consumeAttack();
+      if (next instanceof JumpState && next.takeoff) this.buffer.consumeJump();
+    }
 
-    if (!this.grounded || this.vy < 0) this.vy += this.physics.gravity * dt;
+    if (!this.grounded || this.vy < 0) this.vy += this.physics.gravity * this.gravityScale() * dt;
     this.y += this.vy * dt;
     if (this.y >= this.arena.floorY) {
       this.y = this.arena.floorY;
       this.vy = 0;
     }
     this.x = this.arena.clampX(this.x + this.vx * dt, this.physics.width);
+  }
+
+  /** Arco del salto: sube rápido, cuelga un instante en la cima y cae un poco más rápido. */
+  private gravityScale(): number {
+    const p = this.physics;
+    if (Math.abs(this.vy) < p.apexSpeed) return p.apexGravity;
+    return this.vy > 0 ? p.fallGravity : 1;
   }
 
   /** Mira hacia una posición (solo si el estado lo permite: no se gira a mitad de un golpe). */
@@ -194,6 +224,7 @@ export class Fighter implements Combatant {
     this.vy = 0;
     this.facing = this.side === "left" ? 1 : -1;
     this.signals.length = 0;
+    this.buffer.clear();
     this.changeState(new IdleState());
   }
 }

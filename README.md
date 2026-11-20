@@ -308,7 +308,7 @@ gameconsole/
 | 4 en línea | 44 (Vitest), incluidas 3000 partidas al azar contra una copia de las reglas de Scala | `cd games/connect4 && npm ci && npm test` |
 | 4 en línea contra GameStats real | partidas simuladas y una entera contra Prolog | con el compose corriendo: `GAMESTATS_URL=http://localhost:8000 npm run test:gamestats` |
 | Tetris | 58 (Vitest), incluidos eventos contra una copia de las reglas de Scala | `cd games/tetris && npm ci && npm test` |
-| Peleas | 63 (Vitest), incluidas peleas al azar contra una copia de las reglas de Scala | `cd games/fighting && npm ci && npm test` |
+| Peleas | 106 (Vitest), incluidas peleas al azar contra una copia de las reglas de Scala, el dibujo, los efectos y el sonido | `cd games/fighting && npm ci && npm test` |
 | Registry | 15 (`node:test`) | `cd registry && npm ci && npm test` |
 | Panel | 7 (Vitest) | `cd panel && npm ci && npm test` |
 | Prolog | 18 (plunit) | `cd prolog && swipl tests.pl` |
