@@ -64,9 +64,12 @@ export class ConsoleShell {
       ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []),
       el("p", { class: "signal hint-signal", text: "Cada jugada se guarda en GameStats" }));
 
+    // La marca va grande (DnD Games) y "Consola de juegos" como antetítulo.
+    const header = appHeader("DnD Games", "Juegos independientes · partidas en paralelo · estadísticas en vivo",
+      this.guide.button, statsButton);
+    header.querySelector(".brand-kicker")!.textContent = "🎄 Consola de juegos navideña";
     this.root.append(
-      appHeader("Consola de juegos", "Juegos independientes · partidas en paralelo · estadísticas en vivo",
-        this.guide.button, statsButton),
+      header,
       statusbar,
       this.guide.element,
       this.grid.element,

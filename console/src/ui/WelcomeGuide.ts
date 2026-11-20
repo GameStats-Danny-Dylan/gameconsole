@@ -17,17 +17,17 @@ const STEPS: [string, string, string][] = [
 export class WelcomeGuide {
   readonly element = el("section", { class: "welcome", "aria-labelledby": "welcome-title" });
   /** El botón "?" de la cabecera. */
-  readonly button = el("button", { type: "button", class: "btn", title: "Cómo funciona GameConsole" },
+  readonly button = el("button", { type: "button", class: "btn", title: "Cómo funciona DnD Games" },
     el("span", { class: "btn-icon", "aria-hidden": "true", text: "?" }), "Guía");
 
   constructor() {
-    const ok = el("button", { type: "button", class: "btn primary", text: "¡Entendido, a jugar!" });
+    const ok = el("button", { type: "button", class: "btn primary", text: "🎄 ¡Entendido, a jugar!" });
     ok.addEventListener("click", () => this.hide(true));
     this.element.append(
       el("div", { class: "welcome-text" },
-        el("span", { class: "drawer-kicker", text: "Bienvenido" }),
-        el("h2", { id: "welcome-title", text: "Una consola, muchos juegos, estadísticas en vivo" }),
-        el("p", { text: "GameConsole carga juegos independientes, deja jugar varias partidas al mismo tiempo y muestra lo que calcula GameStats con cada jugada." })),
+        el("span", { class: "drawer-kicker", text: "❄ Primera vez aquí" }),
+        el("h2", { id: "welcome-title", text: "¡Bienvenido a DnD Games!" }),
+        el("p", { text: "Una consola navideña con juegos independientes: abre varias partidas al mismo tiempo y mira en vivo lo que calcula GameStats con cada jugada." })),
       el("ol", { class: "welcome-steps" },
         ...STEPS.map(([icon, title, text], i) => el("li", {},
           el("span", { class: "step-icon", "aria-hidden": "true", text: icon }),

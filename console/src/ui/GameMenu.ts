@@ -12,12 +12,9 @@ import { playerLabel, type LiveSnapshot } from "../catalog/LiveStats";
 import { MODE_LABELS } from "../domain/MatchSetup";
 import { el } from "./dom";
 
-/** Un tono por juego, siempre el mismo (sale del id), para darle color propio a cada tarjeta. */
-function hueOf(id: string): number {
-  let h = 0;
-  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 360;
-  return h;
-}
+
+/** Colores de papel de regalo: rojo, verde, azul, dorado y violeta. */
+const GIFT_HUES = [140, 352, 212, 42, 280];
 
 interface CardEntry { key: string; card: HTMLElement; live: HTMLElement; statsId: string }
 
@@ -31,7 +28,7 @@ export class GameMenu {
   constructor(private readonly onPlay: (gameId: string) => void) {
     this.element.append(
       el("header", { class: "section-head" },
-        el("span", { class: "kicker", text: "Biblioteca" }),
+        el("span", { class: "kicker", text: "El taller de juegos" }),
         el("h2", { text: "Elige un juego" }),
         el("p", { text: "Cada juego es una app aparte que la consola encontró sola. Puedes abrir varias partidas a la vez." })),
       this.empty,
@@ -41,7 +38,7 @@ export class GameMenu {
 
   render(s: CatalogSnapshot): void {
     const seen = new Set<string>();
-    for (const game of s.games) {
+    for (const [i, game] of s.games.entries()) {
       seen.add(game.id);
       const key = JSON.stringify(game);
       let entry = this.cards.get(game.id);
@@ -53,6 +50,8 @@ export class GameMenu {
         this.paintLive(entry);
       }
       this.grid.append(entry.card);   // append mueve la tarjeta: queda en el orden del catálogo
+      // Cada regalo con un color navideño distinto, en el orden del menú.
+      entry.card.style.setProperty("--game-hue", String(GIFT_HUES[i % GIFT_HUES.length]));
     }
     for (const [id, { card }] of this.cards)
       if (!seen.has(id)) { card.remove(); this.cards.delete(id); }
@@ -95,7 +94,7 @@ export class GameMenu {
         el("span", { class: "game-icon placeholder", "aria-hidden": "true", text: initial })), { once: true });
 
     const play = el("button", { type: "button", class: "btn primary play", "aria-label": `Jugar ${g.name}` },
-      el("span", { class: "btn-icon", "aria-hidden": "true", text: "▶" }), "Jugar");
+      el("span", { class: "btn-icon", "aria-hidden": "true", text: "🎁" }), "¡A jugar!");
     play.addEventListener("click", () => this.onPlay(g.id));
     const live = el("div", { class: "game-live", "aria-label": "En GameStats" });
     // Los modos ya dicen cuántos juegan: no se repite la cantidad de jugadores.
@@ -114,7 +113,6 @@ export class GameMenu {
         live,
         play),
     );
-    card.style.setProperty("--game-hue", String(hueOf(g.id)));
     return { key, card, live, statsId: g.gameStatsId };
   }
 }

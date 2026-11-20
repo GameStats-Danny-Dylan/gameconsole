@@ -79,8 +79,15 @@ export function themeToggle(): HTMLButtonElement {
   return b;
 }
 
-/** Logo de GameConsole: un control con 4 fichas en línea. */
-export const LOGO = `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><linearGradient id="gc-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--accent)"/><stop offset="1" style="stop-color:var(--accent-2)"/></linearGradient></defs><rect x="1" y="1" width="30" height="30" rx="9" fill="url(#gc-g)"/><circle cx="8.5" cy="16" r="2.6" fill="#fff"/><circle cx="13.5" cy="16" r="2.6" fill="#fff" opacity=".85"/><circle cx="18.5" cy="16" r="2.6" fill="#fff" opacity=".7"/><circle cx="23.5" cy="16" r="2.6" fill="#fff" opacity=".55"/></svg>`;
+/** Nombre de la consola (Danny y Dylan). */
+export const BRAND = "DnD Games";
+
+/**
+ * Logo de DnD Games: un adorno navideño (esfera con su tapa y gancho, una
+ * banda dorada y un brillo). Los colores salen del tema (style, porque var()
+ * no funciona en los atributos de presentación de un SVG).
+ */
+export const LOGO = `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><radialGradient id="gc-g" cx=".36" cy=".34" r=".78"><stop offset="0" style="stop-color:#ff9d9d"/><stop offset=".5" style="stop-color:var(--accent)"/><stop offset="1" style="stop-color:#6e0d17"/></radialGradient></defs><circle cx="16" cy="3.6" r="2" fill="none" style="stroke:var(--accent-2)" stroke-width="1.4"/><rect x="12.6" y="5.2" width="6.8" height="4" rx="1.2" style="fill:var(--accent-2)"/><circle cx="16" cy="19.5" r="11.2" fill="url(#gc-g)"/><path d="M5.6 17.6c3.4 2 6.9 2.9 10.4 2.9s7-.9 10.4-2.9" fill="none" style="stroke:var(--accent-2)" stroke-width="2.2" stroke-linecap="round"/><circle cx="10" cy="20.6" r="1.1" style="fill:var(--accent-2)"/><circle cx="16" cy="21.8" r="1.1" style="fill:var(--accent-2)"/><circle cx="22" cy="20.6" r="1.1" style="fill:var(--accent-2)"/><ellipse cx="11.4" cy="13.6" rx="2.6" ry="1.6" fill="#fff" opacity=".55" transform="rotate(-35 11.4 13.6)"/></svg>`;
 
 /** Encabezado común: logo, nombre de la app y el botón de tema. */
 export function appHeader(title: string, subtitle: string, ...extra: HTMLElement[]): HTMLElement {
@@ -94,7 +101,7 @@ export function appHeader(title: string, subtitle: string, ...extra: HTMLElement
   const names = document.createElement("div");
   const small = document.createElement("span");
   small.className = "brand-kicker";
-  small.textContent = "GameConsole";
+  small.textContent = BRAND;
   const h1 = document.createElement("h1");
   h1.textContent = title;
   names.append(small, h1);
