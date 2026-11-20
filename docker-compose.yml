@@ -9,7 +9,7 @@
 #
 # Variables (opcionales, en la terminal o en un archivo .env):
 #   GATEWAY_PORT   puerto de la PC donde se publica todo (8000)
-#   GAMESTATS_TAG  versión de las imágenes de GameStats (v1.2)
+#   GAMESTATS_TAG  versión de las imágenes de GameStats (v1.3)
 
 name: gameconsole
 
@@ -47,12 +47,12 @@ services:
 
   # ------------------------------------------------------------------
   # GameStats (Proyecto 1): imágenes publicadas, no se compilan aquí.
-  # Se descargan de ghcr.io/gamestats-danny-dylan (release v1.2 del repo gamestats).
+  # Se descargan de ghcr.io/gamestats-danny-dylan (release v1.3 del repo gamestats).
   # ANALYTICS_IMAGE / INGESTION_IMAGE permiten probar una versión local de
   # GameStats sin publicarla (por ejemplo, una construida desde ../gamestats).
   # ------------------------------------------------------------------
   analytics:
-    image: ${ANALYTICS_IMAGE:-ghcr.io/gamestats-danny-dylan/gamestats-analytics:${GAMESTATS_TAG:-v1.2}}
+    image: ${ANALYTICS_IMAGE:-ghcr.io/gamestats-danny-dylan/gamestats-analytics:${GAMESTATS_TAG:-v1.3}}
     environment:
       PORT: "8081"
       RESULTS_DIR: "/data"
@@ -66,7 +66,7 @@ services:
     restart: unless-stopped
 
   ingestion:
-    image: ${INGESTION_IMAGE:-ghcr.io/gamestats-danny-dylan/gamestats-ingestion:${GAMESTATS_TAG:-v1.2}}
+    image: ${INGESTION_IMAGE:-ghcr.io/gamestats-danny-dylan/gamestats-ingestion:${GAMESTATS_TAG:-v1.3}}
     environment:
       PORT: "8080"
       SCALA_URL: "http://analytics:8081"

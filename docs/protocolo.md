@@ -367,8 +367,9 @@ Estas son las rutas nuevas de GameStats `v1.1`:
   "actions":  { "DISC_DROPPED": 72, "UNDO": 2 },
   "patterns": [{ "rule": "PERFECT_DEFENSE", "count": 2 }],
   // Clasificación (máx. 20): más victorias, después mejor % y más partidas.
-  // played = wins + losses + noResult (noResult: empate, abandono o de un solo jugador).
-  "standings": [{ "playerId": "ana", "played": 2, "wins": 2, "losses": 0, "noResult": 0, "winRate": 1,
+  // played = wins + losses + noResult + interrupted
+  // (noResult: jugada hasta el final sin ganador; interrupted, v1.3: cerrada antes de terminar).
+  "standings": [{ "playerId": "ana", "played": 2, "wins": 2, "losses": 0, "noResult": 0, "interrupted": 0, "winRate": 1,
                   "metrics": { "discs": { "avg": 11, "min": 9, "max": 13 } } }]
 }
 

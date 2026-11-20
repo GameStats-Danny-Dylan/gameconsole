@@ -7,8 +7,8 @@
 #   docker compose -f docker-compose.deploy.yml logs tunnel                     # ahí aparece la URL *.trycloudflare.com
 #   docker compose -f docker-compose.deploy.yml down                            # apagar
 #
-# Versiones: GAMECONSOLE_TAG (por defecto v1.0.2, la versión entregada; latest = lo último de main) y
-# GAMESTATS_TAG (por defecto v1.2). Puerto: GATEWAY_PORT (8000).
+# Versiones: GAMECONSOLE_TAG (por defecto v1.0.3, la versión entregada; latest = lo último de main) y
+# GAMESTATS_TAG (por defecto v1.3). Puerto: GATEWAY_PORT (8000).
 
 name: gameconsole
 
@@ -18,7 +18,7 @@ x-gc: &gc
 services:
   gateway:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-gateway:${GAMECONSOLE_TAG:-v1.0.2}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-gateway:${GAMECONSOLE_TAG:-v1.0.3}
     ports:
       - "${GATEWAY_PORT:-8000}:80"
     depends_on:
@@ -30,46 +30,46 @@ services:
 
   registry:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-registry:${GAMECONSOLE_TAG:-v1.0.2}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-registry:${GAMECONSOLE_TAG:-v1.0.3}
     environment:
       PORT: "8080"
       HEARTBEAT_TIMEOUT_MS: "15000"
 
   prolog:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-prolog:${GAMECONSOLE_TAG:-v1.0.2}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-prolog:${GAMECONSOLE_TAG:-v1.0.3}
     environment:
       PORT: "8080"
 
   panel:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-panel:${GAMECONSOLE_TAG:-v1.0.2}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-panel:${GAMECONSOLE_TAG:-v1.0.3}
 
   console:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-console:${GAMECONSOLE_TAG:-v1.0.2}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-console:${GAMECONSOLE_TAG:-v1.0.3}
 
   game-connect4:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-connect4:${GAMECONSOLE_TAG:-v1.0.2}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-connect4:${GAMECONSOLE_TAG:-v1.0.3}
     environment:
       REGISTRY_URL: "http://registry:8080"
 
   game-tetris:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-tetris:${GAMECONSOLE_TAG:-v1.0.2}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-tetris:${GAMECONSOLE_TAG:-v1.0.3}
     environment:
       REGISTRY_URL: "http://registry:8080"
 
   game-fighting:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-fighting:${GAMECONSOLE_TAG:-v1.0.2}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-fighting:${GAMECONSOLE_TAG:-v1.0.3}
     environment:
       REGISTRY_URL: "http://registry:8080"
 
   analytics:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gamestats-analytics:${GAMESTATS_TAG:-v1.2}
+    image: ghcr.io/gamestats-danny-dylan/gamestats-analytics:${GAMESTATS_TAG:-v1.3}
     environment:
       PORT: "8081"
       RESULTS_DIR: "/data"
@@ -83,7 +83,7 @@ services:
 
   ingestion:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gamestats-ingestion:${GAMESTATS_TAG:-v1.2}
+    image: ghcr.io/gamestats-danny-dylan/gamestats-ingestion:${GAMESTATS_TAG:-v1.3}
     environment:
       PORT: "8080"
       SCALA_URL: "http://analytics:8081"

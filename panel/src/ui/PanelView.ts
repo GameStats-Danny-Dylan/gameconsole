@@ -174,7 +174,7 @@ function gamePage(r: GameRow, snap: Snapshot): Child[] {
           sectionHead("Clasificación", "Va primero quien tiene más victorias en este juego; si empatan, el de mejor porcentaje."),
           leaderboard(s.standings ?? [], r.gameId),
           s.matchesWithoutWinner > 0 && h("p", { class: "foot" },
-            `${plural(s.matchesWithoutWinner, "partida terminó", "partidas terminaron")} sin ganador: empate, se cerró antes o era de una sola persona.`)),
+            `${plural(s.matchesWithoutWinner, "partida terminó", "partidas terminaron")} sin ganador: empate o se cerró antes de terminar. Las cortadas no cuentan como ganadas ni perdidas.`)),
 
     s && s.matches > 0 && h("section", { class: "pair" },
       h("div", { class: "card" },
@@ -238,7 +238,8 @@ function leaderboard(standings: Standing[], game: string | null): HTMLElement {
     h("th", { class: "num" }, "Partidas"),
     h("th", { class: "num" }, "Ganadas"),
     h("th", { class: "num" }, "Perdidas"),
-    h("th", { class: "num c-nores", title: "Empates, partidas que se cerraron antes o de un solo jugador" }, "Sin ganador"),
+    h("th", { class: "num c-nores", title: "Partidas jugadas hasta el final que terminaron sin ganador (empate)" }, "Sin ganador"),
+    h("th", { class: "num c-nores", title: "Partidas que se cerraron antes de terminar: no cuentan como ganadas ni perdidas" }, "Cortadas"),
     showExtra && h("th", { class: "num c-extra" }, extra!.label),
     h("th", { class: "c-rate" }, "% de victorias"));
 
@@ -253,6 +254,7 @@ function leaderboard(standings: Standing[], game: string | null): HTMLElement {
       h("td", { class: "num win" }, String(s.wins)),
       h("td", { class: "num" }, String(s.losses)),
       h("td", { class: "num c-nores muted-num" }, String(s.noResult)),
+      h("td", { class: "num c-nores muted-num" }, String(s.interrupted ?? 0)),
       showExtra && h("td", { class: "num c-extra" }, metric ? metricValue(extra!.metric, metric[extra!.use]) : "—"),
       h("td", { class: "c-rate" }, rateMeter(s.winRate, `${name}: ganó ${s.wins} de ${s.played}`)));
   });

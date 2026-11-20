@@ -123,6 +123,8 @@ public/
 
 Todo se dibuja por código; `CanvasView` solo coordina y cada renderer hace lo suyo: `StageRenderer` (escenario por capas con parallax), `FighterRenderer` (luchadores articulados), `EffectsRenderer` (partículas, destello del KO y contador de combo) y `HudRenderer` (marcador). El mundo se dibuja a través de la cámara de los efectos (sacudida y zoom); el marcador queda fijo.
 
+**Rendimiento:** el escenario se redibuja entero en cada cuadro, así que el canvas trabaja como máximo a **1280 px de ancho** y el navegador lo estira al tamaño de la pantalla. A pantalla completa en una laptop con la pantalla al 150 %, el canvas llegaba a 2700 px y bajaba a unos 34 cuadros por segundo; con el límite va a unos 50 (medido en Edge) y se ve casi igual.
+
 Los luchadores son esqueletos (`Skeleton`, con cinemática directa) y `PoseAnimator` da la pose de cada estado: respiración, ciclo de piernas, salto, puño, patada, bloqueo, golpeado y caída del KO. Diseños propios del juego (`src/ui/looks.ts`): **Brasa** (camiseta sin mangas carmesí con ribete naranja, faja ámbar con puntas al viento, pelo en cresta) y **Marea** (chaqueta corta turquesa cruzada, vendas blancas, canilleras y coleta larga). Las animaciones solo leen al luchador: nunca mueven una HitBox (`test/render.test.ts` lo revisa cuadro por cuadro, y que el puño o el pie dibujados lleguen a la zona del golpe).
 
 ### Sensación de juego

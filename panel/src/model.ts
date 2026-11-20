@@ -14,7 +14,8 @@ export interface Standing {
   played: number;
   wins: number;
   losses: number;
-  noResult: number;   // empates, partidas cerradas antes o de un solo jugador
+  noResult: number;   // jugadas hasta el final sin ganador: empates o de un solo jugador
+  interrupted?: number; // GameStats v1.3: cerradas antes de terminar (antes iban en noResult)
   winRate: number;    // 0 a 1
   metrics: Record<string, MetricSummary>;
 }
