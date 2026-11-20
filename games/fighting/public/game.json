@@ -1,0 +1,18 @@
+{
+  "id": "fighting",
+  "name": "Pelea",
+  "version": "1.0.0",
+  "description": "Pelea 1 contra 1 para 2 personas en el mismo teclado, al mejor de 1, 3 o 5 rounds.",
+  "gameStatsId": "fighting",
+  "gameVersion": "1.0",
+  "entry": "/games/fighting/",
+  "icon": "/games/fighting/icon.svg",
+  "players": { "min": 2, "max": 2 },
+  "modes": ["local-2p"],
+  "options": [
+    { "key": "rounds", "label": "Rounds", "type": "select",
+      "values": [1, 3, 5], "labels": ["1 round", "Mejor de 3", "Mejor de 5"], "default": 3 }
+  ],
+  "howToPlay": "Jugador 1 (izquierda): A y D caminan, W salta, F golpea, G bloquea; S + F es patada. Jugador 2 (derecha): flechas ← → caminan, ↑ salta, K golpea, L bloquea; ↓ + K es patada. Golpear en el aire también es patada. Deja al rival sin vida (KO) o termina el tiempo con más vida para ganar el round; gana quien gane la mayoría de los rounds.",
+  "protocol": "gameconsole/1"
+}

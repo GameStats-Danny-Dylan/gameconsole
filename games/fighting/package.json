@@ -1,0 +1,21 @@
+{
+  "name": "@gameconsole/fighting",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pelea 1 contra 1 para GameConsole: 2 personas en el mismo teclado, al mejor de N rounds.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@gameconsole/sdk": "file:../../sdk"
+  }
+}
