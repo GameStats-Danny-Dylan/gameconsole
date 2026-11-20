@@ -41,11 +41,11 @@ export class MatchTile {
   private readonly players = el("p", { class: "match-players" });
   private readonly status = el("span", { class: "match-status" });
   private readonly detail = el("p", { class: "match-detail", role: "status" });
-  private readonly howButton = el("button", { type: "button", class: "btn small ghost", "aria-expanded": "false", text: "? Cómo se juega" });
+  private readonly howButton = el("button", { type: "button", class: "btn small link", "aria-expanded": "false" });
   private readonly pauseButton = el("button", { type: "button", class: "btn small" });
-  private readonly restartButton = el("button", { type: "button", class: "btn small", text: "Reiniciar" });
-  private readonly newButton = el("button", { type: "button", class: "btn small", text: "Nueva partida" });
-  private readonly closeButton = el("button", { type: "button", class: "btn small danger", text: "Cerrar" });
+  private readonly restartButton = el("button", { type: "button", class: "btn small" });
+  private readonly newButton = el("button", { type: "button", class: "btn small" });
+  private readonly closeButton = el("button", { type: "button", class: "btn small danger" });
   private readonly howTo = el("section", { class: "tile-howto", hidden: true, "aria-label": "Cómo se juega" });
   /** Donde va el iframe. Es siempre el mismo elemento, aunque cambie la sesión. */
   readonly stage = el("div", { class: "match-stage" });
@@ -60,10 +60,12 @@ export class MatchTile {
         el("div", { class: "match-names" }, this.title, this.players), this.status),
       el("div", { class: "match-body" }, this.stage, this.howTo),
       el("footer", { class: "match-bar" },
-        this.detail,
+        el("div", { class: "match-help" }, this.howButton, this.detail),
         el("div", { class: "match-buttons" },
-          this.howButton, this.pauseButton, this.restartButton, this.newButton, this.closeButton)),
+          this.pauseButton, this.restartButton, this.newButton, this.closeButton)),
     );
+    label(this.howButton, "?", "Cómo se juega");
+    label(this.newButton, "＋", "Nueva partida");
 
     this.pauseButton.addEventListener("click", () => {
       if (this.current.status === "paused") this.current.resume();
@@ -121,21 +123,17 @@ export class MatchTile {
     const risky = s === "playing" || s === "paused";
     if (!risky || this.armed?.button === button) { this.disarm(); action(); return; }
     this.disarm();
-    const original = button.textContent ?? "";
-    button.textContent = question;
+    label(button, "⚠", question);
     button.classList.add("confirm");
     this.detail.textContent = "La partida en curso terminará sin ganador. Pulsa otra vez para confirmar.";
     const timer = setTimeout(() => this.disarm(), CONFIRM_MS);
     this.armed = { button, timer };
-    button.dataset.original = original;
   }
 
   private disarm(): void {
     if (!this.armed) return;
     clearTimeout(this.armed.timer);
-    const b = this.armed.button;
-    b.textContent = b.dataset.original ?? b.textContent;
-    b.classList.remove("confirm");
+    this.armed.button.classList.remove("confirm");
     this.armed = null;
     this.render();
   }
@@ -173,12 +171,12 @@ export class MatchTile {
     this.status.textContent = STATUS_TEXT[s.status];
     this.status.className = `match-status ${s.status}`;
 
-    this.pauseButton.textContent = s.status === "paused" ? "Reanudar" : "Pausar";
+    if (s.status === "paused") label(this.pauseButton, "▶", "Reanudar"); else label(this.pauseButton, "⏸", "Pausar");
     this.pauseButton.disabled = s.status !== "playing" && s.status !== "paused";
     this.pauseButton.classList.toggle("primary", s.resumeHint);
     const busy = s.status === "stopping";
-    if (this.armed?.button !== this.restartButton)
-      this.restartButton.textContent = s.status === "error" ? "Reintentar" : "Reiniciar";
+    if (this.armed?.button !== this.restartButton) label(this.restartButton, "↻", s.status === "error" ? "Reintentar" : "Reiniciar");
+    if (this.armed?.button !== this.closeButton) label(this.closeButton, "✕", "Cerrar");
     this.restartButton.classList.toggle("primary", s.status === "error" || s.status === "finished");
     this.restartButton.disabled = busy;
     this.closeButton.disabled = busy;
@@ -213,4 +211,9 @@ export class MatchTile {
     if (s.status === "playing" && !this.hasFocus) return "Haz clic en el juego para usar el teclado.";
     return "";
   }
+}
+
+/** Texto del botón con su ícono (el ícono es decorativo: el lector de pantalla lee el texto). */
+function label(button: HTMLButtonElement, icon: string, text: string): void {
+  button.replaceChildren(el("span", { class: "btn-icon", "aria-hidden": "true", text: icon }), text);
 }

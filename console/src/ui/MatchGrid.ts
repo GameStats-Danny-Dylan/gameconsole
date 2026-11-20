@@ -19,7 +19,7 @@ import type { VisibilityWatcher } from "./VisibilityWatcher";
 export class MatchGrid {
   readonly element = el("section", { class: "matches", "aria-label": "Partidas" });
   private readonly grid = el("div", { class: "match-grid" });
-  private readonly count = el("span", { class: "chip" });
+  private readonly count = el("span", { class: "count-badge" });
   private readonly tiles = new Set<MatchTile>();
   private readonly actions: TileActions = {
     restart: (t) => void this.restart(t),
@@ -35,7 +35,10 @@ export class MatchGrid {
     private readonly toasts?: Toasts,
   ) {
     this.element.append(
-      el("div", { class: "section-head row" }, el("h2", { text: "Partidas" }), this.count),
+      el("header", { class: "section-head" },
+        el("span", { class: "kicker", text: "En juego" }),
+        el("div", { class: "row" }, el("h2", { text: "Tus partidas" }), this.count),
+        el("p", { text: "Todas corren a la vez. Haz clic en una para jugarla con el teclado." })),
       this.grid,
     );
     this.update();

@@ -12,11 +12,6 @@ import { playerLabel, type LiveSnapshot } from "../catalog/LiveStats";
 import { MODE_LABELS } from "../domain/MatchSetup";
 import { el } from "./dom";
 
-function playersText(p: GameManifest["players"]): string {
-  if (p.min === p.max) return p.min === 1 ? "1 jugador" : `${p.min} jugadores`;
-  return `${p.min}–${p.max} jugadores`;
-}
-
 /** Un tono por juego, siempre el mismo (sale del id), para darle color propio a cada tarjeta. */
 function hueOf(id: string): number {
   let h = 0;
@@ -35,9 +30,10 @@ export class GameMenu {
 
   constructor(private readonly onPlay: (gameId: string) => void) {
     this.element.append(
-      el("div", { class: "section-head" },
+      el("header", { class: "section-head" },
+        el("span", { class: "kicker", text: "Biblioteca" }),
         el("h2", { text: "Elige un juego" }),
-        el("p", { text: "Los juegos aparecen solos cuando arranca su contenedor. Puedes abrir varias partidas a la vez." })),
+        el("p", { text: "Cada juego es una app aparte que la consola encontró sola. Puedes abrir varias partidas a la vez." })),
       this.empty,
       this.grid,
     );
@@ -77,15 +73,16 @@ export class GameMenu {
   private paintLive(entry: CardEntry): void {
     const g = this.live.get(entry.statsId);
     const playing = g?.inProgress ?? 0;
-    const pills: HTMLElement[] = [
-      el("span", { class: `live-pill ${playing > 0 ? "on" : ""}`, title: "Partidas abiertas ahora (GameStats)" },
-        el("i", { class: "dot", "aria-hidden": "true" }), `${playing} en curso`),
-      el("span", { class: "live-pill", title: "Partidas terminadas que analizó GameStats" },
-        `${g?.played ?? 0} ${(g?.played ?? 0) === 1 ? "jugada" : "jugadas"}`),
-    ];
-    if (g?.leader)
-      pills.push(el("span", { class: "live-pill leader", title: "Quien más ha ganado (GameStats)" }, `🏆 ${playerLabel(g.leader)}`));
-    entry.live.replaceChildren(...pills);
+    const played = g?.played ?? 0;
+    // Datos de GameStats: números con su etiqueta debajo, como un marcador (no parecen botones).
+    const stat = (value: string, label: string, cls = "", title = "") =>
+      el("div", { class: `stat ${cls}`.trim(), title }, el("strong", { text: value }), el("span", { text: label }));
+    entry.live.replaceChildren(
+      stat(String(playing), "en curso", playing > 0 ? "on" : "", "Partidas abiertas ahora (GameStats)"),
+      stat(String(played), played === 1 ? "jugada" : "jugadas", "", "Partidas terminadas que analizó GameStats"),
+      stat(g?.leader ? (g.leader === "cpu" ? "🤖 IA" : playerLabel(g.leader)) : "—", "líder", "leader",
+        g?.leader ? `Quien más ha ganado: ${playerLabel(g.leader)} (GameStats)` : "Todavía nadie ganó una partida"),
+    );
   }
 
   private card(g: GameManifest, key: string): CardEntry {
@@ -97,21 +94,25 @@ export class GameMenu {
       icon.addEventListener("error", () => icon.replaceWith(
         el("span", { class: "game-icon placeholder", "aria-hidden": "true", text: initial })), { once: true });
 
-    const play = el("button", { type: "button", class: "btn primary", text: "Jugar" });
+    const play = el("button", { type: "button", class: "btn primary play", "aria-label": `Jugar ${g.name}` },
+      el("span", { class: "btn-icon", "aria-hidden": "true", text: "▶" }), "Jugar");
     play.addEventListener("click", () => this.onPlay(g.id));
     const live = el("div", { class: "game-live", "aria-label": "En GameStats" });
+    // Los modos ya dicen cuántos juegan: no se repite la cantidad de jugadores.
+    const MODES: Record<string, [string, string]> = {
+      "vs-cpu": ["🤖", "Contra la computadora"], "local-2p": ["👥", "2 personas, misma pantalla"], solo: ["👤", "Un jugador"],
+    };
 
     const card = el("article", { class: "game-card", "data-game": g.id },
       el("div", { class: "game-banner", "aria-hidden": "true" }, icon),
       el("div", { class: "game-body" },
-        el("div", { class: "game-title" },
-          el("h3", { text: g.name }),
-          el("span", { class: "chip", text: playersText(g.players) })),
+        el("h3", { class: "game-name", text: g.name }),
         g.description ? el("p", { class: "game-desc", text: g.description }) : null,
-        el("ul", { class: "chips", "aria-label": "Modos" },
-          ...g.modes.map((m) => el("li", { class: "chip mode", text: MODE_LABELS[m] ?? m }))),
+        el("ul", { class: "game-meta", "aria-label": "Modos de juego" },
+          ...g.modes.map((m) => el("li", {},
+            el("span", { "aria-hidden": "true", text: MODES[m]?.[0] ?? "🎮" }), MODES[m]?.[1] ?? MODE_LABELS[m] ?? m))),
         live,
-        el("footer", {}, play)),
+        play),
     );
     card.style.setProperty("--game-hue", String(hueOf(g.id)));
     return { key, card, live, statsId: g.gameStatsId };

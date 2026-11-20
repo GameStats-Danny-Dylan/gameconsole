@@ -17,7 +17,8 @@ const STEPS: [string, string, string][] = [
 export class WelcomeGuide {
   readonly element = el("section", { class: "welcome", "aria-labelledby": "welcome-title" });
   /** El botón "?" de la cabecera. */
-  readonly button = el("button", { type: "button", class: "nav-link", title: "Cómo funciona GameConsole", text: "? Guía" });
+  readonly button = el("button", { type: "button", class: "btn", title: "Cómo funciona GameConsole" },
+    el("span", { class: "btn-icon", "aria-hidden": "true", text: "?" }), "Guía");
 
   constructor() {
     const ok = el("button", { type: "button", class: "btn primary", text: "¡Entendido, a jugar!" });

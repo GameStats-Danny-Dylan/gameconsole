@@ -38,7 +38,7 @@ export interface ShellDeps {
 }
 
 export class ConsoleShell {
-  private readonly status = el("p", { class: "status", role: "status" });
+  private readonly status = el("p", { class: "signal", role: "status" });
   private readonly menu = new GameMenu((id) => this.openForm(id));
   private readonly form = new MatchFormView((ctx, m) => this.startMatch(ctx, m));
   private readonly stats = new StatsDrawer("/panel/");
@@ -52,13 +52,22 @@ export class ConsoleShell {
   }
 
   mount(): void {
-    const statsButton = el("button", { type: "button", class: "nav-link stats-link", "aria-controls": "stats" }, "📊 Estadísticas");
+    // En la cabecera, solo botones. Los estados van aparte, en la barra de estado:
+    // así la información nunca parece algo que se pueda pulsar.
+    const statsButton = el("button", { type: "button", class: "btn stats-link", "aria-controls": "stats" },
+      el("span", { class: "btn-icon", "aria-hidden": "true", text: "📊" }), "Estadísticas");
     statsButton.addEventListener("click", () => { this.form.close(); this.stats.toggle(); });
     this.stats.element.id = "stats";
 
+    const statusbar = el("div", { class: "statusbar", "aria-label": "Estado del sistema" },
+      this.status,
+      ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []),
+      el("p", { class: "signal hint-signal", text: "Cada jugada se guarda en GameStats" }));
+
     this.root.append(
-      appHeader("Consola", "Juegos independientes, partidas en paralelo y estadísticas en vivo",
-        this.status, ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []), this.guide.button, statsButton),
+      appHeader("Consola de juegos", "Juegos independientes · partidas en paralelo · estadísticas en vivo",
+        this.guide.button, statsButton),
+      statusbar,
       this.guide.element,
       this.grid.element,
       this.menu.element,
@@ -100,9 +109,9 @@ export class ConsoleShell {
     const n = s.games.length;
     const [cls, text] =
       s.status === "loading" ? ["", "Conectando…"] :
-      s.status === "online" ? ["ok", `En línea · ${n} ${n === 1 ? "juego" : "juegos"}`] :
-      ["bad", "Sin conexión"];
-    this.status.className = `status ${cls}`.trim();
+      s.status === "online" ? ["ok", `${n} ${n === 1 ? "juego disponible" : "juegos disponibles"}`] :
+      ["bad", "Sin conexión con los juegos"];
+    this.status.className = `signal ${cls}`.trim();
     this.status.replaceChildren(el("span", { class: "icon", "aria-hidden": "true", text: "●" }), text);
     this.status.title = s.status === "offline"
       ? "El servicio que lista los juegos no responde: se muestra la última lista conocida y se reintenta solo."
