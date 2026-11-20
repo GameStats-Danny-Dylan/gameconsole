@@ -219,14 +219,19 @@ Uno por hecho del juego, **nunca por cuadro**: las posiciones mientras se mueven
 | `FightingMatch.test.ts` | 23 | Rounds, KO, tiempo, empates, combos y ganador |
 | `FightingApp.test.ts` | 9 | El juego dentro de la consola por el SDK |
 | `events.test.ts` | 8 | Eventos y peleas al azar contra las reglas de GameStats |
+| `movement.test.ts` | 11 | Buffer de entrada, aceleración y fricción, salto, equilibrio (sin combos infinitos) y los impactos que se avisan a la presentación |
+| `feel.test.ts` | 11 | Congelado de impacto, cámara lenta del KO, partículas y cámara, y que la pausa los detenga |
+| `effects.test.ts` | 3 | Estela de vida, que sin tiempo (pausa) no avance y la flexión al aterrizar |
+| `render.test.ts` | 10 | Que dibujar no mueva a nadie ni cambie los eventos, y que el puño y el pie dibujados lleguen a donde conecta el golpe |
+| `sound.test.ts` | 8 | Sonidos sintetizados con WebAudio, tecla M, pausa y cierre |
 
-**Total: 63 pruebas.**
+**Total: 106 pruebas.**
 
 ## 10. Cómo correrlo
 
 ```bash
 npm ci
-npm test         # 63 pruebas
+npm test         # 106 pruebas
 npm run build
 npm run dev      # abierto directamente: modo de prueba con un formulario
 ```
