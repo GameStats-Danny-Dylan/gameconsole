@@ -27,6 +27,10 @@ Rutas: `GET /health`, `GET {base}game.json`, los archivos de `dist/` bajo `{base
 
 Registro: `POST /games` al arrancar (reintenta cada 2 s si el registry no está listo), `PUT /games/{id}/heartbeat` cada 5 s, un nuevo `POST` si el latido da `404`, y `DELETE /games/{id}` al recibir `SIGTERM` o `SIGINT`.
 
+## Manifiesto: `howToPlay`
+
+`GameManifest` (en `protocol.ts`) incluye `howToPlay?: string`: texto corto en español con los controles y el objetivo, opcional. El `game.json` del juego lo declara y `game-server` lo sirve y lo registra tal cual; la consola lo muestra antes de empezar. Ver sección 2 de [`docs/protocolo.md`](../docs/protocolo.md).
+
 ## Cómo se construye un juego
 
 1. `package.json` con `"@gameconsole/sdk": "file:../../sdk"` (desde `games/{id}/`).
