@@ -1,19 +1,36 @@
 # IA del 4 en línea (SWI-Prolog)
 
-Servicio HTTP que recibe un tablero de 4 en línea y devuelve la mejor columna para la computadora. El contrato está en [`docs/protocolo.md`](../docs/protocolo.md#7-ia-en-prolog).
+Servicio HTTP que recibe un tablero de 4 en línea y devuelve la mejor columna para la computadora. Es la parte del proyecto que cumple "usuario contra computadora con decisiones en Prolog": el juego le manda el estado y usa la respuesta.
+
+## Contenido
+
+- [Archivos](#archivos)
+- [API](#api)
+- [Cómo decide la computadora](#cómo-decide-la-computadora)
+- [Rendimiento](#rendimiento-medido-en-una-laptop)
+- [Cómo correrlo](#cómo-correrlo)
+
+## Archivos
 
 | Archivo | Qué tiene |
 |---|---|
 | `connect4.pl` | Las reglas del juego y el algoritmo (minimax con poda alfa-beta) |
 | `server.pl` | El servidor HTTP: `POST /connect4/move` y `GET /health` |
-| `tests.pl` | 17 pruebas con `plunit` (5 comprueban que cada dificultad juega distinto) |
+| `tests.pl` | 18 pruebas con `plunit` (6 comprueban que cada dificultad juega distinto) |
+| `Dockerfile` | Imagen `swipl:10.0.2`: corre las pruebas al construir y arranca el servidor |
 
-## Cómo correrlo
+## API
 
-```bash
-swipl tests.pl       # pruebas
-swipl server.pl      # servidor en el puerto 8080 (o el de la variable PORT)
+Por el gateway: `POST /api/ai/connect4/move` (contrato en [`docs/protocolo.md` §7](../docs/protocolo.md#7-ia-en-prolog)).
+
+```json
+{ "board": [["red"], [], ["yellow", "red"], ["yellow"], [], [], []],
+  "player": "yellow",
+  "difficulty": "hard" }
 ```
+
+- `board`: 7 columnas, cada una con sus fichas **de abajo hacia arriba**.
+- Respuesta: `{"column": 4, "score": 12, "depth": 6, "nodes": 4821, "ms": 85}` (columna elegida, puntaje, profundidad, posiciones revisadas y tiempo). Con un pedido inválido responde `400` con el motivo.
 
 ## Cómo decide la computadora
 
@@ -59,8 +76,17 @@ swipl server.pl      # servidor en el puerto 8080 (o el de la variable PORT)
 
 | Dificultad | Tablero vacío | Hay que tapar | Mitad de partida | Trampa de dos amenazas |
 |---|---|---|---|---|
-| Fácil (1) | 7 posiciones, ~10 ms | 7, ~2 ms | 7, ~3 ms | 7, ~2 ms |
-| Media (3) | 75, ~20 ms | 27, ~10 ms | 35, ~20 ms | 92, ~40 ms |
-| Difícil (6) | 1 380, ~0,5 s | 993, ~0,4 s | 1 276, ~0,7 s | 4 429, ~1,7 s |
+| Fácil (1 jugada) | 7 posiciones, ~10 ms | 7, ~2 ms | 7, ~3 ms | 7, ~2 ms |
+| Media (1 jugada) | 7 posiciones, ~10 ms | 7, ~7 ms | 7, ~6 ms | 7, ~5 ms |
+| Difícil (6 jugadas) | 1 380, ~0,5 s | 993, ~0,4 s | 1 276, ~0,7 s | 4 429, ~1,7 s |
 
 Fácil y media responden casi al instante, así que el juego espera al menos 0,7 s antes de mostrar la ficha (`MinThinkTime`, un Decorator de la estrategia en `games/connect4/src/ai/MoveStrategy.ts`): si no, la ficha aparecería de golpe. Difícil ya tarda más y casi no espera de más.
+
+## Cómo correrlo
+
+```bash
+swipl tests.pl       # 18 pruebas
+swipl server.pl      # servidor en el puerto 8080 (o el de la variable PORT)
+```
+
+Con Docker: `docker build -t gameconsole-prolog . ; docker run -p 8091:8080 gameconsole-prolog`

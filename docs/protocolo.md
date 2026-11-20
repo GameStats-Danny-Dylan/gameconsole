@@ -433,5 +433,6 @@ Lo que le queda a cada juego:
 
   Conclusión: `data.ai`, las partidas sin ganador y el cierre de respaldo de la consola funcionan con GameStats tal como está.
 - [x] Formato de las respuestas de `/api/stats/overview` y `/api/stats/games/{gameId}`: definido en la sección 8 (implementado en `gamestats`, rama `scala`).
-- [ ] Formato de `/api/games` (Go): el que espera el panel está en la sección 8; falta que Go lo implemente.
+- [x] Formato de `/api/games` (Go): `[{gameId, inProgress}]`, como espera el panel (sección 8). Implementado en `gamestats` (PR #23), junto con el tiempo de espera por juego (`IDLE_TIMEOUT_BY_GAME`).
+- [x] EventSender (sección 6) en la consola, con el cierre de respaldo (sección 5) y el indicador de envío (19-nov).
 - [x] Revisión de Dylan (7-nov): rutas de nginx, cierre de respaldo, `STOP`, partidas ocultas, `playerId` distintos, nada por frame, registry en Node/TS. Incorporado en esta versión.

@@ -2,15 +2,26 @@
 
 Cada juego **se registra solo** al arrancar (manda su manifiesto) y después manda un **latido cada 5 s**. Si pasa **15 s sin latir**, sale de la lista. La consola pide la lista y arma el menú sin conocer los juegos de antemano: agregar un juego nuevo es levantar su contenedor.
 
-El contrato está en [`docs/protocolo.md`](../docs/protocolo.md#3-registry-descubrimiento-automático) (secciones 2 y 3).
+## Contenido
 
-| Método | Ruta interna | Por nginx | Qué hace |
+- [Rutas](#rutas)
+- [Archivos](#archivos)
+- [Patrones](#patrones)
+- [Cómo correrlo](#cómo-correrlo)
+
+El contrato está en [`docs/protocolo.md`](../docs/protocolo.md) (secciones 2 y 3).
+
+## Rutas
+
+| Método | Ruta interna | Por el gateway | Qué hace |
 |---|---|---|---|
 | `POST` | `/games` | `/api/registry/games` | Registra o actualiza (cuerpo: el manifiesto) → `201`, o `400` con el motivo |
 | `PUT` | `/games/{id}/heartbeat` | `/api/registry/games/{id}/heartbeat` | Latido → `204`, o `404` (el juego debe registrarse otra vez) |
 | `DELETE` | `/games/{id}` | `/api/registry/games/{id}` | Se va de la lista → `204` o `404` |
 | `GET` | `/games` | `/api/registry/games` | Juegos vivos con `registeredAt` y `lastSeen` |
 | `GET` | `/health` | `/api/registry/health` | `{"status":"ok","games":N}` |
+
+El manifiesto se valida: `id` en minúsculas, números y guiones; rutas relativas; modos `solo`, `vs-cpu` o `local-2p`; protocolo `gameconsole/1`.
 
 ## Archivos
 
@@ -22,12 +33,15 @@ El contrato está en [`docs/protocolo.md`](../docs/protocolo.md#3-registry-descu
 | `src/main.ts` | Arranque, variables de entorno y log |
 | `test/` | 15 pruebas con `node:test` |
 
-**Patrones:** *Registry* (un solo lugar donde los juegos se anotan y la consola los busca) y *Observer* (`GameRegistry` es un `EventEmitter`; el log se suscribe a sus avisos sin que la clase sepa quién escucha).
+## Patrones
+
+- **Registry:** un solo lugar donde los juegos se anotan y la consola los busca.
+- **Observer:** `GameRegistry` es un `EventEmitter`; el log se suscribe a sus avisos sin que la clase sepa quién escucha.
 
 ## Cómo correrlo
 
 ```bash
-npm install
+npm ci
 npm test          # compila y corre las pruebas
 npm run build && npm start
 ```
