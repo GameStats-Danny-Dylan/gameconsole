@@ -25,10 +25,10 @@ De arriba hacia abajo:
 
 | Parte | Qué tiene |
 |---|---|
-| **Cabecera** | El logo y "**DnD** Games"; los botones **? Guía**, **📊 Estadísticas** y el de tema claro/oscuro; una guirnalda de luces |
-| **Portada** | "¿Qué jugamos hoy?", una frase de qué es, el estado del sistema ("3 juegos disponibles", "GameStats al día"), el botón **🎁 Ver los juegos**, un paisaje nevado y "Cómo funciona" en 3 pasos |
-| **Tus partidas** | Las partidas abiertas, una al lado de la otra (aparece cuando hay al menos una). Cada una ocupa el alto de la pantalla: arriba el nombre, el estado y los botones; el resto es el juego, que entra entero sin barra de desplazamiento |
-| **Elige un juego** | Una tarjeta por juego, como un regalo envuelto: descripción, modos, un marcador de GameStats (en curso, jugadas, líder) y el botón **🎁 ¡A jugar!** |
+| **Cabecera** | El logo y "**DnD** Games"; los botones **? Guía**, **Estadísticas** y el de tema claro/oscuro; una guirnalda de luces |
+| **Portada** | "¿Qué jugamos hoy?", una frase de qué es, el estado del sistema en dos recuadros (**Juegos · 3 disponibles** y **GameStats · Al día**), el botón **Ver los juegos**, un paisaje nevado y "Cómo funciona" en 3 tarjetas (paso, dibujo, título y explicación) |
+| **Tus partidas** | Las partidas abiertas, una al lado de la otra (aparece cuando hay al menos una). Cada una ocupa el alto de la pantalla: arriba el nombre, el estado y los botones; el resto es el juego, que entra entero sin barra de desplazamiento. Una partida nueva queda a la vista al instante |
+| **Elige un juego** | Una tarjeta por juego, como un regalo envuelto: título, descripción, sus **modos de juego** en un bloque aparte, un marcador de GameStats (en curso, jugadas, líder) y el botón **▶ ¡A jugar!** |
 | **"Nueva partida" (pantalla completa)** | A la izquierda, "Cómo se juega" (objetivo, paso a paso, controles, consejos); a la derecha, modo, opciones y nombres; abajo, **Cancelar** y **▶ Jugar** |
 | **Panel lateral "Estadísticas"** | El panel de GameStats, al lado de las partidas, que siguen corriendo |
 | **Avisos** | Mensajes breves abajo: partida abierta, quién ganó, si GameStats deja de responder |

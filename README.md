@@ -98,9 +98,46 @@ Rutas del gateway:
 
 ## 4. Instalación y ejecución
 
-**Requisito:** Docker (Docker Desktop en Windows o Mac). No hace falta instalar Node, Prolog, Go ni Java.
+**Requisitos:**
 
-### Construir y levantar todo desde el código
+- **Solo [Docker](https://www.docker.com/)**: en Windows y Mac, Docker Desktop instalado y **abierto**. No hace falta instalar Node, Prolog, Go ni Java.
+- El puerto **8000** libre (se puede cambiar con `GATEWAY_PORT`).
+- Funciona en Windows, Linux y Mac (también con chip Apple).
+
+Hay dos formas de levantarlo. Para probarlo, la **A** es la más rápida.
+
+### A. Probarlo en 5 minutos, con las imágenes publicadas (sin compilar)
+
+**Paso 1: bajar el repositorio** (o solo el archivo [`docker-compose.deploy.yml`](docker-compose.deploy.yml), que es lo único que se usa).
+
+```bash
+git clone https://github.com/GameStats-Danny-Dylan/gameconsole.git
+cd gameconsole
+```
+
+**Paso 2: levantar todo.**
+
+```bash
+docker compose -f docker-compose.deploy.yml up -d --wait
+```
+
+- Descarga las imágenes ya construidas de GitHub Container Registry (la primera vez, alrededor de 1 GB; después arranca en segundos) y espera a que los 10 servicios estén sanos. Cuando termina, la terminal vuelve a quedar libre.
+- Sin variables usa lo último publicado (`latest`). Para una versión concreta:
+  - bash: `GAMECONSOLE_TAG=v1.0.1 docker compose -f docker-compose.deploy.yml up -d --wait`
+  - PowerShell: `$env:GAMECONSOLE_TAG="v1.0.1"; docker compose -f docker-compose.deploy.yml up -d --wait`
+
+**Paso 3: abrir <http://localhost:8000>** y seguir el [recorrido de la sección 5](#5-cómo-se-usa).
+
+**Paso 4: apagar.**
+
+```bash
+docker compose -f docker-compose.deploy.yml down       # apaga y conserva las estadísticas
+docker compose -f docker-compose.deploy.yml down -v    # apaga y borra las estadísticas y las partidas en curso
+```
+
+### B. Construir y levantar todo desde el código
+
+Es la forma de desarrollo y la que usa el CI. La primera vez tarda varios minutos, porque construye cada app y corre sus pruebas (si alguna falla, esa imagen no se construye).
 
 ```bash
 git clone https://github.com/GameStats-Danny-Dylan/gameconsole.git
@@ -108,9 +145,11 @@ cd gameconsole
 docker compose up -d --build --wait    # construye y espera a que todo esté sano
 ```
 
-Queda en **<http://localhost:8000>**. Al construir, cada imagen corre sus pruebas: si alguna falla, no se construye.
+Queda en **<http://localhost:8000>**. Para apagar: `docker compose down` (o `down -v` para borrar también las estadísticas).
 
 ### Comandos útiles
+
+Con la forma A, a cada comando de `docker compose` se le agrega `-f docker-compose.deploy.yml`.
 
 | Comando | Para qué |
 |---|---|
@@ -133,6 +172,19 @@ Se guardan en dos volúmenes: `analytics-results` (los resultados de Scala) y `i
 
 ## 5. Cómo se usa
 
+### Recorrido para probarlo por primera vez
+
+1. **Abrir <http://localhost:8000>.** La portada muestra "Cómo funciona" en 3 pasos y el estado del sistema: **Juegos · 3 disponibles** y **GameStats · Al día**.
+2. **Elegir un juego.** Pulsar **Ver los juegos** y, en la tarjeta del **4 en línea**, **¡A jugar!**. Se abre "Nueva partida" en pantalla completa: a la izquierda, cómo se juega; a la derecha, las opciones.
+3. **Jugar contra la computadora.** Dejar el modo **Contra la computadora**, elegir la dificultad (Fácil, Media o Difícil), escribir un nombre y pulsar **▶ Jugar**. Se juega con clic en una columna o con las teclas **1** a **7**. Cada jugada de la computadora la decide Prolog.
+4. **Abrir otra partida a la vez.** Volver a "Elige un juego" y abrir **Tetris** (flechas para mover y girar, **Espacio** para dejar caer). Las dos partidas corren al mismo tiempo. También se puede abrir <http://localhost:8000> en **otra pestaña** y jugar **Pelea** (2 personas en el mismo teclado: **A D W F G** contra **← → ↑ K L**).
+5. **Ver las estadísticas en vivo.** El botón **Estadísticas** de la cabecera abre el panel al lado de las partidas, que siguen corriendo: pestaña **General** y una por juego, con las partidas jugándose y terminadas (instancias), la clasificación y las jugadas destacadas. Se actualiza cada 3 s mientras se juega.
+6. **Terminar o cerrar.** Al terminar una partida aparece quién ganó y el botón **Jugar otra**. **Cerrar** pide confirmar; si la partida seguía, termina sin ganador y GameStats la registra así.
+
+Cada partida tiene su botón **? Cómo se juega** con el objetivo, los pasos, los controles y consejos.
+
+### Direcciones
+
 | Dirección | Qué hay |
 |---|---|
 | <http://localhost:8000/> | **Consola**: elegir un juego, leer cómo se juega, escribir los nombres, elegir opciones y jugar. Se pueden abrir varias partidas a la vez. El botón **Estadísticas** muestra el panel al lado de las partidas |
@@ -148,14 +200,7 @@ Se guardan en dos volúmenes: `analytics-results` (los resultados de Scala) y `i
 
 ## 6. Deployment
 
-Igual que en GameStats: el CD publica las imágenes en **GitHub Container Registry** y cualquier PC con Docker levanta la versión publicada **sin compilar nada**:
-
-```bash
-# Solo hace falta docker-compose.deploy.yml
-docker compose -f docker-compose.deploy.yml up -d --wait
-# Una versión concreta:
-GAMECONSOLE_TAG=v1.0 docker compose -f docker-compose.deploy.yml up -d --wait
-```
+Igual que en GameStats: el CD publica las imágenes en **GitHub Container Registry** y cualquier PC con Docker levanta la versión publicada **sin compilar nada**, con `docker-compose.deploy.yml` (los comandos están en la [forma A de la sección 4](#a-probarlo-en-5-minutos-con-las-imágenes-publicadas-sin-compilar)). Ese es el entorno de ejecución que elegimos, como en GameStats: no mantenemos un servidor encendido; el job `deploy` del CD comprueba en una máquina limpia que la versión publicada funciona.
 
 | Imagen | Contenido |
 |---|---|
@@ -310,11 +355,27 @@ gameconsole/
 | Tetris | 58 (Vitest), incluidos eventos contra una copia de las reglas de Scala | `cd games/tetris && npm ci && npm test` |
 | Peleas | 106 (Vitest), incluidas peleas al azar contra una copia de las reglas de Scala, el dibujo, los efectos y el sonido | `cd games/fighting && npm ci && npm test` |
 | Registry | 15 (`node:test`) | `cd registry && npm ci && npm test` |
-| Panel | 7 (Vitest) | `cd panel && npm ci && npm test` |
+| Panel | 8 (Vitest) | `cd panel && npm ci && npm test` |
 | Prolog | 18 (plunit) | `cd prolog && swipl tests.pl` |
 | Todo integrado | prueba de humo | con el compose corriendo: `bash scripts/smoke.sh` |
+| **De punta a punta** | 38 comprobaciones con un navegador real que juega de verdad | con el compose corriendo: `node scripts/e2e.mjs http://localhost:8000 gameconsole ./e2e-out` |
 
 Con Docker no hace falta instalar nada: cada imagen corre sus pruebas al construirse.
+
+**La prueba de punta a punta** (`scripts/e2e.mjs`) abre la consola en Edge o Chrome sin ventana y revisa, sobre el sistema levantado. Necesita Node 22 o más, Edge (en Windows lo busca solo) o Chrome con `BROWSER=<ruta al ejecutable>`, y el sistema corriendo con cualquiera de las dos formas de la sección 4 (el proyecto de Docker Compose se llama `gameconsole` en las dos). Apaga y vuelve a encender `ingestion` y `game-tetris` durante la prueba.
+
+| Qué | Cómo |
+|---|---|
+| Los 3 juegos | Aparecen solos en el menú (registry) y se juegan hasta el final: 4 en línea contra la IA en difícil, Tetris hasta perder y una pelea de 1 round |
+| Partidas en paralelo | Las tres a la vez, en **dos pestañas**; GameStats ve las 3 en curso mientras se juegan |
+| Eventos | Captura lo que la consola manda a `/api/events`: cada partida con su `matchId`, ningún envío mezcla partidas, todos los campos del contrato, `MATCH_STARTED` … `MATCH_FINISHED`, tiempos en orden y `eventId` únicos |
+| Prolog | Cada jugada de la computadora trae `data.ai` (`prolog-minimax`, profundidad, nodos) y Prolog tapa una amenaza conocida |
+| GameStats | Go tiene exactamente los eventos que mandó la consola y Scala analizó cada partida |
+| Panel | Los totales generales y por juego son los mismos que devuelve GameStats |
+| Fallos | Se apaga GameStats a mitad de una partida: la consola avisa, sigue y al volver manda todo sin perder nada. Cerrar la pestaña cierra la partida en GameStats al instante |
+| Descubrimiento | Se apaga Tetris y desaparece del menú; se enciende y vuelve |
+
+Resultado el 20-nov: contra la `v1.0` publicada (deployment limpio desde GHCR) dio 36/38, porque una partida recién abierta podía pausarse sola antes de quedar a la vista; se corrigió en la `v1.0.1` y con el arreglo da **38/38**.
 
 ## 12. Documentación de cada parte
 

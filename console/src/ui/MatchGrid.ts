@@ -49,10 +49,12 @@ export class MatchGrid {
     const tile = new MatchTile(session, frameElement(session), this.actions);
     this.tiles.add(tile);
     this.grid.append(tile.element);
-    this.watcher.watch(tile.stage, session);
     this.update();
-    // La partida nueva queda a la vista entera: arriba de la pantalla.
-    tile.element.scrollIntoView({ behavior: "smooth", block: "start" });
+    // La partida nueva queda a la vista entera, arriba de la pantalla, AL INSTANTE
+    // y antes de vigilarla: con un desplazamiento suave el juego podía arrancar
+    // mientras todavía estaba fuera de la pantalla y se pausaba solo ("hidden").
+    tile.element.scrollIntoView({ behavior: "instant", block: "start" });
+    this.watcher.watch(tile.stage, session);
     // La partida nueva recibe el teclado: se puede jugar sin hacer clic antes.
     setTimeout(() => tile.focusGame(), 400);
     this.toasts?.show(`Se abrió ${manifest.name}: ${context.players.map((p) => p.name).join(" vs ")}.`, "info");
