@@ -78,7 +78,10 @@ body {
 .fight { display: grid; gap: 8px; width: 100%; justify-items: center; }
 /* El canvas es 16:9 y entra a lo alto de la ventana (o del iframe de la consola). */
 .fight-stage { width: min(100%, calc((100dvh - 170px) * 16 / 9)); min-width: 280px; }
-#app.embedded .fight-stage { width: min(100%, calc((100dvh - 80px) * 16 / 9)); }
+/* Dentro de la consola: canvas + teclas entran en el iframe, sin desplazarse. */
+#app.embedded { height: 100dvh; overflow: hidden; align-content: center; }
+#app.embedded .game.card, #app.embedded .fight { align-content: center; }
+#app.embedded .fight-stage { width: min(100%, calc((100dvh - 120px) * 16 / 9)); }
 .fight-canvas {
   display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px;
   border: 1px solid var(--line); background: var(--surface-2); outline: none;

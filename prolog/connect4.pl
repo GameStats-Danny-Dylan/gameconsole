@@ -11,7 +11,7 @@
 */
 :- module(connect4, [
     best_move/5,          % elegir la mejor columna (evaluación completa)
-    best_move/6,          % ... con un estilo de evaluación (basic | attack | full)
+    best_move/6,          % ... con un estilo de evaluación (lines(T3,T2) | block | full)
     difficulty/3,         % easy/medium/hard -> profundidad y estilo
     valid_move/2,         % columna donde todavía cabe una ficha
     drop/4,               % soltar una ficha
@@ -33,28 +33,29 @@ other(yellow, red).
 %% difficulty(?Name, ?Depth, ?Style): cómo juega cada dificultad.
 %    Depth = cuántas jugadas mira hacia adelante (contando las del rival).
 %    Style = qué mira al evaluar un tablero:
-%      basic   solo jugar cerca del centro (no arma líneas ni mira las del rival)
-%      attack  solo sus propias líneas (no se fija en las amenazas del rival)
-%      full    sus líneas y las del rival
+%      lines(T3, T2)  solo sus propias líneas: T3 puntos por cada línea con
+%                     3 suyas y 1 vacía, T2 por cada una con 2 suyas y 2
+%                     vacías (no se fija en las del rival)
+%      block          solo las líneas de 3 del rival que siguen abiertas
+%      full           sus líneas y las del rival
 %
-%  - easy:   mira 1 jugada y juega cerca del centro. Gana si ve un 4 en
-%            línea, pero no lo arma a propósito ni tapa: un principiante.
-%            (Con attack era peor contra la IA, pero a una persona la
-%            presionaba más que media: armaba una línea en cada turno.)
-%  - medium: mira 1 jugada pero evalúa sus líneas y las del rival: arma
-%            líneas y tapa las amenazas que ve en el tablero, sin planear
-%            trampas. (Con 3 jugadas le ganaba casi siempre a una persona
-%            normal y no se distinguía de hard.)
-%  - hard:   mira 6 jugadas: ve trampas de dos amenazas a la vez y las
-%            arma o las esquiva. (Con 7 tardaría varios segundos por jugada.)
+%  - easy:   mira 1 jugada y arma sus líneas sin mucho empeño (pesos 1 y 1:
+%            casi siempre pesa más jugar al centro). Gana si ve un 4 en
+%            línea, pero nunca tapa: un principiante.
+%  - medium: mira 1 jugada y solo se defiende: tapa las líneas de 3 del
+%            rival que ve en el tablero, pero no arma las suyas a propósito
+%            ni ve trampas.
+%  - hard:   mira 3 jugadas y arma sus líneas (pesos 5 y 2): ve las
+%            victorias y derrotas que están a 2 jugadas, así que tapa,
+%            arma amenazas dobles y no cae en las trampas cortas.
 %
-%  Medido el 19-nov contra un jugador simulado "casual" (gana si puede, tapa
-%  si debe, no regala, si no al azar), 20–40 partidas: la IA gana 10 % en
-%  easy, ~50 % en medium y 95 % en hard. Entre IAs: medium le gana a easy
-%  22–7 y hard a medium 17–2.
-difficulty(easy,   1, basic).
-difficulty(medium, 1, full).
-difficulty(hard,   6, full).
+%  Calibrado el 20-nov contra un jugador simulado "casual" (gana si puede,
+%  tapa si debe, no regala una victoria, si no al azar cerca del centro),
+%  200 partidas por dificultad con la IA jugando segunda: la IA gana ~15 %
+%  en easy, ~47 % en medium y ~85 % en hard.
+difficulty(easy,   1, lines(1, 1)).
+difficulty(medium, 1, block).
+difficulty(hard,   3, lines(5, 2)).
 
 %% difficulty_depth(?Difficulty, ?Depth)
 difficulty_depth(D, Depth) :- difficulty(D, Depth, _).
@@ -130,27 +131,24 @@ winner(Board, Player) :-
 %  rivales hay; además premia las fichas en la columna del centro (4), que
 %  entran en más líneas.
 %
-%  full:       mira las líneas de los dos.
-%  attack(Me): solo las líneas de Me (la computadora), mueva quien mueva. Si
-%              le toca al rival, el puntaje va con signo contrario (negamax).
+%  full:               mira las líneas de los dos.
+%  lines(T3, T2, Me):  solo las líneas de Me (la computadora), mueva quien
+%                      mueva. Si le toca al rival, el puntaje va con signo
+%                      contrario (negamax).
+%  block(Me):          solo las líneas de 3 del rival con la cuarta casilla
+%                      libre: −5 por cada una.
 evaluate(full, Board, Player, Score) :-
     side_score(full, Board, Player, Score).
-evaluate(attack(Me), Board, Player, Score) :-
-    side_score(attack, Board, Me, S),
+evaluate(lines(T3, T2, Me), Board, Player, Score) :-
+    side_score(lines(T3, T2), Board, Me, S),
     (   Player == Me -> Score = S ; Score is -S ).
-%  basic(Me): solo le importa jugar cerca del centro; no arma líneas a
-%  propósito ni mira las del rival (el principiante de la dificultad fácil).
-evaluate(basic(Me), Board, Player, Score) :-
-    center_score(Board, Me, S),
+evaluate(block(Me), Board, Player, Score) :-
+    other(Me, Opp),
+    aggregate_all(count,
+        ( line(W), cells(W, Board, Vs), count(Vs, Opp, 3), count(Vs, empty, 1) ),
+        Open),
+    S is -5 * Open,
     (   Player == Me -> Score = S ; Score is -S ).
-
-%% center_score(+Board, +Player, -Score): fichas de Player según su columna
-%  (la del centro vale 3, las de al lado 2, después 1 y las orillas 0).
-center_score(Board, Player, Score) :-
-    aggregate_all(sum(W),
-        ( nth1(C, Board, Column), member(P, Column), P == Player,
-          W is 3 - abs(C - 4) ),
-        Score).
 
 side_score(Style, Board, Player, Score) :-
     other(Player, Opp),
@@ -174,6 +172,8 @@ count([], _, 0).
 count([Y|Ys], X, N) :- count(Ys, X, N0), ( Y == X -> N is N0 + 1 ; N = N0 ).
 
 %  window_score(+Estilo, +Mías, +Rivales, +Vacías, -Puntos)
+window_score(lines(T3, _), 3, 0, 1, T3) :- !.   % pesos propios de lines/2
+window_score(lines(_, T2), 2, 0, 2, T2) :- !.
 window_score(_,    3, 0, 1,  5) :- !.   % me falta una para ganar
 window_score(_,    2, 0, 2,  2) :- !.   % voy armando la línea
 window_score(full, 0, 3, 1, -4) :- !.   % el rival amenaza: hay que taparla
@@ -201,9 +201,15 @@ best_move(Board, Player, Depth, Column, Score) :-
 best_move(Board, Player, Depth, Style, Column, Score) :-
     ordered_moves(Board, Moves),
     Moves \== [],
-    (   Style == full -> Eval = full ; Eval =.. [Style, Player] ),   % attack -> attack(Player)
+    eval_style(Style, Player, Eval),
     infinity(Inf), NegInf is -Inf,
     root(Moves, Board, Player, Depth-Eval, NegInf, Inf, none, Column, Score).
+
+%  eval_style: los estilos que miran solo un lado recuerdan quién es la
+%  computadora (Player), porque en negamax el que mueve va cambiando.
+eval_style(full,         _,      full).
+eval_style(lines(T3, T2), Player, lines(T3, T2, Player)).
+eval_style(block,        Player, block(Player)).
 
 %  Raíz: recorre las columnas y se queda con la de mayor puntaje.
 %  Search = Profundidad-Estilo (se pasan juntos para no alargar los argumentos).

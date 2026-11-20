@@ -105,7 +105,11 @@ body {
   border: 1px solid var(--line); background: var(--surface); color: var(--fg);
   transition: border-color .15s, background-color .15s, transform .1s, box-shadow .15s;
 }
-.c4-button:hover:not(:disabled) { border-color: var(--accent); }
+.c4-button:hover:not(:disabled) {
+  border-color: var(--accent); color: var(--fg); transform: translateY(-1px);
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  box-shadow: 0 6px 16px -8px var(--accent);
+}
 .c4-button:active:not(:disabled) { transform: translateY(1px); }
 .c4-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
 .c4-button:disabled { opacity: .45; cursor: default; }
@@ -156,7 +160,15 @@ body {
   position: relative; margin: 0 auto;
   width: min(100%, max(260px, calc((100dvh - 290px) * 7 / 6)));
 }
-#app.embedded .c4-board-wrap { width: min(100%, max(240px, calc((100dvh - 170px) * 7 / 6))); }
+/* Dentro de la consola todo entra en el iframe, sin barra de desplazamiento:
+   jugadores, estado y botones toman lo que necesitan y el tablero, el resto
+   (su ancho sale del alto que le queda: 7 columnas × 6 filas + bordes). */
+#app.embedded { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+#app.embedded > .game.card { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px; }
+#app.embedded .c4 { flex: 1; min-height: 0; gap: 8px; grid-template-rows: auto auto minmax(0, 1fr) auto auto; }
+#app.embedded .c4-board-wrap { width: 100%; height: 100%; min-height: 0; container-type: size; display: grid; place-items: center; }
+#app.embedded .c4-board { width: min(100cqw, calc((100cqh - 35px) * 7 / 6 + 38px)); }
+#app.embedded .c4-message:empty { display: none; }
 .c4-board {
   display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
   padding: 10px; border-radius: 18px;

@@ -4,8 +4,10 @@
  *
  * Usabilidad (heurísticas de Nielsen):
  * - "Cómo se juega" siempre a mano durante la partida (reconocer en vez de recordar).
- * - Cerrar o reiniciar una partida en curso pide confirmar en el mismo botón,
- *   sin ventanas emergentes (prevención de errores, control del usuario).
+ * - Cerrar (siempre) y Reiniciar (si la partida sigue) piden confirmar: los
+ *   botones se cambian por una pregunta con «Cancelar» y «Sí, …», sin ventanas
+ *   emergentes (prevención de errores, control del usuario). Esc cancela.
+ * - Todos los botones van arriba, junto al título: el juego usa el resto del alto.
  * - Si la partida no tiene el teclado, se avisa cómo dárselo.
  * - Con error, el mensaje dice qué hacer y "Reiniciar" pasa a "Reintentar".
  */
@@ -32,37 +34,35 @@ const STATUS_TEXT: Record<SessionStatus, string> = {
   error: "Error",
 };
 
-/** Cuánto espera la confirmación ("¿Seguro?") antes de volver al botón normal. */
-export const CONFIRM_MS = 3500;
-
 export class MatchTile {
   readonly element = el("article", { class: "match-tile" });
   private readonly title = el("h3", {});
   private readonly players = el("p", { class: "match-players" });
   private readonly status = el("span", { class: "match-status" });
   private readonly detail = el("p", { class: "match-detail", role: "status" });
-  private readonly howButton = el("button", { type: "button", class: "btn small link", "aria-expanded": "false" });
+  private readonly howButton = el("button", { type: "button", class: "btn small ghost", "aria-expanded": "false" });
   private readonly pauseButton = el("button", { type: "button", class: "btn small" });
   private readonly restartButton = el("button", { type: "button", class: "btn small" });
   private readonly newButton = el("button", { type: "button", class: "btn small" });
   private readonly closeButton = el("button", { type: "button", class: "btn small danger" });
+  private readonly buttons = el("div", { class: "match-buttons" });
+  /** La pregunta de confirmación: reemplaza a los botones mientras está abierta. */
+  private readonly confirmBox = el("div", { class: "match-confirm", role: "group", hidden: true });
   private readonly howTo = el("section", { class: "tile-howto", hidden: true, "aria-label": "Cómo se juega" });
   /** Donde va el iframe. Es siempre el mismo elemento, aunque cambie la sesión. */
   readonly stage = el("div", { class: "match-stage" });
   private off: (() => void) | null = null;
   private hasFocus = false;
   private lastStatus: SessionStatus | null = null;
-  private armed: { button: HTMLButtonElement; timer: ReturnType<typeof setTimeout> } | null = null;
 
   constructor(private current: MatchSession, frame: HTMLElement, private readonly actions: TileActions) {
+    this.buttons.append(this.howButton, this.pauseButton, this.restartButton, this.newButton, this.closeButton);
     this.element.append(
       el("header", { class: "match-head" },
-        el("div", { class: "match-names" }, this.title, this.players), this.status),
+        el("div", { class: "match-names" },
+          el("div", { class: "match-title" }, this.title, this.status), this.players, this.detail),
+        this.buttons, this.confirmBox),
       el("div", { class: "match-body" }, this.stage, this.howTo),
-      el("footer", { class: "match-bar" },
-        el("div", { class: "match-help" }, this.howButton, this.detail),
-        el("div", { class: "match-buttons" },
-          this.pauseButton, this.restartButton, this.newButton, this.closeButton)),
     );
     label(this.howButton, "?", "Cómo se juega");
     label(this.newButton, "＋", "Nueva partida");
@@ -71,12 +71,20 @@ export class MatchTile {
       if (this.current.status === "paused") this.current.resume();
       else this.current.pause("user");
     });
-    this.restartButton.addEventListener("click", () =>
-      this.confirmIfPlaying(this.restartButton, "¿Reiniciar? Sí", () => this.actions.restart(this)));
+    this.restartButton.addEventListener("click", () => {
+      if (!this.inProgress()) { this.actions.restart(this); return; }
+      this.askConfirm("¿Reiniciar la partida?", "La que se está jugando terminará sin ganador.", "↻", "Sí, reiniciar",
+        () => this.actions.restart(this));
+    });
     this.newButton.addEventListener("click", () => this.actions.newMatch(this));
     this.closeButton.addEventListener("click", () =>
-      this.confirmIfPlaying(this.closeButton, "¿Cerrar? Sí", () => this.actions.close(this)));
+      this.askConfirm("¿Cerrar la partida?",
+        this.inProgress() ? "Terminará sin ganador." : "Se quita de la pantalla.", "✕", "Sí, cerrar",
+        () => this.actions.close(this)));
     this.howButton.addEventListener("click", () => this.toggleHowTo());
+    this.element.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !this.confirmBox.hidden) { e.preventDefault(); this.cancelConfirm(); }
+    });
 
     // Un clic en la partida le da el foco a su iframe, para que reciba las teclas.
     this.element.addEventListener("click", (e) => {
@@ -107,7 +115,7 @@ export class MatchTile {
   }
 
   detach(): void {
-    this.off?.(); this.off = null; this.disarm();
+    this.off?.(); this.off = null;
     window.removeEventListener("blur", this.onWindowFocus);
     window.removeEventListener("focus", this.onWindowFocus);
   }
@@ -117,25 +125,36 @@ export class MatchTile {
 
   // ------------------------------------------------------------------
 
-  /** Si la partida está en juego, el primer clic pide confirmar en el mismo botón. */
-  private confirmIfPlaying(button: HTMLButtonElement, question: string, action: () => void): void {
+  private inProgress(): boolean {
     const s = this.current.status;
-    const risky = s === "playing" || s === "paused";
-    if (!risky || this.armed?.button === button) { this.disarm(); action(); return; }
-    this.disarm();
-    label(button, "⚠", question);
-    button.classList.add("confirm");
-    this.detail.textContent = "La partida en curso terminará sin ganador. Pulsa otra vez para confirmar.";
-    const timer = setTimeout(() => this.disarm(), CONFIRM_MS);
-    this.armed = { button, timer };
+    return s === "playing" || s === "paused";
   }
 
-  private disarm(): void {
-    if (!this.armed) return;
-    clearTimeout(this.armed.timer);
-    this.armed.button.classList.remove("confirm");
-    this.armed = null;
-    this.render();
+  /** Cambia los botones por la pregunta: «Cancelar» (con el foco) o confirmar. */
+  private askConfirm(question: string, consequence: string, icon: string, yes: string, action: () => void): void {
+    const cancel = el("button", { type: "button", class: "btn small" });
+    label(cancel, "←", "Cancelar");
+    const ok = el("button", { type: "button", class: "btn small danger solid" });
+    label(ok, icon, yes);
+    cancel.addEventListener("click", () => this.cancelConfirm());
+    ok.addEventListener("click", () => { this.hideConfirm(); action(); });
+    this.confirmBox.replaceChildren(
+      el("p", { class: "confirm-text" }, el("strong", { text: question }), " ", consequence),
+      el("div", { class: "confirm-buttons" }, cancel, ok));
+    this.buttons.hidden = true;
+    this.confirmBox.hidden = false;
+    cancel.focus();
+  }
+
+  private hideConfirm(): void {
+    this.confirmBox.hidden = true;
+    this.confirmBox.replaceChildren();
+    this.buttons.hidden = false;
+  }
+
+  private cancelConfirm(): void {
+    this.hideConfirm();
+    this.focusGame();
   }
 
   private toggleHowTo(force?: boolean): void {
@@ -177,13 +196,13 @@ export class MatchTile {
     this.pauseButton.disabled = s.status !== "playing" && s.status !== "paused";
     this.pauseButton.classList.toggle("primary", s.resumeHint);
     const busy = s.status === "stopping";
-    if (this.armed?.button !== this.restartButton) label(this.restartButton, "↻", s.status === "error" ? "Reintentar" : "Reiniciar");
-    if (this.armed?.button !== this.closeButton) label(this.closeButton, "✕", "Cerrar");
+    label(this.restartButton, "↻", s.status === "error" ? "Reintentar" : s.status === "finished" ? "Jugar otra" : "Reiniciar");
+    label(this.closeButton, "✕", "Cerrar");
     this.restartButton.classList.toggle("primary", s.status === "error" || s.status === "finished");
     this.restartButton.disabled = busy;
     this.closeButton.disabled = busy;
 
-    if (!this.armed) this.detail.textContent = this.detailText();
+    this.detail.textContent = this.detailText();
   }
 
   /** Avisa los cambios importantes una sola vez (Nielsen 1: estado visible). */
@@ -208,7 +227,7 @@ export class MatchTile {
     if (s.status === "finished" && s.result) {
       if (s.result.reason === "stopped") return "Partida detenida.";
       const winner = s.context.players.find((p) => p.playerId === s.result!.winner);
-      return `${winner ? `¡Ganó ${winner.name}!` : "Sin ganador."} «Reiniciar» juega otra igual.`;
+      return `${winner ? `¡Ganó ${winner.name}!` : "Sin ganador."} «Jugar otra» empieza una igual.`;
     }
     if (s.status === "playing" && !this.hasFocus) return "Haz clic en el juego para usar el teclado.";
     return "";

@@ -1,6 +1,6 @@
-# GameConsole
+# DnD Games · GameConsole
 
-Consola web de videojuegos orientada a objetos, con inteligencia de juego en Prolog y estadísticas en vivo de **GameStats**.
+**DnD Games** (por **D**anny a**n**d **D**ylan) es una consola web de videojuegos orientada a objetos, con inteligencia de juego en Prolog y estadísticas en vivo de **GameStats**, con una temática navideña propia. El repositorio se llama `gameconsole`.
 
 Es la **continuación de [GameStats](https://github.com/GameStats-Danny-Dylan/gamestats)** (Proyecto 1). En el P1 un simulador generaba las partidas; aquí las generan **juegos de verdad**, y GameStats las sigue analizando con el mismo contrato de eventos.
 
@@ -33,7 +33,8 @@ Proyecto 2 del curso Lenguajes de Programación · Danny González y Dylan Mende
 - **Varias partidas a la vez:** cada partida corre en su propio iframe, en la misma consola o en pestañas distintas, con un identificador único (`matchId`).
 - **IA en Prolog:** en el 4 en línea contra la computadora, cada jugada la decide Prolog con minimax y poda alfa-beta, en tres dificultades.
 - **Eventos para GameStats:** los juegos generan eventos con el contrato del P1 y la consola los envía en paralelo, sin bloquear nada y reintentando si GameStats no responde.
-- **Panel en vivo:** muestra las estadísticas que calcula GameStats (por juego y generales, clasificación de jugadores, partidas en curso) mientras se juega.
+- **Panel en vivo:** muestra las estadísticas que calcula GameStats (por juego y generales, clasificación de jugadores, partidas en curso) mientras se juega, al lado de las partidas.
+- **Pensada para quien la usa por primera vez:** portada con "Cómo funciona", "Cómo se juega" de cada juego por partes (objetivo, pasos, controles y consejos), avisos y confirmaciones, revisada con las 10 heurísticas de Nielsen.
 
 ## 2. Cómo cumple el enunciado
 
@@ -126,7 +127,7 @@ Se guardan en dos volúmenes: `analytics-results` (los resultados de Scala) y `i
 | Variable | Por defecto | Qué es |
 |---|---|---|
 | `GATEWAY_PORT` | `8000` | Puerto de la PC donde se publica todo |
-| `GAMESTATS_TAG` | `v1.0` | Versión de las imágenes de GameStats |
+| `GAMESTATS_TAG` | `v1.1` | Versión de las imágenes de GameStats |
 | `ANALYTICS_IMAGE`, `INGESTION_IMAGE` | las de GHCR | Usar una imagen local de GameStats (por ejemplo, una versión sin publicar) |
 | `GAMECONSOLE_TAG` | `latest` | Versión de las imágenes de GameConsole (solo en `docker-compose.deploy.yml`) |
 
@@ -166,7 +167,8 @@ GAMECONSOLE_TAG=v1.0 docker compose -f docker-compose.deploy.yml up -d --wait
 | `ghcr.io/gamestats-danny-dylan/gameconsole-registry` | registry |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-prolog` | IA en Prolog |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-panel` | panel |
-| GameStats: `gamestats-analytics`, `gamestats-ingestion` | del repo `gamestats` |
+| `ghcr.io/gamestats-danny-dylan/gamestats-analytics:v1.1` | GameStats: análisis en Scala ([release v1.1](https://github.com/GameStats-Danny-Dylan/gamestats/releases/tag/v1.1)) |
+| `ghcr.io/gamestats-danny-dylan/gamestats-ingestion:v1.1` | GameStats: ingesta en Go (mismo release) |
 
 Todas para `amd64` y `arm64` (también funcionan en una Mac con chip Apple).
 
@@ -239,9 +241,21 @@ El panel solo muestra lo que devuelve GameStats. Para eso GameStats v1.1 agregó
 
 GameStats v1.1 también acepta cualquier `gameId`, para que un juego nuevo se analice con estadísticas genéricas.
 
+### GameStats v1.1: persistencia de las partidas en curso
+
+Si `ingestion` (Go) se reinicia en medio de una partida, antes la perdía y Scala recibía partidas incompletas. En v1.1 guarda las partidas en curso en disco (`DATA_DIR`, volumen `ingestion-data`) y rechaza eventos de partidas cuyo `MATCH_STARTED` no vio. Probado: con un reinicio a mitad de partida, Scala la recibe completa.
+
+### "Cómo se juega" de cada juego
+
+Cada `game.json` puede traer `instructions`: el objetivo, los pasos, los controles (por jugador si hace falta) y consejos. La consola lo muestra **antes de jugar** (en el panel de nueva partida) y **durante la partida** (botón "? Cómo se juega"), en secciones que se abren y cierran con un clic. Como viene del manifiesto, un juego nuevo trae sus propias instrucciones sin tocar la consola.
+
+### Diseño: temática DnD Games
+
+Una temática navideña propia (sin personajes ni marcas de terceros): letras Poppins e Inter, rojo navidad, dorado y verde pino, modo claro tipo cabaña y oscuro de noche de invierno, nieve, guirnalda de luces y los juegos como regalos. Los botones tienen relieve e ícono, y la información es texto plano, para que nunca se confundan. Detalle en [`console/README.md`](console/README.md#6-diseño-temática-dnd-games).
+
 ### Usabilidad para quien la usa por primera vez
 
-La consola se revisó contra las **10 heurísticas de Nielsen**: estado siempre visible (indicadores y avisos), lenguaje de jugador, "Cómo se juega" antes y durante cada partida, confirmación antes de cerrar una partida en curso, mensajes de error que dicen qué hacer y una guía de primera vez. La tabla completa está en [`console/README.md`](console/README.md#usabilidad-heurísticas-de-nielsen).
+La consola se revisó contra las **10 heurísticas de Nielsen**: estado siempre visible (indicadores y avisos), lenguaje de jugador, "Cómo funciona" en la portada, "Cómo se juega" antes y durante cada partida, confirmación antes de cerrar una partida en curso y mensajes de error que dicen qué hacer. La tabla completa está en [`console/README.md`](console/README.md#7-usabilidad-heurísticas-de-nielsen).
 
 ### Un solo origen
 
@@ -294,7 +308,7 @@ gameconsole/
 | 4 en línea | 44 (Vitest), incluidas 3000 partidas al azar contra una copia de las reglas de Scala | `cd games/connect4 && npm ci && npm test` |
 | 4 en línea contra GameStats real | partidas simuladas y una entera contra Prolog | con el compose corriendo: `GAMESTATS_URL=http://localhost:8000 npm run test:gamestats` |
 | Tetris | 58 (Vitest), incluidos eventos contra una copia de las reglas de Scala | `cd games/tetris && npm ci && npm test` |
-| Peleas | 63 (Vitest) | `cd games/fighting && npm ci && npm test` |
+| Peleas | 63 (Vitest), incluidas peleas al azar contra una copia de las reglas de Scala | `cd games/fighting && npm ci && npm test` |
 | Registry | 15 (`node:test`) | `cd registry && npm ci && npm test` |
 | Panel | 7 (Vitest) | `cd panel && npm ci && npm test` |
 | Prolog | 18 (plunit) | `cd prolog && swipl tests.pl` |
@@ -307,11 +321,11 @@ Con Docker no hace falta instalar nada: cada imagen corre sus pruebas al constru
 | Documento | Qué explica |
 |---|---|
 | [`docs/protocolo.md`](docs/protocolo.md) | El contrato completo: rutas, manifiesto, registry, mensajes, eventos, envío, IA y panel |
-| [`console/README.md`](console/README.md) | La consola y el envío de eventos |
-| [`sdk/README.md`](sdk/README.md) | Cómo se construye un juego sobre el SDK |
-| [`games/connect4/README.md`](games/connect4/README.md) | El 4 en línea |
-| [`games/tetris/README.md`](games/tetris/README.md) | Tetris |
-| [`games/fighting/README.md`](games/fighting/README.md) | Peleas |
+| [`console/README.md`](console/README.md) | La consola: qué ve la persona, el envío de eventos, el diseño y las heurísticas de Nielsen |
+| [`sdk/README.md`](sdk/README.md) | `GameApp`, el sellado de eventos, el manifiesto, el servidor de cada juego, el tema y cómo se construye un juego nuevo |
+| [`games/connect4/README.md`](games/connect4/README.md) | El 4 en línea: reglas, IA, POO, patrones y eventos |
+| [`games/tetris/README.md`](games/tetris/README.md) | Tetris: reglas, puntaje, POO, patrones y eventos |
+| [`games/fighting/README.md`](games/fighting/README.md) | Peleas: reglas del combate, POO, patrones y eventos |
 | [`prolog/README.md`](prolog/README.md) | Cómo decide la computadora |
 | [`registry/README.md`](registry/README.md) | El descubrimiento de juegos |
 | [`panel/README.md`](panel/README.md) | El panel de estadísticas |
@@ -327,5 +341,6 @@ Con Docker no hace falta instalar nada: cada imagen corre sus pruebas al constru
 | Panel | ✅ |
 | Docker, CI/CD, deployment | ✅ |
 | Tetris y peleas | ✅ |
-| GameStats v1.1 publicado y en los compose (`GAMESTATS_TAG=v1.1`) | pendiente |
+| Diseño DnD Games y usabilidad (heurísticas de Nielsen) | ✅ |
+| GameStats v1.1 publicado y en los compose (`GAMESTATS_TAG=v1.1`) | ✅ |
 | Video de demostración | pendiente |

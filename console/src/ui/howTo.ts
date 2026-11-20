@@ -2,10 +2,11 @@
  * El "Cómo se juega" de un juego (howToPlay del manifiesto), ordenado para
  * alguien que nunca lo jugó:
  *
- *   🎯 Objetivo      qué hay que lograr            (siempre abierto)
- *   🕹️ Paso a paso   cómo se juega, numerado        (se abre y cierra)
- *   ⌨️ Controles     tabla tecla → acción, por jugador
- *   💡 Consejos      para jugar mejor               (cerrado al empezar)
+ *   Objetivo      qué hay que lograr            (siempre abierto)
+ *   Paso a paso   cómo se juega, numerado        (se abre y cierra)
+ *   Controles     tabla tecla → acción, por jugador
+ *   Consejos      para jugar mejor               (cerrado al empezar)
+ * Cada parte lleva su ícono (icons.ts: target, steps, keyboard, bulb).
  *
  * Cada parte es un <details>: se abre o se cierra con un clic. Se usa en el
  * formulario (antes de empezar) y en cada partida (durante el juego).
@@ -14,6 +15,7 @@
  */
 import type { HowToControl, HowToPlay } from "@gameconsole/sdk";
 import { el } from "./dom";
+import { icon, type IconName } from "./icons";
 
 const KEY_SPLIT = /(\b(?:Espacio|Enter|Esc)\b|[←→↑↓]|\b[A-Z]\b)/;
 const IS_KEY = /^(Espacio|Enter|Esc|[←→↑↓]|[A-Z])$/;
@@ -41,23 +43,23 @@ export function hasHowTo(h: string | HowToPlay | undefined): h is string | HowTo
 export function renderHowTo(h: string | HowToPlay, expanded = true): HTMLElement {
   const box = el("div", { class: "howto-sections" });
   if (typeof h === "string") {
-    box.append(section("🎯", "Cómo se juega", true, howToPlayText(h)));
+    box.append(section("target", "Cómo se juega", true, howToPlayText(h)));
     return box;
   }
-  box.append(section("🎯", "Objetivo", true, el("p", { class: "howto-goal", text: h.goal })));
+  box.append(section("target", "Objetivo", true, el("p", { class: "howto-goal", text: h.goal })));
   if (h.steps?.length)
-    box.append(section("🕹️", "Paso a paso", expanded,
+    box.append(section("steps", "Paso a paso", expanded,
       el("ol", { class: "howto-steps" }, ...h.steps.map((s) => el("li", {}, howToPlayText(s))))));
-  if (h.controls?.length) box.append(section("⌨️", "Controles", expanded, controlsTable(h.controls)));
+  if (h.controls?.length) box.append(section("keyboard", "Controles", expanded, controlsTable(h.controls)));
   if (h.tips?.length)
-    box.append(section("💡", "Consejos", false,
+    box.append(section("bulb", "Consejos", false,
       el("ul", { class: "howto-tips" }, ...h.tips.map((t) => el("li", { text: t })))));
   return box;
 }
 
-function section(icon: string, title: string, open: boolean, body: HTMLElement): HTMLElement {
+function section(name: IconName, title: string, open: boolean, body: HTMLElement): HTMLElement {
   return el("details", { class: "howto-section", open },
-    el("summary", {}, el("span", { class: "howto-icon", "aria-hidden": "true", text: icon }), title),
+    el("summary", {}, el("span", { class: "howto-icon" }, icon(name)), title),
     el("div", { class: "howto-body" }, body));
 }
 

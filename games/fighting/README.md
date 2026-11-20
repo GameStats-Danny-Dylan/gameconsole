@@ -1,52 +1,141 @@
 # Pelea (fighting)
 
-Pelea 1 contra 1 para 2 personas en el mismo teclado (modo `local-2p`), al mejor de 1, 3 o 5 rounds. Todo se dibuja por código en un `<canvas>` (sin imágenes ni bibliotecas): luchadores articulados, escenario por capas y marcador clásico.
+El juego para **2 personas en el mismo teclado** de DnD Games: una pelea 1 contra 1, al mejor de 1, 3 o 5 rounds. Gana quien deja al rival sin vida o tiene más vida cuando se acaba el tiempo. Se dibuja por código en un `<canvas>` (sin imágenes ni bibliotecas): luchadores articulados, escenario por capas y marcador clásico, con efectos de impacto y sonido sintetizado.
 
-| Jugador | Caminar | Saltar | Golpe | Patada | Bloqueo |
-|---|---|---|---|---|---|
-| Slot 1 (izquierda) | A / D | W | F | S + F | G |
-| Slot 2 (derecha) | ← / → | ↑ | K | ↓ + K | L |
+Es una app independiente: tiene su propio contenedor (`game-fighting`), se registra sola en la consola y manda sus eventos a GameStats con el contrato del Proyecto 1.
+
+---
+
+## Contenido
+
+1. [Cómo se juega](#1-cómo-se-juega)
+2. [Reglas del combate](#2-reglas-del-combate)
+3. [Arquitectura](#3-arquitectura)
+   - [Dibujo y personajes](#dibujo-y-personajes)
+   - [Sensación de juego](#sensación-de-juego)
+   - [Sonido](#sonido)
+4. [Programación orientada a objetos](#4-programación-orientada-a-objetos)
+5. [Patrones de diseño](#5-patrones-de-diseño)
+6. [Ciclo de una partida](#6-ciclo-de-una-partida)
+7. [Eventos para GameStats](#7-eventos-para-gamestats)
+8. [Manifiesto (`game.json`)](#8-manifiesto-gamejson)
+9. [Pruebas](#9-pruebas)
+10. [Cómo correrlo](#10-cómo-correrlo)
+
+---
+
+## 1. Cómo se juega
+
+**Objetivo:** ganar más rounds que tu rival. Un round se gana dejando al otro sin vida (KO) o teniendo más vida cuando se acaba el tiempo.
+
+1. El Jugador 1 (**Brasa**, rojo) está a la izquierda y el Jugador 2 (**Marea**, celeste) a la derecha, en el mismo teclado.
+2. Golpea y patea para bajarle la vida al rival; bloquea para no recibir daño.
+3. Cada round dura 60 segundos. Gana la pelea quien gane la mayoría de los rounds.
+
+**Controles**
+
+| Acción | Jugador 1 (izquierda) | Jugador 2 (derecha) |
+|---|---|---|
+| Caminar | **A** / **D** | **←** / **→** |
+| Saltar | **W** | **↑** |
+| Golpe (puño) | **F** | **K** |
+| Patada | **S** + **F** | **↓** + **K** |
+| Bloquear | **G** | **L** |
+
+Golpear en el aire también es patada. El bloqueo solo sirve de frente.
 
 **M** silencia o vuelve a activar el sonido (sirve para los dos).
 
-Golpear en el aire también es patada. El bloqueo solo sirve de frente. Un round termina por KO o por tiempo (60 s; gana el que tiene más vida, con la misma vida es empate). Gana la pelea quien llega a la mayoría de los rounds; si se juegan todos sin llegar, gana el que ganó más y, si empatan, no hay ganador (igual que calcula GameStats).
+**Opción:** cantidad de rounds: 1, mejor de 3 o mejor de 5 (por defecto, mejor de 3).
 
-```bash
-npm install
-npm run dev     # abierto directamente: modo de prueba con un formulario
-npm test        # Vitest
-npm run build
+## 2. Reglas del combate
+
+Todos los valores están en `src/domain/CombatRules.ts` (`DEFAULT_RULES`):
+
+| Regla | Valor |
+|---|---|
+| Vida de cada luchador | 100 |
+| Duración de un round | 60 s |
+| Daño del puño / de la patada | 7 / 11 |
+| Alcance del puño / de la patada | 62 / 86 px |
+| Aturdimiento al recibir un golpe | 0,28 s (menos que un puño completo: el rival alcanza a bloquear, no hay combos infinitos) |
+| Frenado al bloquear | 0,18 s |
+| Ventana del combo | 0,75 s entre dos golpes que conectan |
+
+**Cómo termina:**
+
+- **Round:** por KO (vida en 0) o por tiempo. Por tiempo gana quien tiene más vida; con la misma vida es empate.
+- **Pelea:** gana quien llega primero a la mayoría de los rounds. Si se juegan todos sin llegar, gana quien ganó más; si empatan, no hay ganador (igual que calcula GameStats).
+
+## 3. Arquitectura
+
+```
+src/
+  domain/
+    HitBox.ts             rectángulos de choque
+    Arena.ts              el escenario (dojo): ancho, piso, posiciones iniciales
+    CombatRules.ts        daño, bloqueo, alcance y tiempos de cada golpe
+    Round.ts              reloj y resultado de un round
+    FightingMatch.ts      la pelea: rounds al mejor de N, combos y hechos
+    fighter/
+      Fighter.ts          un luchador: posición, vida, movimiento
+      states.ts           sus estados: quieto, caminando, saltando, atacando, bloqueando, golpeado, KO
+      Intent.ts           lo que quiere hacer en este cuadro (según las teclas)
+      InputBuffer.ts      guarda 0,1 s un golpe o salto pulsado un poco antes de poder hacerlo
+      FighterFactory.ts   crea a Brasa y Marea
+  input/
+    ControlScheme.ts      qué tecla hace qué, por jugador
+    KeyboardInput.ts      el teclado del navegador
+  adapter/
+    GameStatsAdapter.ts   hechos de la pelea -> eventos del contrato de GameStats
+  fx/
+    GameFeel.ts           une la pelea con todo lo que la hace "sentirse" (Mediator)
+    HitStop.ts            congelado de impacto
+    SlowMotion.ts         cámara lenta del KO final
+    EffectsSystem.ts      estela de vida, contador de combo, aterrizaje y festejo
+    ParticleSystem.ts     chispas, esquirlas y polvo
+    CameraRig.ts          sacudida y zoom
+  audio/
+    SoundPort.ts          lo que el juego necesita del sonido
+    SoundBank.ts          efectos sintetizados con WebAudio
+  game/
+    FightingGame.ts       ciclo con requestAnimationFrame y tiempo delta, pausa y cierre
+    FightingApp.ts        el juego dentro de la consola (hereda de GameApp del SDK)
+    ports.ts              interfaces que usa el juego
+  ui/
+    CanvasView.ts         arma la vista: coordina a los que dibujan (fachada)
+    StageRenderer.ts      escenario por capas: cielo, montañas, patio del dojo y piso, con parallax
+    FighterRenderer.ts    luchadores articulados con ropa por personaje, sombra y destello
+    EffectsRenderer.ts    partículas, destello del KO y contador de combo
+    HudRenderer.ts        barras con estela de daño, retratos, medallones de rounds, reloj y carteles
+    looks.ts              cómo se ve cada personaje
+    color.ts              ayudas de color para el canvas
+    pose/
+      Skeleton.ts         huesos y cinemática directa
+      PoseAnimator.ts     la pose de cada estado
+  standalone/
+    setup.ts              modo de prueba con un formulario
+public/
+  game.json               manifiesto del juego
 ```
 
-## Estructura
+### Dibujo y personajes
 
-| Carpeta | Qué hay | Patrón |
-|---|---|---|
-| `src/domain/` | `HitBox`, `Arena`, `CombatRules` (daño, bloqueo, alcance, tiempos), `Round`, `FightingMatch` (rounds al mejor de N, combos, hechos) | Strategy (`CombatRules`), Observer (`facts`) |
-| `src/domain/fighter/` | `Fighter`, sus estados (`idle`, `walk`, `jump`, `attack`, `block`, `hit`, `ko`), `InputBuffer` y `FighterFactory` | State, Factory |
-| `src/input/` | Mapeo de teclas por jugador (`KeyboardControls`) y el teclado del navegador | Strategy |
-| `src/adapter/` | `GameStatsAdapter`: hechos de la pelea → eventos del contrato | Adapter |
-| `src/game/` | `FightingGame` (ciclo con `requestAnimationFrame` y tiempo delta, pausa, cierre) y `FightingApp extends GameApp` | Template Method |
-| `src/ui/` | `CanvasView` coordina a `StageRenderer` (cielo, montañas, patio del dojo y piso, con parallax), `FighterRenderer` (luchadores articulados con ropa por personaje, sombra y destello) y `HudRenderer` (barras con estela de daño, retratos, medallones de rounds, reloj y carteles animados) | Facade (`CanvasView`) |
-| `src/ui/pose/` | `Skeleton` (huesos y cinemática directa) y `PoseAnimator` (la pose de cada estado: respiración, ciclo de piernas, salto, puño, patada, bloqueo, golpeado, caída del KO) | State (lee el estado del luchador) |
-| `src/fx/` | `GameFeel` une la pelea con `HitStop` (congelado de impacto), `SlowMotion` (cámara lenta del KO final) y `EffectsSystem` (estela de vida, `ParticleSystem`, `CameraRig`, contador de combo, aterrizaje, festejo). Todo es lógica pura que avanza con el ciclo: en la pausa queda quieto | Mediator (`GameFeel`), Facade (`EffectsSystem`), Observer (`impacts`) |
-| `src/audio/` | `SoundPort` (lo que el juego necesita del sonido) y `SoundBank` (efectos sintetizados con WebAudio) | Adapter / inyección (`SoundPort`) |
+Todo se dibuja por código; `CanvasView` solo coordina y cada renderer hace lo suyo: `StageRenderer` (escenario por capas con parallax), `FighterRenderer` (luchadores articulados), `EffectsRenderer` (partículas, destello del KO y contador de combo) y `HudRenderer` (marcador). El mundo se dibuja a través de la cámara de los efectos (sacudida y zoom); el marcador queda fijo.
 
-## Personajes
+Los luchadores son esqueletos (`Skeleton`, con cinemática directa) y `PoseAnimator` da la pose de cada estado: respiración, ciclo de piernas, salto, puño, patada, bloqueo, golpeado y caída del KO. Diseños propios del juego (`src/ui/looks.ts`): **Brasa** (camiseta sin mangas carmesí con ribete naranja, faja ámbar con puntas al viento, pelo en cresta) y **Marea** (chaqueta corta turquesa cruzada, vendas blancas, canilleras y coleta larga). Las animaciones solo leen al luchador: nunca mueven una HitBox (`test/render.test.ts` lo revisa cuadro por cuadro, y que el puño o el pie dibujados lleguen a la zona del golpe).
 
-Diseños propios del juego (`src/ui/looks.ts`): **Brasa** (camiseta sin mangas carmesí con ribete naranja, faja ámbar con puntas al viento, pelo en cresta) y **Marea** (chaqueta corta turquesa cruzada, vendas blancas, canilleras y coleta larga). Las animaciones solo leen al luchador: nunca mueven una HitBox (`test/render.test.ts` lo revisa cuadro por cuadro, y que el puño o el pie dibujados lleguen a la zona del golpe).
-
-## Sensación de juego
+### Sensación de juego
 
 - **Congelado de impacto** (`HitStop`): al tocar, la pelea (y el reloj del round) se detiene 3 cuadros con un puño, 4 con una patada o en el KO y 2 si lo bloquean. Las teclas apretadas en ese momento se guardan para el cuadro siguiente.
 - **Retroceso con fricción**: el golpeado sale empujado y frena solo (fricción que no depende de los cuadros por segundo). Contra la pared el empuje lo absorbe el que pega, así una cadena de golpes no pasa de 3 (`test/movement.test.ts`).
 - **Movimiento**: caminar acelera en unos cuadros y frena en seco al soltar (para medir bien las distancias); el salto sube rápido, cuelga en la cima y cae un poco más rápido.
 - **Buffer de entrada** (`InputBuffer`, 0,1 s): un golpe o salto pulsado un poco antes de poder hacerlo sale apenas se puede. No inventa acciones: sale igual que si se pulsara en ese cuadro.
-- **Efectos**: chispas y estrella de impacto, esquirlas y arco de guardia al bloquear, polvo al caminar, aterrizar y caer; sacudida de pantalla en patadas y KO; contador de combo ("3 GOLPES") del lado de quien lo hace; destello, zoom leve y cámara lenta en el KO que decide la pelea.
+- **Efectos**: chispas y estrella de impacto, esquirlas y arco de guardia al bloquear, polvo al caminar, aterrizar y caer; sacudida de pantalla en patadas y KO; contador de combo ("3 GOLPES") del lado de quien lo hace; destello, zoom leve y cámara lenta (`SlowMotion`) en el KO que decide la pelea.
 
-Nada de esto cambia los hechos ni los eventos: `FightingMatch.impacts` avisa los golpes solo para la presentación.
+`GameFeel` une la pelea con todo esto. Es lógica pura que avanza con el ciclo, así que en la pausa queda quieto. Nada de esto cambia los hechos ni los eventos: `FightingMatch.impacts` avisa los golpes solo para la presentación.
 
-## Sonido
+### Sonido
 
 Efectos sintetizados en el momento con WebAudio, sin archivos (`src/audio/SoundBank.ts`): puño, patada, bloqueo, KO, campana de round y el silbido de un golpe que sale.
 
@@ -55,18 +144,97 @@ Efectos sintetizados en el momento con WebAudio, sin archivos (`src/audio/SoundB
 - En la pausa (o al cerrar la partida) el audio se suspende: lo que sonaba se corta y no suena nada nuevo hasta seguir.
 - Los sonidos salen de `GameFeel`, igual que los efectos: no cambian hechos ni eventos (`test/sound.test.ts`).
 
-## Eventos
+## 4. Programación orientada a objetos
 
-Uno por hecho del juego, nunca por cuadro. Un golpe que conecta queda en espera mientras dura la ventana del combo (0,75 s) y sale como `ATTACK` o dentro de un `COMBO`: `MATCH_STARTED {stage, rounds}`, `PLAYER_JOINED {character}` por cada uno, y después `ATTACK` (un golpe suelto; fallado o bloqueado va con `damage: 0`), `BLOCK`, `COMBO` (2 o más golpes conectados seguidos, cada uno a menos de 0,75 s del anterior; **reemplaza** a los `ATTACK` de esos golpes, como en el fixture de GameStats, así la suma del daño de un round es la vida que se quitó), `KNOCKDOWN` (el golpe que deja al rival en 0), `ROUND_WON` / `ROUND_DRAW`, `MATCH_PAUSED` / `MATCH_RESUMED`, y al cerrar a la mitad `PLAYER_LEFT` de cada uno. `MATCH_FINISHED` sale una sola vez.
+| Concepto | Dónde se ve |
+|---|---|
+| **Responsabilidades separadas** | `CombatRules` decide el daño, `Round` lleva el tiempo, `FightingMatch` cuenta rounds y combos, `Fighter` se mueve, `CanvasView` coordina el dibujo y `GameFeel` reparte los efectos y el sonido |
+| **Encapsulación** | La vida y el estado de cada luchador solo cambian por las reglas del combate, no desde afuera |
+| **Abstracción** | El juego depende de interfaces (`ports.ts`, `SoundPort`) y de un esquema de controles; se prueba sin teclado, sin pantalla y sin sonido |
+| **Herencia** | `FightingApp extends GameApp`; los estados del luchador comparten una base común |
+| **Polimorfismo** | Cada estado del luchador (quieto, atacando, bloqueando…) responde distinto a la misma intención |
 
-`test/support/scalaRules.ts` es una copia de las reglas de GameStats para fighting (schema y `FightingCheck`); `test/events.test.ts` simula cientos de peleas al azar y revisa que ningún evento se descarte.
+## 5. Patrones de diseño
 
-## Docker
+| Patrón | Dónde | Para qué |
+|---|---|---|
+| **State** | `fighter/states.ts` | Cada estado del luchador decide qué puede hacer (no se ataca mientras te golpean); `PoseAnimator` lee ese estado para elegir la pose |
+| **Factory** | `FighterFactory` | Crea cada luchador con su personaje, color y lado |
+| **Strategy** | `CombatRules`, `ControlScheme` | Las reglas del combate y los controles se cambian sin tocar el resto |
+| **Observer** | `FightingMatch.facts` y `FightingMatch.impacts` (`Emitter`) | La pelea publica sus hechos y sus golpes; el adapter se suscribe a los hechos y `GameFeel` a los golpes, solo para la presentación |
+| **Adapter** | `GameStatsAdapter`, `SoundPort` / `SoundBank` | Convierte los hechos en eventos del contrato de GameStats; el juego pide sonidos por una interfaz y `SoundBank` los sintetiza con WebAudio |
+| **Template Method** | `FightingApp extends GameApp` | El SDK define el ciclo; el juego llena sus pasos |
+| **Mediator** | `GameFeel` | Une la pelea con el congelado de impacto, la cámara lenta, los efectos y el sonido sin que se conozcan entre sí |
+| **Facade** | `CanvasView`, `EffectsSystem` | Una sola entrada para dibujar la pelea (coordina a los renderers) y para los efectos (estela, partículas, cámara, combo) |
 
-Se construye desde la raíz del repo (para que Docker vea `sdk/`):
+## 6. Ciclo de una partida
+
+```
+loading ──INIT──► ready ──START──► playing ⇄ paused ──► finished
+```
+
+| Mensaje de la consola | Qué hace el juego |
+|---|---|
+| `INIT` | Arma la pelea con la cantidad de rounds elegida |
+| `START` | Emite `MATCH_STARTED {stage, rounds}` y un `PLAYER_JOINED {character}` por luchador; empieza el round 1 |
+| `PAUSE` / `RESUME` | Detiene y reanuda el reloj y el movimiento |
+| `STOP` | Si la pelea empezó, emite `PLAYER_LEFT` de cada uno y `MATCH_FINISHED` |
+
+## 7. Eventos para GameStats
+
+Uno por hecho del juego, **nunca por cuadro**: las posiciones mientras se mueven no se mandan.
+
+| Evento | Cuándo | `data` |
+|---|---|---|
+| `MATCH_STARTED` | Al empezar | `stage` (`dojo`), `rounds` (1, 3 o 5) |
+| `PLAYER_JOINED` | Por cada luchador | `character` (`brasa` o `marea`) |
+| `PLAYER_ACTION ATTACK` | Un golpe suelto (puño o patada) | `targetId`, `move`, `hit`, `damage` (0 si falló o lo bloquearon), `round` |
+| `PLAYER_ACTION BLOCK` | Bloquea un golpe | `attackerId`, `round` |
+| `PLAYER_ACTION COMBO` | 2 o más golpes que conectan seguidos (cada uno a menos de 0,75 s del anterior). **Reemplaza** a los `ATTACK` de esos golpes, así el daño del round suma exactamente la vida que se quitó | `targetId`, `hits`, `damage`, `round` |
+| `PLAYER_ACTION KNOCKDOWN` | El golpe que deja al rival en 0 | `targetId`, `round` |
+| `PLAYER_ACTION ROUND_WON` | Alguien gana un round | `round`, `remainingHealth`, `method` (KO o tiempo) |
+| `PLAYER_ACTION ROUND_DRAW` | Un round termina empatado | `round`, `method`, `otherId` |
+| `MATCH_PAUSED` / `MATCH_RESUMED` | Pausa y reanudación | `reason` |
+| `PLAYER_LEFT` | Al cerrar la pelea a la mitad | — |
+| `MATCH_FINISHED` | Al terminar (una sola vez) | `reason`: `normal` o `stopped` |
+
+**Validación:** `test/support/scalaRules.ts` es una copia de las reglas de GameStats para fighting (schema y `FightingCheck`); `test/events.test.ts` simula cientos de peleas al azar (al mejor de 1, 3 y 5) y revisa que ningún evento se descarte.
+
+## 8. Manifiesto (`game.json`)
+
+| Campo | Valor |
+|---|---|
+| `id` / `gameStatsId` | `fighting` |
+| `modes` | `local-2p` (2 personas en el mismo teclado) |
+| `options` | `rounds` (1, 3 o 5) |
+| `howToPlay` | Texto corto con los controles de cada jugador |
+| `instructions` | "Cómo se juega" por partes: objetivo, paso a paso, controles por jugador y consejos. La consola lo muestra antes de jugar y durante la partida |
+
+## 9. Pruebas
+
+| Archivo | Pruebas | Qué revisa |
+|---|---|---|
+| `CombatRules.test.ts` | 8 | Daño, bloqueo, alcance y tiempos de cada golpe |
+| `Fighter.test.ts` | 15 | Movimiento, salto, estados del luchador |
+| `FightingMatch.test.ts` | 23 | Rounds, KO, tiempo, empates, combos y ganador |
+| `FightingApp.test.ts` | 9 | El juego dentro de la consola por el SDK |
+| `events.test.ts` | 8 | Eventos y peleas al azar contra las reglas de GameStats |
+
+**Total: 63 pruebas.**
+
+## 10. Cómo correrlo
+
+```bash
+npm ci
+npm test         # 63 pruebas
+npm run build
+npm run dev      # abierto directamente: modo de prueba con un formulario
+```
+
+**Con Docker**, desde la **raíz** del repo, porque usa el SDK:
 
 ```bash
 docker build -f games/fighting/Dockerfile -t gameconsole-game-fighting .
 ```
 
-En `docker-compose.yml`, el servicio se llama `game-fighting` (el gateway lo busca por ese nombre) y necesita `REGISTRY_URL: "http://registry:8080"`.
+En `docker-compose.yml` el servicio se llama `game-fighting` (el gateway lo busca por ese nombre) y necesita `REGISTRY_URL: "http://registry:8080"`.

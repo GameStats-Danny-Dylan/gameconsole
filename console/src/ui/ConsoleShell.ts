@@ -9,8 +9,8 @@
  * va del registry, el formulario lo marca como no disponible, pero sus
  * partidas abiertas siguen).
  *
- * Los paneles laterales no son modales: mientras están abiertos, las partidas
- * se corren a un lado y siguen jugándose (no se pausan).
+ * Estadísticas es un panel lateral: mientras está abierto, las partidas se
+ * corren a un lado y siguen jugándose. Nueva partida ocupa toda la pantalla.
  */
 import type { GameManifest, MatchContext } from "@gameconsole/sdk";
 import { appHeader } from "@gameconsole/sdk/theme";
@@ -26,7 +26,8 @@ import { sendIndicator } from "./SendIndicator";
 import { StatsDrawer } from "./StatsDrawer";
 import { Toasts } from "./Toasts";
 import { VisibilityWatcher } from "./VisibilityWatcher";
-import { WelcomeGuide } from "./WelcomeGuide";
+import { Hero } from "./Hero";
+import { icon, type IconName } from "./icons";
 
 export interface ShellDeps {
   catalog: GameCatalog;
@@ -42,7 +43,6 @@ export class ConsoleShell {
   private readonly menu = new GameMenu((id) => this.openForm(id));
   private readonly form = new MatchFormView((ctx, m) => this.startMatch(ctx, m));
   private readonly stats = new StatsDrawer("/panel/");
-  private readonly guide = new WelcomeGuide();
   private readonly watcher = new VisibilityWatcher();
   private readonly toasts = new Toasts();
   private readonly grid: MatchGrid;
@@ -55,20 +55,28 @@ export class ConsoleShell {
     // En la cabecera, solo botones. Los estados van aparte, en la barra de estado:
     // así la información nunca parece algo que se pueda pulsar.
     const statsButton = el("button", { type: "button", class: "btn stats-link", "aria-controls": "stats" },
-      el("span", { class: "btn-icon", "aria-hidden": "true", text: "📊" }), "Estadísticas");
+      icon("chart", "btn-svg"), "Estadísticas");
     statsButton.addEventListener("click", () => { this.form.close(); this.stats.toggle(); });
     this.stats.element.id = "stats";
 
+    // Estado del sistema: información, no botones. Un recuadro por cosa, con su
+    // dibujo, qué es y cómo está (el punto de color dice si está bien).
+    const statusItem = (name: IconName, label: string, value: HTMLElement) =>
+      el("div", { class: "status-item" },
+        el("span", { class: "status-icon" }, icon(name)),
+        el("div", {}, el("span", { class: "status-label", text: label }), value));
     const statusbar = el("div", { class: "statusbar", "aria-label": "Estado del sistema" },
-      this.status,
-      ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []),
-      el("p", { class: "signal hint-signal", text: "Cada jugada se guarda en GameStats" }));
+      statusItem("gamepad", "Juegos", this.status),
+      ...(this.deps.sender ? [statusItem("cloud", "GameStats", sendIndicator(this.deps.sender))] : []));
 
+    const hero = new Hero(statusbar, () => this.menu.element.scrollIntoView({ behavior: "smooth", block: "start" }));
+
+    // Cabecera: la marca "DnD Games" (DnD en rojo) y solo botones a la derecha.
+    const header = appHeader("DnD Games", "", hero.button, statsButton);
+    header.querySelector("h1")!.replaceChildren(el("span", { class: "brand-dnd", text: "DnD" }), " Games");
     this.root.append(
-      appHeader("Consola de juegos", "Juegos independientes · partidas en paralelo · estadísticas en vivo",
-        this.guide.button, statsButton),
-      statusbar,
-      this.guide.element,
+      header,
+      hero.element,
       this.grid.element,
       this.menu.element,
     );
@@ -84,9 +92,11 @@ export class ConsoleShell {
         : "GameStats volvió: se mandó todo lo pendiente.", failing ? "warn" : "good");
     });
 
-    // Un solo panel lateral a la vez; mientras hay uno, la página le deja lugar.
+    // Estadísticas: panel lateral (la página le deja lugar). Nueva partida:
+    // pantalla completa (la página de atrás no se desplaza mientras está abierta).
     const sync = () => {
-      document.body.classList.toggle("drawer-open", this.form.element.open || this.stats.isOpen);
+      document.body.classList.toggle("drawer-open", this.stats.isOpen);
+      document.body.classList.toggle("modal-open", this.form.element.open);
       statsButton.classList.toggle("active", this.stats.isOpen);
       statsButton.setAttribute("aria-expanded", String(this.stats.isOpen));
     };
@@ -109,7 +119,7 @@ export class ConsoleShell {
     const n = s.games.length;
     const [cls, text] =
       s.status === "loading" ? ["", "Conectando…"] :
-      s.status === "online" ? ["ok", `${n} ${n === 1 ? "juego disponible" : "juegos disponibles"}`] :
+      s.status === "online" ? ["ok", `${n} ${n === 1 ? "disponible" : "disponibles"}`] :
       ["bad", "Sin conexión con los juegos"];
     this.status.className = `signal ${cls}`.trim();
     this.status.replaceChildren(el("span", { class: "icon", "aria-hidden": "true", text: "●" }), text);

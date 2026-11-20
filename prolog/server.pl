@@ -1,7 +1,7 @@
 /*  server.pl — servicio HTTP de la IA (protocolo, sección 7).
 
     POST /connect4/move   {"board": [[...],...], "player": "yellow", "difficulty": "hard"}
-                       -> {"column": 4, "score": 12, "depth": 6, "nodes": 4821, "ms": 85}
+                       -> {"column": 4, "score": 12, "depth": 3, "nodes": 81, "ms": 35}
     GET  /health       -> {"status": "ok"}
 
     nginx publica estas rutas como /api/ai/connect4/move y /api/ai/health.

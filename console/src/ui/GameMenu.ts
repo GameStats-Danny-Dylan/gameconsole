@@ -11,13 +11,11 @@ import type { CatalogSnapshot } from "../catalog/GameCatalog";
 import { playerLabel, type LiveSnapshot } from "../catalog/LiveStats";
 import { MODE_LABELS } from "../domain/MatchSetup";
 import { el } from "./dom";
+import { icon as svgIcon, type IconName } from "./icons";
 
-/** Un tono por juego, siempre el mismo (sale del id), para darle color propio a cada tarjeta. */
-function hueOf(id: string): number {
-  let h = 0;
-  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 360;
-  return h;
-}
+
+/** Colores de papel de regalo: rojo, verde, azul, dorado y violeta. */
+const GIFT_HUES = [140, 352, 212, 42, 280];
 
 interface CardEntry { key: string; card: HTMLElement; live: HTMLElement; statsId: string }
 
@@ -31,9 +29,9 @@ export class GameMenu {
   constructor(private readonly onPlay: (gameId: string) => void) {
     this.element.append(
       el("header", { class: "section-head" },
-        el("span", { class: "kicker", text: "Biblioteca" }),
+        el("span", { class: "kicker", text: "El taller de juegos" }),
         el("h2", { text: "Elige un juego" }),
-        el("p", { text: "Cada juego es una app aparte que la consola encontró sola. Puedes abrir varias partidas a la vez." })),
+        el("p", { text: "Cada juego es una aplicación aparte que la consola encontró sola. Elige uno, ábrelo como un regalo y juega todas las partidas que quieras, incluso varias a la vez." })),
       this.empty,
       this.grid,
     );
@@ -41,7 +39,7 @@ export class GameMenu {
 
   render(s: CatalogSnapshot): void {
     const seen = new Set<string>();
-    for (const game of s.games) {
+    for (const [i, game] of s.games.entries()) {
       seen.add(game.id);
       const key = JSON.stringify(game);
       let entry = this.cards.get(game.id);
@@ -53,6 +51,8 @@ export class GameMenu {
         this.paintLive(entry);
       }
       this.grid.append(entry.card);   // append mueve la tarjeta: queda en el orden del catálogo
+      // Cada regalo con un color navideño distinto, en el orden del menú.
+      entry.card.style.setProperty("--game-hue", String(GIFT_HUES[i % GIFT_HUES.length]));
     }
     for (const [id, { card }] of this.cards)
       if (!seen.has(id)) { card.remove(); this.cards.delete(id); }
@@ -80,7 +80,7 @@ export class GameMenu {
     entry.live.replaceChildren(
       stat(String(playing), "en curso", playing > 0 ? "on" : "", "Partidas abiertas ahora (GameStats)"),
       stat(String(played), played === 1 ? "jugada" : "jugadas", "", "Partidas terminadas que analizó GameStats"),
-      stat(g?.leader ? (g.leader === "cpu" ? "🤖 IA" : playerLabel(g.leader)) : "—", "líder", "leader",
+      stat(g?.leader ? (g.leader === "cpu" ? "La IA" : playerLabel(g.leader)) : "—", "líder", "leader",
         g?.leader ? `Quien más ha ganado: ${playerLabel(g.leader)} (GameStats)` : "Todavía nadie ganó una partida"),
     );
   }
@@ -95,12 +95,12 @@ export class GameMenu {
         el("span", { class: "game-icon placeholder", "aria-hidden": "true", text: initial })), { once: true });
 
     const play = el("button", { type: "button", class: "btn primary play", "aria-label": `Jugar ${g.name}` },
-      el("span", { class: "btn-icon", "aria-hidden": "true", text: "▶" }), "Jugar");
+      svgIcon("play", "btn-svg"), "¡A jugar!");
     play.addEventListener("click", () => this.onPlay(g.id));
     const live = el("div", { class: "game-live", "aria-label": "En GameStats" });
     // Los modos ya dicen cuántos juegan: no se repite la cantidad de jugadores.
-    const MODES: Record<string, [string, string]> = {
-      "vs-cpu": ["🤖", "Contra la computadora"], "local-2p": ["👥", "2 personas, misma pantalla"], solo: ["👤", "Un jugador"],
+    const MODES: Record<string, [IconName, string]> = {
+      "vs-cpu": ["cpu", "Contra la computadora"], "local-2p": ["users", "2 personas, misma pantalla"], solo: ["user", "Un jugador"],
     };
 
     const card = el("article", { class: "game-card", "data-game": g.id },
@@ -108,13 +108,15 @@ export class GameMenu {
       el("div", { class: "game-body" },
         el("h3", { class: "game-name", text: g.name }),
         g.description ? el("p", { class: "game-desc", text: g.description }) : null,
-        el("ul", { class: "game-meta", "aria-label": "Modos de juego" },
-          ...g.modes.map((m) => el("li", {},
-            el("span", { "aria-hidden": "true", text: MODES[m]?.[0] ?? "🎮" }), MODES[m]?.[1] ?? MODE_LABELS[m] ?? m))),
+        // Los modos van aparte de la descripción: etiqueta propia y una pastilla por modo.
+        el("div", { class: "game-modes" },
+          el("span", { class: "meta-label", text: g.modes.length === 1 ? "Modo de juego" : "Modos de juego" }),
+          el("ul", { class: "game-meta", "aria-label": "Modos de juego" },
+            ...g.modes.map((m) => el("li", {},
+              svgIcon(MODES[m]?.[0] ?? "gamepad", "meta-svg"), MODES[m]?.[1] ?? MODE_LABELS[m] ?? m)))),
         live,
         play),
     );
-    card.style.setProperty("--game-hue", String(hueOf(g.id)));
     return { key, card, live, statsId: g.gameStatsId };
   }
 }

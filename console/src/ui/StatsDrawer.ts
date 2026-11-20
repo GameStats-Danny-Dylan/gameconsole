@@ -23,7 +23,7 @@ export class StatsDrawer {
         el("div", {},
           el("span", { class: "drawer-kicker", text: "En vivo · GameStats" }),
           el("h2", { text: "Estadísticas" }),
-          el("p", { class: "muted", text: "Generales y por juego. Se actualizan solas mientras juegas." })),
+          el("p", { class: "muted", text: "La lista de Santa: quién va ganando, por juego y en general. Se actualiza sola mientras juegas." })),
         el("div", { class: "drawer-tools" }, external, close)),
       el("div", { class: "stats-stage" }),
     );

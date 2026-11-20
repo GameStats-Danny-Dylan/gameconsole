@@ -1,6 +1,6 @@
 # Gateway (nginx)
 
-La única puerta de entrada de GameConsole: es el único servicio con un puerto publicado (`GATEWAY_PORT`, por defecto `8000`). Todo lo demás se habla por la red interna de Docker.
+La única puerta de entrada de DnD Games (repo `gameconsole`): es el único servicio con un puerto publicado (`GATEWAY_PORT`, por defecto `8000`). Todo lo demás se habla por la red interna de Docker.
 
 ## Contenido
 
