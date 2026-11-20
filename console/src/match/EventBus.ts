@@ -14,6 +14,12 @@ export interface BusTopics {
   "state": { matchId: string; state: MatchStatus };
   /** El juego avisó que terminó (mensaje FINISHED). */
   "finished": { matchId: string; winner: string | null; reason: FinishReason };
+  /**
+   * La sesión se cerró y su iframe ya no está (con FINISHED o sin él: STOP sin
+   * respuesta, error, juego colgado). `humans` son los playerId de las personas,
+   * para el cierre de respaldo del EventSender (protocolo, sección 5).
+   */
+  "closed": { matchId: string; humans: string[] };
 }
 
 export type BusTopic = keyof BusTopics;

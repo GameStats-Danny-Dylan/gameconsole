@@ -11,7 +11,9 @@ import type { GameManifest, MatchContext } from "@gameconsole/sdk";
 import { appHeader } from "@gameconsole/sdk/theme";
 import type { CatalogSnapshot, GameCatalog } from "../catalog/GameCatalog";
 import type { MatchSessionFactory } from "../match/MatchSessionFactory";
+import type { EventSender } from "../sending/EventSender";
 import { el } from "./dom";
+import { sendIndicator } from "./SendIndicator";
 import { GameMenu } from "./GameMenu";
 import { MatchFormView } from "./MatchFormView";
 import { MatchGrid } from "./MatchGrid";
@@ -20,6 +22,8 @@ import { VisibilityWatcher } from "./VisibilityWatcher";
 export interface ShellDeps {
   catalog: GameCatalog;
   sessions: MatchSessionFactory;
+  /** Para mostrar en la cabecera cómo va el envío a GameStats. */
+  sender?: EventSender;
 }
 
 export class ConsoleShell {
@@ -37,7 +41,8 @@ export class ConsoleShell {
     // El panel es otra app (/panel/): se abre aparte para no cerrar las partidas de la consola.
     const panel = el("a", { class: "nav-link", href: "/panel/", target: "_blank", rel: "noopener", text: "Estadísticas" });
     this.root.append(
-      appHeader("Consola", "Elige un juego y arma la partida", this.status, panel),
+      appHeader("Consola", "Elige un juego y arma la partida",
+        this.status, ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []), panel),
       this.grid.element,
       this.menu.element,
       this.form.element,

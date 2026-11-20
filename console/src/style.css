@@ -87,6 +87,9 @@ body {
 .status.ok { color: var(--good-text); }
 .status.ok .icon { color: var(--good); }
 .status.bad { color: var(--critical); }
+.status.busy .icon { color: var(--accent); animation: send-pulse 1s ease-in-out infinite; }
+@keyframes send-pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .status.busy .icon { animation: none; } }
 @media (max-width: 420px) { .theme-text { display: none; } .theme-toggle { padding: 8px; } }
 
 .notice {

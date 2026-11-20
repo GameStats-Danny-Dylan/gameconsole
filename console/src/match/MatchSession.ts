@@ -195,6 +195,8 @@ export class MatchSession {
     this.stopTimer = null;
     this.frame.remove();
     this.notify();
+    const humans = this.context.players.filter((p) => p.kind === "human").map((p) => p.playerId);
+    this.deps.bus.publish("closed", { matchId: this.matchId, humans });
     for (const l of [...this.disposeListeners]) l(this);
     this.resolveClosed();
   }
