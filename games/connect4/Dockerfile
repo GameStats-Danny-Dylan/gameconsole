@@ -7,7 +7,10 @@
 # y se registra solo en el registry (REGISTRY_URL) con su latido.
 
 # 1) El SDK: pruebas y compilación del servidor (sdk/dist-server).
-FROM node:22-alpine AS sdk
+# Las etapas de pruebas y compilación corren en la plataforma del que construye
+# ($BUILDPLATFORM): el resultado es JS y archivos estáticos, igual para amd64 y arm64.
+# Así las pruebas no corren emuladas con QEMU (muy lentas) al publicar para arm64.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS sdk
 WORKDIR /repo/sdk
 COPY sdk/package.json sdk/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -18,7 +21,7 @@ COPY sdk/test ./test
 RUN npm test && npm run build
 
 # 2) El juego, con el SDK en ../../sdk (file:../../sdk).
-FROM node:22-alpine AS build
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 COPY --from=sdk /repo/sdk /repo/sdk
 WORKDIR /repo/games/connect4
 COPY games/connect4/package.json games/connect4/package-lock.json ./
