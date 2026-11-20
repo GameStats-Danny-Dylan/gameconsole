@@ -108,9 +108,12 @@ export class GameMenu {
       el("div", { class: "game-body" },
         el("h3", { class: "game-name", text: g.name }),
         g.description ? el("p", { class: "game-desc", text: g.description }) : null,
-        el("ul", { class: "game-meta", "aria-label": "Modos de juego" },
-          ...g.modes.map((m) => el("li", {},
-            svgIcon(MODES[m]?.[0] ?? "gamepad", "meta-svg"), MODES[m]?.[1] ?? MODE_LABELS[m] ?? m))),
+        // Los modos van aparte de la descripción: etiqueta propia y una pastilla por modo.
+        el("div", { class: "game-modes" },
+          el("span", { class: "meta-label", text: g.modes.length === 1 ? "Modo de juego" : "Modos de juego" }),
+          el("ul", { class: "game-meta", "aria-label": "Modos de juego" },
+            ...g.modes.map((m) => el("li", {},
+              svgIcon(MODES[m]?.[0] ?? "gamepad", "meta-svg"), MODES[m]?.[1] ?? MODE_LABELS[m] ?? m)))),
         live,
         play),
     );

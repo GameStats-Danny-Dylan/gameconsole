@@ -860,3 +860,31 @@ body { line-height: 1.7; }
 .match-names h3 { line-height: 1.2; }
 .match-players { margin-top: 4px; }
 
+
+/* ============================================================
+   v6 (20-nov) — "Cómo funciona" y tarjetas de juegos más claras
+   ============================================================ */
+/* Paso: el dibujo a la izquierda y "PASO n" al otro extremo, sin tocarse. */
+.hero-steps li.step-card { align-items: stretch; padding: 24px 22px 24px; }
+.step-top { width: 100%; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+.step-card h4 { margin-bottom: 12px; }
+.step-card p { font-size: 15px; }
+
+/* Tarjeta de juego: título, descripción y modos, cada uno con su estilo. */
+.game-body { gap: 0; padding: 24px 22px 24px; }
+.game-name { margin: 0 0 12px; font: 800 28px/1.12 var(--font-display); letter-spacing: -.02em; color: var(--ink); }
+.game-desc { margin: 0 0 18px; font-size: 15px; line-height: 1.75; color: var(--ink-2); }
+.game-modes {
+  display: grid; gap: 10px; margin-bottom: 20px; padding-top: 16px;
+  border-top: 1.5px dashed var(--border-strong);
+}
+.meta-label { font: 700 11.5px/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.game-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+.game-meta li {
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 10px; border-radius: 999px; cursor: default;
+  font: 600 13.5px/1.2 var(--font-body); color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+}
+.game-meta .meta-svg { width: 17px; height: 17px; color: var(--accent); }
+.game-live { margin-top: auto; margin-bottom: 18px; }
+
