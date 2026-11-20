@@ -270,4 +270,14 @@ th { font-size: 12px; }
   .who-name { font-size: 14px; }
   .tile strong { font-size: 32px; }
   .section-head h2, .section-title { font-size: 20px; }
+}/* Botón "← Volver a DnD Games": con relieve, como los botones de la consola. */
+.back-link {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 12px;
+  font: 600 14.5px/1 var(--font-body); color: #fff; text-decoration: none; white-space: nowrap;
+  background: linear-gradient(180deg, #2fb36a, #1e8a4c); border: 1.5px solid color-mix(in srgb, var(--accent-2) 70%, transparent);
+  box-shadow: 0 3px 0 #125c31; transition: transform .12s, box-shadow .12s;
 }
+.back-link:hover { transform: translateY(-1px); box-shadow: 0 4px 0 #125c31; }
+.back-link:active { transform: translateY(1px); box-shadow: none; }
+.back-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+.back-link .btn-icon { font-size: 1.1em; }
