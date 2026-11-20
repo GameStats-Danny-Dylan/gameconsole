@@ -3,6 +3,7 @@
  * mundo, con la cámara), el destello de pantalla del KO y el contador de combo
  * (en la pantalla, como parte del marcador). Solo lee.
  */
+import { FONT_DISPLAY } from "./fonts";
 import type { EffectsSystem } from "../fx/EffectsSystem";
 import { COMBO_SHOW, KO_FLASH } from "../fx/EffectsSystem";
 import type { Particle } from "../fx/ParticleSystem";
@@ -12,7 +13,7 @@ type Ctx = CanvasRenderingContext2D;
 
 const W = 960;
 const H = 540;
-const FONT = "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
+const FONT = FONT_DISPLAY;
 
 export class EffectsRenderer {
   /** Partículas, en coordenadas del mundo. El polvo va normal; lo que brilla, sumando luz. */
@@ -60,7 +61,7 @@ export class EffectsRenderer {
       c.textBaseline = "alphabetic";
       c.lineJoin = "round";
       const num = String(combo.hits);
-      c.font = `italic 900 62px ${FONT}`;
+      c.font = `italic 800 62px ${FONT}`;
       c.lineWidth = 9;
       c.strokeStyle = "#0b0610";
       c.strokeText(num, 0, 0);
@@ -70,7 +71,7 @@ export class EffectsRenderer {
       c.fillStyle = g;
       c.fillText(num, 0, 0);
       const w = c.measureText(num).width;
-      c.font = `italic 900 22px ${FONT}`;
+      c.font = `italic 800 22px ${FONT}`;
       c.lineWidth = 6;
       const label = "GOLPES";
       const lx = left ? w + 8 : -w - 8;

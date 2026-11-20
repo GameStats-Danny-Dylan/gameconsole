@@ -31,7 +31,8 @@
       { "player": "Jugador 2 (derecha)", "keys": ["↑"], "action": "Saltar" },
       { "player": "Jugador 2 (derecha)", "keys": ["K"], "action": "Golpe" },
       { "player": "Jugador 2 (derecha)", "keys": ["↓+K"], "action": "Patada" },
-      { "player": "Jugador 2 (derecha)", "keys": ["L"], "action": "Bloquear" }
+      { "player": "Jugador 2 (derecha)", "keys": ["L"], "action": "Bloquear" },
+      { "player": "Los dos jugadores", "keys": ["M"], "action": "Silenciar o activar el sonido" }
     ],
     "tips": [
       "Golpear en el aire también es patada.",

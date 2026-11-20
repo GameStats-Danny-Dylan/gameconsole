@@ -7,6 +7,7 @@
  * Solo lee la pelea y los efectos; los carteles se animan con el tiempo de la
  * fase del round, así en la pausa quedan quietos.
  */
+import { FONT_BODY, FONT_DISPLAY } from "./fonts";
 import type { Fighter } from "../domain/fighter/Fighter";
 import type { FightingMatch } from "../domain/FightingMatch";
 import type { RoundResult } from "../domain/Round";
@@ -25,8 +26,8 @@ const BAR_H = 24;
 const BAR_Y = 26;
 const BAR_X = 88;
 const SLANT = 12;
-const FONT = "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
-const GOLD = "#ffd36b";
+const FONT = FONT_DISPLAY;
+const GOLD = "#f6c453";
 
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 const easeOut = (t: number) => 1 - Math.pow(1 - clamp01(t), 3);
@@ -52,14 +53,14 @@ export class HudRenderer {
     const clock = fx?.clock ?? 0;
 
     // Placa de fondo.
-    c.fillStyle = withAlpha("#07060d", 0.72);
+    c.fillStyle = withAlpha("#0b1530", 0.72);
     barPath(c, x0 - 6, BAR_Y - 6, BAR_W + 12, BAR_H + 12, SLANT + 2, left);
     c.fill();
 
     c.save();
     barPath(c, x0, BAR_Y, BAR_W, BAR_H, SLANT, left);
     c.clip();
-    c.fillStyle = "#2a0b12";
+    c.fillStyle = "#2a0a18";
     c.fillRect(x0 - SLANT, BAR_Y, BAR_W + 2 * SLANT, BAR_H);
     // La vida se vacía desde afuera hacia el centro (lo que queda, pegado al reloj).
     const span = (r: number): [number, number] => {
@@ -67,19 +68,19 @@ export class HudRenderer {
       return left ? [x0 + BAR_W - w, w] : [x0 - SLANT, w];
     };
     const [tx, tw] = span(trail);
-    c.fillStyle = "#ff3d3d";
+    c.fillStyle = "#ff5a64";
     c.fillRect(tx, BAR_Y, tw, BAR_H);
     const [hx, hw] = span(ratio);
     const low = ratio <= 0.3;
     const g = c.createLinearGradient(0, BAR_Y, 0, BAR_Y + BAR_H);
     if (low) {
       const pulse = 0.5 + 0.5 * Math.sin(clock * 9);
-      g.addColorStop(0, shade("#ff9b3d", 0.25 * pulse));
-      g.addColorStop(1, "#e2461f");
+      g.addColorStop(0, shade("#ff8a92", 0.25 * pulse));
+      g.addColorStop(1, "#c8102e");
     } else {
-      g.addColorStop(0, "#fff27a");
-      g.addColorStop(0.55, "#ffc93c");
-      g.addColorStop(1, "#f08a1c");
+      g.addColorStop(0, "#ffe9a8");
+      g.addColorStop(0.55, "#f6c453");
+      g.addColorStop(1, "#c9951a");
     }
     c.fillStyle = g;
     c.fillRect(hx, BAR_Y, hw, BAR_H);
@@ -127,10 +128,10 @@ export class HudRenderer {
     const nx = left ? x0 - 4 : x0 + BAR_W + 4;
     const room = BAR_W - m.roundsToWin * 26 - 14;
     const name = f.name.toUpperCase();
-    c.font = `italic 900 19px ${FONT}`;
+    c.font = `italic 800 19px ${FONT}`;
     let nameW = c.measureText(name).width;
     const size = nameW > room ? Math.max(11, Math.floor((19 * room) / nameW)) : 19;
-    if (size !== 19) { c.font = `italic 900 ${size}px ${FONT}`; nameW = c.measureText(name).width; }
+    if (size !== 19) { c.font = `italic 800 ${size}px ${FONT}`; nameW = c.measureText(name).width; }
     c.lineWidth = 4;
     c.strokeStyle = withAlpha("#000000", 0.75);
     c.strokeText(name, nx, BAR_Y + BAR_H + 7 + (19 - size) / 2);
@@ -170,8 +171,8 @@ export class HudRenderer {
     c.lineTo(cx - hw, cy - hh + 14);
     c.closePath();
     const g = c.createLinearGradient(0, cy - hh, 0, cy + hh);
-    g.addColorStop(0, "#2b2340");
-    g.addColorStop(1, "#0b0913");
+    g.addColorStop(0, "#1b2c52");
+    g.addColorStop(1, "#0b1530");
     c.fillStyle = g;
     c.fill();
     c.strokeStyle = GOLD;
@@ -183,24 +184,24 @@ export class HudRenderer {
     c.scale(beat, beat);
     c.textAlign = "center";
     c.textBaseline = "middle";
-    c.font = `italic 900 44px ${FONT}`;
+    c.font = `italic 800 44px ${FONT}`;
     c.lineWidth = 6;
     c.strokeStyle = "#000000";
     c.strokeText(String(secs).padStart(2, "0"), 0, 0);
     const tg = c.createLinearGradient(0, -20, 0, 20);
-    tg.addColorStop(0, urgent ? "#ffb1a1" : "#ffffff");
-    tg.addColorStop(1, urgent ? "#ff3b30" : "#ffd36b");
+    tg.addColorStop(0, urgent ? "#ffc2c6" : "#ffffff");
+    tg.addColorStop(1, urgent ? "#ff5a64" : "#f6c453");
     c.fillStyle = tg;
     c.fillText(String(secs).padStart(2, "0"), 0, 0);
     c.restore();
 
     // Número de round.
-    c.font = `italic 900 13px ${FONT}`;
+    c.font = `italic 800 13px ${FONT}`;
     c.textAlign = "center";
     c.textBaseline = "middle";
     const label = `ROUND ${r.number}/${m.rounds}`;
     const w = c.measureText(label).width + 20;
-    c.fillStyle = withAlpha("#07060d", 0.8);
+    c.fillStyle = withAlpha("#0b1530", 0.8);
     roundRect(c, cx - w / 2, 88, w, 20, 10);
     c.fill();
     c.fillStyle = GOLD;
@@ -242,7 +243,7 @@ export class HudRenderer {
     const alpha = enter * (1 - exit);
     band(c, H / 2 - 4, 120 * enter, alpha);
     bigText(c, n === total && total > 1 ? "ROUND FINAL" : `ROUND ${n}`, W / 2, H / 2 - 6, 70, 1.5 - 0.5 * enter + exit * 0.15, alpha,
-      ["#ffffff", "#ffd36b"]);
+      ["#ffffff", "#f6c453"]);
   }
 
   private fightCall(c: Ctx, t: number): void {
@@ -250,7 +251,7 @@ export class HudRenderer {
     const s = 2.4 - 1.4 * easeBack(t / 0.24);
     const alpha = clamp01(t / 0.08) * (1 - clamp01((t - 0.95) / 0.25));
     band(c, H / 2 - 4, 130, alpha * 0.9);
-    bigText(c, "¡PELEA!", W / 2, H / 2 - 6, 96, s, alpha, ["#fff6c2", "#ff8a1f"], "#3a0a00");
+    bigText(c, "¡PELEA!", W / 2, H / 2 - 6, 96, s, alpha, ["#fff3c4", "#f6c453"], "#3a0a00");
   }
 
   private resultCall(c: Ctx, result: RoundResult | null, e: number, sub: string | null): void {
@@ -264,7 +265,7 @@ export class HudRenderer {
     const alpha = clamp01(e / 0.06);
     band(c, H / 2 - 4, sub ? 150 : 130, alpha * 0.85);
     bigText(c, title, W / 2 + shake, H / 2 - 16, ko ? 120 : 84, s, alpha,
-      ko ? ["#ffe9a0", "#e8141c"] : ["#ffffff", "#ffd36b"], ko ? "#2a0000" : "#000000");
+      ko ? ["#ffe9a0", "#ff5a64"] : ["#ffffff", "#f6c453"], ko ? "#2a0000" : "#000000");
     if (sub) subText(c, sub, H / 2 + 50, clamp01((e - 0.5) / 0.3));
   }
 
@@ -273,17 +274,17 @@ export class HudRenderer {
     const alpha = clamp01(e / 0.12);
     band(c, H / 2 - 4, 160, alpha * 0.9);
     const title = name ? `¡${name.toUpperCase()} GANA!` : "EMPATE";
-    c.font = `italic 900 80px ${FONT}`;
+    c.font = `italic 800 80px ${FONT}`;
     const fit = Math.min(1, (W - 120) / Math.max(1, c.measureText(title).width));
-    bigText(c, title, W / 2, H / 2 - 16, 80 * fit, 1.6 - 0.6 * enter, alpha, ["#fffbe0", "#ffbf2e"], "#2b1700");
+    bigText(c, title, W / 2, H / 2 - 16, 80 * fit, 1.6 - 0.6 * enter, alpha, ["#fffbe0", "#f6c453"], "#2b1700");
     if (sub) subText(c, name ? "Gana la pelea" : "Nadie gana la pelea", H / 2 + 52, clamp01((e - 0.35) / 0.3));
   }
 
   private overlay(c: Ctx, title: string, sub: string, dim: number): void {
-    c.fillStyle = withAlpha("#05040a", dim);
+    c.fillStyle = withAlpha("#070e22", dim);
     c.fillRect(0, 0, W, H);
     band(c, H / 2 - 4, 140, 1);
-    bigText(c, title, W / 2, H / 2 - 18, 72, 1, 1, ["#ffffff", "#ffd36b"]);
+    bigText(c, title, W / 2, H / 2 - 18, 72, 1, 1, ["#ffffff", "#f6c453"]);
     subText(c, sub, H / 2 + 42, 1);
   }
 
@@ -291,7 +292,7 @@ export class HudRenderer {
   drawMuted(c: Ctx): void {
     const x = W - 30, y = H - 28;
     c.save();
-    c.fillStyle = withAlpha("#07060d", 0.72);
+    c.fillStyle = withAlpha("#0b1530", 0.72);
     roundRect(c, x - 112, y - 16, 128, 32, 16);
     c.fill();
     c.fillStyle = "#ffffff";
@@ -309,12 +310,12 @@ export class HudRenderer {
     c.closePath();
     c.fill();
     // Tachado.
-    c.strokeStyle = "#ff5a4f";
+    c.strokeStyle = "#ff5a64";
     c.beginPath();
     c.moveTo(x - 9, y - 9);
     c.lineTo(x + 9, y + 9);
     c.stroke();
-    c.font = `800 12px ${FONT}`;
+    c.font = `800 12px ${FONT_BODY}`;
     c.textAlign = "right";
     c.textBaseline = "middle";
     c.fillStyle = "#ffffff";
@@ -323,11 +324,11 @@ export class HudRenderer {
   }
 
   drawFocusHint(c: Ctx): void {
-    c.fillStyle = withAlpha("#090d18", 0.8);
+    c.fillStyle = withAlpha("#0b1530", 0.8);
     roundRect(c, W / 2 - 230, H - 58, 460, 40, 10);
     c.fill();
     c.fillStyle = "#ffffff";
-    c.font = `700 16px ${FONT}`;
+    c.font = `700 16px ${FONT_BODY}`;
     c.textAlign = "center";
     c.textBaseline = "middle";
     c.fillText("Haz clic en el juego para usar el teclado", W / 2, H - 38);
@@ -367,7 +368,7 @@ function barPath(c: Ctx, x: number, y: number, w: number, h: number, slant: numb
 function medal(c: Ctx, x: number, y: number, won: boolean): void {
   c.beginPath();
   c.arc(x, y, 9, 0, Math.PI * 2);
-  c.fillStyle = withAlpha("#07060d", 0.85);
+  c.fillStyle = withAlpha("#0b1530", 0.85);
   c.fill();
   c.lineWidth = 2;
   c.strokeStyle = won ? GOLD : withAlpha("#ffffff", 0.35);
@@ -375,8 +376,8 @@ function medal(c: Ctx, x: number, y: number, won: boolean): void {
   if (!won) return;
   // Estrella dorada.
   const g = c.createRadialGradient(x - 2, y - 3, 1, x, y, 8);
-  g.addColorStop(0, "#fff7c8");
-  g.addColorStop(1, "#f0a91c");
+  g.addColorStop(0, "#fff3c4");
+  g.addColorStop(1, "#c9951a");
   c.fillStyle = g;
   c.beginPath();
   for (let k = 0; k < 10; k++) {
@@ -392,10 +393,10 @@ function medal(c: Ctx, x: number, y: number, won: boolean): void {
 function band(c: Ctx, cy: number, h: number, alpha: number): void {
   if (alpha <= 0) return;
   const g = c.createLinearGradient(0, 0, W, 0);
-  g.addColorStop(0, withAlpha("#05040a", 0));
-  g.addColorStop(0.2, withAlpha("#05040a", 0.62 * alpha));
-  g.addColorStop(0.8, withAlpha("#05040a", 0.62 * alpha));
-  g.addColorStop(1, withAlpha("#05040a", 0));
+  g.addColorStop(0, withAlpha("#070e22", 0));
+  g.addColorStop(0.2, withAlpha("#070e22", 0.62 * alpha));
+  g.addColorStop(0.8, withAlpha("#070e22", 0.62 * alpha));
+  g.addColorStop(1, withAlpha("#070e22", 0));
   c.fillStyle = g;
   c.fillRect(0, cy - h / 2, W, h);
   const e = c.createLinearGradient(0, 0, W, 0);
@@ -417,7 +418,7 @@ function bigText(c: Ctx, text: string, x: number, y: number, size: number, scale
   c.scale(scale, scale);
   c.textAlign = "center";
   c.textBaseline = "middle";
-  c.font = `italic 900 ${size}px ${FONT}`;
+  c.font = `italic 800 ${size}px ${FONT}`;
   c.lineJoin = "round";
   c.lineWidth = size * 0.16;
   c.strokeStyle = stroke;
