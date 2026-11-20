@@ -100,7 +100,8 @@ Cada juego publica su ficha en `/games/{id}/game.json` y la manda al registry al
 |---|---|---|
 | `id` | sí | Identificador único: minúsculas, números y guiones. Es el nombre del contenedor (`game-{id}`), el `gameId` de `INIT` y el prefijo del `matchId` (sección 5) |
 | `name`, `description`, `icon` | `name` sí | Lo que muestra el menú. `icon` es una ruta relativa a una imagen (`.svg` o `.png`) |
-| `howToPlay` | no | Texto corto en español con los controles y el objetivo del juego. La consola lo muestra antes de empezar la partida |
+| `howToPlay` | no | Texto corto en español con los controles y el objetivo del juego (también lo usa el propio juego en su pantalla) |
+| `instructions` | no | El "Cómo se juega" por partes: `goal` (objetivo), `steps` (paso a paso), `controls` (`[{ keys, action, player? }]`; `"S+F"` = combinación, varias teclas = alternativas) y `tips` (consejos). Si está, la consola lo muestra en secciones que se abren y cierran, antes de empezar y durante la partida; si no, usa `howToPlay` |
 | `version` | sí | Versión de la app del juego |
 | `gameStatsId` | sí | El `gameId` que va **en cada evento** hacia GameStats (`connect4`, `tetris`, `fighting`) |
 | `gameVersion` | sí | El `gameVersion` que va en cada evento |

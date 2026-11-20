@@ -24,13 +24,38 @@ export interface GameOption {
   [extra: string]: unknown;
 }
 
+/** Un control: qué teclas hacen qué. `player` agrupa los controles (por ejemplo "Jugador 1"). */
+export interface HowToControl {
+  keys: string[];
+  action: string;
+  player?: string;
+}
+
+/** "Cómo se juega" por partes, para mostrarlo claro y ordenado. */
+export interface HowToPlay {
+  /** Qué hay que lograr, en una o dos frases. */
+  goal: string;
+  /** Cómo se juega, paso a paso. */
+  steps?: string[];
+  /** Teclas o clics y lo que hacen. */
+  controls?: HowToControl[];
+  /** Consejos para jugar mejor. */
+  tips?: string[];
+}
+
 export interface GameManifest {
   id: string;
   name: string;
   version: string;
   description?: string;
-  /** Texto corto con controles y objetivo; la consola lo muestra antes de empezar. */
+  /** Texto corto con controles y objetivo (lo usan también los juegos en su pantalla). */
   howToPlay?: string;
+  /**
+   * Cómo se juega por partes (objetivo, paso a paso, controles, consejos). Si
+   * está, la consola lo muestra en lugar de howToPlay, antes de empezar y
+   * durante la partida.
+   */
+  instructions?: HowToPlay;
   /** El gameId que va en cada evento hacia GameStats. */
   gameStatsId: string;
   gameVersion: string;

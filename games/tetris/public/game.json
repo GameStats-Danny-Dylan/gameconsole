@@ -4,6 +4,28 @@
   "version": "1.0.0",
   "description": "Acomoda las piezas que caen y completa líneas. Un jugador, cada vez más rápido.",
   "howToPlay": "Mueve con ← →, rota con ↑ (Z rota al revés), baja con ↓ y deja caer de golpe con Espacio. C guarda la pieza. Completa líneas horizontales para sumar puntos y subir de nivel; pierdes si las piezas llegan arriba.",
+  "instructions": {
+    "goal": "Acomoda las piezas que caen para completar líneas horizontales. Cada línea completa se borra y suma puntos.",
+    "steps": [
+      "Las piezas caen solas desde arriba, una a la vez.",
+      "Muévelas y gíralas antes de que toquen el fondo o otra pieza.",
+      "Cuando una fila queda llena, se borra. Con más líneas, subes de nivel y las piezas caen más rápido.",
+      "Pierdes si las piezas se amontonan hasta arriba."
+    ],
+    "controls": [
+      { "keys": ["←", "→"], "action": "Mover la pieza a los lados" },
+      { "keys": ["↑"], "action": "Girar la pieza" },
+      { "keys": ["Z"], "action": "Girar la pieza al revés" },
+      { "keys": ["↓"], "action": "Bajar más rápido" },
+      { "keys": ["Espacio"], "action": "Dejarla caer de golpe" },
+      { "keys": ["C"], "action": "Guardar la pieza para después" }
+    ],
+    "tips": [
+      "Borrar 4 líneas de una vez (un Tetris) da muchos más puntos.",
+      "Deja un hueco a un lado para la pieza larga.",
+      "Mira las piezas siguientes para planear dónde va cada una."
+    ]
+  },
   "gameStatsId": "tetris",
   "gameVersion": "1.0",
   "entry": "/games/tetris/",

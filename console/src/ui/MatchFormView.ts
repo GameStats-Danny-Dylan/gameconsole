@@ -9,7 +9,7 @@ import type { GameManifest, MatchContext } from "@gameconsole/sdk";
 import { MatchSetup, MODE_LABELS } from "../domain/MatchSetup";
 import { NAME_MAX_LENGTH, toPlayerId } from "../domain/players";
 import { el } from "./dom";
-import { howToPlayText } from "./howTo";
+import { hasHowTo, renderHowTo } from "./howTo";
 
 interface NameRow {
   input: HTMLInputElement;
@@ -82,10 +82,10 @@ export class MatchFormView {
 
   /** "Cómo se juega": el texto del manifiesto, con los nombres de las teclas resaltados. */
   private renderHowTo(manifest: GameManifest): void {
-    const text = manifest.howToPlay?.trim();
-    this.howTo.hidden = !text;
-    if (!text) return;
-    this.howTo.replaceChildren(el("h3", { text: "Cómo se juega" }), howToPlayText(text));
+    const h = manifest.instructions ?? manifest.howToPlay;
+    this.howTo.hidden = !hasHowTo(h);
+    if (!hasHowTo(h)) return;
+    this.howTo.replaceChildren(el("h3", { text: "Cómo se juega" }), el("p", { class: "howto-hint", text: "Toca cada parte para verla." }), renderHowTo(h, false));
   }
 
   close(): void {

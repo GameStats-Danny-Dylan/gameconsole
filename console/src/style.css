@@ -425,3 +425,41 @@ kbd {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ============================================================
+   CÓMO SE JUEGA: objetivo, paso a paso, controles y consejos.
+   Cada parte se abre o se cierra con un clic (<details>).
+   ============================================================ */
+.howto-sections { display: grid; gap: 10px; }
+.howto-section { border-radius: 14px; background: var(--surface); border: 1px solid var(--border); overflow: hidden; }
+.howto-section > summary {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; list-style: none;
+  font: 700 18px/1.1 var(--font-display); color: var(--ink); user-select: none;
+}
+.howto-section > summary::-webkit-details-marker { display: none; }
+.howto-section > summary::after {
+  content: "▾"; margin-left: auto; font-size: 14px; color: var(--muted); transition: transform .15s;
+}
+.howto-section:not([open]) > summary::after { transform: rotate(-90deg); }
+.howto-section > summary:hover { background: var(--surface-2); }
+.howto-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; font-size: 16px; background: var(--surface-2); }
+.howto-body { padding: 0 16px 14px 54px; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.howto-body p { margin: 0; }
+.howto-goal { font-size: 15px; color: var(--ink); font-weight: 600; }
+.howto-steps, .howto-tips { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.howto-steps li::marker { font-weight: 800; color: var(--accent); }
+.howto-tips li::marker { color: var(--accent); }
+.howto-steps p { display: inline; }
+.howto-controls { display: grid; gap: 14px; }
+.howto-controls.split { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.howto-player h5 { margin: 0 0 6px; font: 800 11px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.howto-controls dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 7px 12px; align-items: center; }
+.howto-controls dt { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.howto-controls dd { margin: 0; color: var(--ink); }
+.howto-controls .sep { font-size: 11px; font-weight: 700; color: var(--muted); }
+.how-to > h3 { margin-bottom: 10px; }
+.how-to .howto-section { background: var(--surface); }
+.tile-howto-head h4 { margin: 0; }
+.tile-howto .howto-sections { max-width: 720px; }
+.tile-howto > .btn { justify-self: start; }
+.howto-hint { margin: -4px 0 10px; font-size: 12.5px; color: var(--muted); }

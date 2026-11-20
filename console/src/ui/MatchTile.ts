@@ -12,7 +12,7 @@
 import type { MatchSession } from "../match/MatchSession";
 import type { SessionStatus } from "../match/sessionStates";
 import { el } from "./dom";
-import { howToPlayText } from "./howTo";
+import { hasHowTo, renderHowTo } from "./howTo";
 
 export interface TileActions {
   restart(tile: MatchTile): void;
@@ -146,11 +146,13 @@ export class MatchTile {
   }
 
   private renderHowTo(): void {
-    const text = this.current.manifest.howToPlay?.trim();
-    this.howButton.hidden = !text;
-    const close = el("button", { type: "button", class: "btn small primary", text: "Entendido" });
-    close.addEventListener("click", () => { this.toggleHowTo(false); this.current.focus(); });
-    this.howTo.replaceChildren(el("h4", { text: "Cómo se juega" }), text ? howToPlayText(text) : "", close);
+    const h = this.current.manifest.instructions ?? this.current.manifest.howToPlay;
+    this.howButton.hidden = !hasHowTo(h);
+    const close = el("button", { type: "button", class: "btn primary", text: "Entendido, volver al juego" });
+    close.addEventListener("click", () => { this.toggleHowTo(false); this.focusGame(); });
+    this.howTo.replaceChildren(
+      el("header", { class: "tile-howto-head" }, el("h4", { text: `Cómo se juega ${this.current.manifest.name}` })),
+      hasHowTo(h) ? renderHowTo(h) : "", close);
     this.toggleHowTo(false);
   }
 
