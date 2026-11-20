@@ -5,6 +5,7 @@
  */
 import "./style.css";
 import { GameCatalog } from "./catalog/GameCatalog";
+import { LiveStats } from "./catalog/LiveStats";
 import { EventBus } from "./match/EventBus";
 import { IframeFrame } from "./match/MatchFrame";
 import { MatchMediator } from "./match/MatchMediator";
@@ -28,5 +29,9 @@ const sessions = new MatchSessionFactory({
   createFrame: (src, title) => new IframeFrame(src, title),
 });
 
-new ConsoleShell(document.getElementById("app")!, { catalog, sessions, sender }).mount();
+// Lo que dice GameStats de cada juego (en curso, jugadas, líder), para las tarjetas.
+const live = new LiveStats("/api");
+
+new ConsoleShell(document.getElementById("app")!, { catalog, sessions, sender, live }).mount();
 catalog.start();
+live.start();

@@ -60,6 +60,22 @@ body {
   transition: background-color .25s, color .25s;
 }
 #app { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 22px; }
+/* Dentro de la consola: sin cabecera propia ni fondo con brillo, y más compacto. */
+.embedded body { background: var(--page); }
+.embedded #app { padding: 14px 14px 32px; gap: 16px; }
+.embedded .app-header { display: none; }
+/* Angosto (por ejemplo, dentro del panel lateral de la consola): la tabla entra sin desplazarse. */
+@media (max-width: 560px) {
+  .rate-track { display: none; }
+  .c-rate { width: auto; }
+  th, td { padding-right: 8px; }
+  th { white-space: normal; font-size: 10.5px; letter-spacing: .03em; }
+  table { font-size: 13.5px; }
+  .who-name small { display: none; }
+  .who .avatar { display: none; }
+  .c-pos { width: 34px; }
+  .card { padding: 16px; }
+}
 
 h2 { font-size: 17px; margin: 0 0 12px; letter-spacing: -.01em; }
 h3 { font-size: 17px; margin: 0; }
@@ -172,7 +188,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .rate { display: flex; align-items: center; gap: 10px; }
 .rate-track { flex: 1; height: 8px; min-width: 50px; border-radius: 999px; background: var(--track); overflow: hidden; }
 .rate-fill { display: block; height: 100%; border-radius: 999px; background: var(--series); }
-.rate-num { width: 4.2ch; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rate-num { width: 5.2ch; flex: none; white-space: nowrap; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 @media (max-width: 640px) {
   .c-nores, .c-extra { display: none; }

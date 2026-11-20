@@ -1,35 +1,47 @@
 /**
- * ConsoleShell — arma la página: cabecera, partidas abiertas, menú y formulario.
+ * ConsoleShell — arma la página: cabecera, guía, partidas abiertas, menú y los
+ * dos paneles laterales (nueva partida y estadísticas).
  *
  * Facade: main.ts solo llama a mount(); por dentro el shell conecta el
- * catálogo, el menú, el formulario y la cuadrícula de partidas, que no se
- * conocen entre sí (elegir un juego abre el formulario; el formulario abre una
- * partida en la cuadrícula; si un juego se va del registry, el formulario lo
- * marca como no disponible, pero sus partidas abiertas siguen).
+ * catálogo, el menú, el formulario, la cuadrícula de partidas y las
+ * estadísticas, que no se conocen entre sí (elegir un juego abre el
+ * formulario; el formulario abre una partida en la cuadrícula; si un juego se
+ * va del registry, el formulario lo marca como no disponible, pero sus
+ * partidas abiertas siguen).
+ *
+ * Los paneles laterales no son modales: mientras están abiertos, las partidas
+ * se corren a un lado y siguen jugándose (no se pausan).
  */
 import type { GameManifest, MatchContext } from "@gameconsole/sdk";
 import { appHeader } from "@gameconsole/sdk/theme";
 import type { CatalogSnapshot, GameCatalog } from "../catalog/GameCatalog";
+import type { LiveStats } from "../catalog/LiveStats";
 import type { MatchSessionFactory } from "../match/MatchSessionFactory";
 import type { EventSender } from "../sending/EventSender";
 import { el } from "./dom";
-import { sendIndicator } from "./SendIndicator";
 import { GameMenu } from "./GameMenu";
 import { MatchFormView } from "./MatchFormView";
 import { MatchGrid } from "./MatchGrid";
+import { sendIndicator } from "./SendIndicator";
+import { StatsDrawer } from "./StatsDrawer";
 import { VisibilityWatcher } from "./VisibilityWatcher";
+import { WelcomeGuide } from "./WelcomeGuide";
 
 export interface ShellDeps {
   catalog: GameCatalog;
   sessions: MatchSessionFactory;
   /** Para mostrar en la cabecera cómo va el envío a GameStats. */
   sender?: EventSender;
+  /** Lo que dice GameStats de cada juego, para las tarjetas del menú. */
+  live?: LiveStats;
 }
 
 export class ConsoleShell {
   private readonly status = el("p", { class: "status", role: "status" });
   private readonly menu = new GameMenu((id) => this.openForm(id));
   private readonly form = new MatchFormView((ctx, m) => this.startMatch(ctx, m));
+  private readonly stats = new StatsDrawer("/panel/");
+  private readonly guide = new WelcomeGuide();
   private readonly watcher = new VisibilityWatcher();
   private readonly grid: MatchGrid;
 
@@ -38,18 +50,31 @@ export class ConsoleShell {
   }
 
   mount(): void {
-    // El panel es otra app (/panel/): se abre aparte para no cerrar las partidas de la consola.
-    const panel = el("a", { class: "nav-link", href: "/panel/", target: "_blank", rel: "noopener", text: "Estadísticas" });
+    const statsButton = el("button", { type: "button", class: "nav-link stats-link", "aria-controls": "stats" }, "📊 Estadísticas");
+    statsButton.addEventListener("click", () => { this.form.close(); this.stats.toggle(); });
+    this.stats.element.id = "stats";
+
     this.root.append(
-      appHeader("Consola", "Elige un juego y arma la partida",
-        this.status, ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []), panel),
+      appHeader("Consola", "Juegos independientes, partidas en paralelo y estadísticas en vivo",
+        this.status, ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []), this.guide.button, statsButton),
+      this.guide.element,
       this.grid.element,
       this.menu.element,
-      this.form.element,
     );
-    // El formulario es modal y tapa las partidas: mientras está abierto cuentan como ocultas.
-    this.form.element.addEventListener("close", () => this.watcher.setCovered(false));
+    document.body.append(this.form.element, this.stats.element);
+
+    // Un solo panel lateral a la vez; mientras hay uno, la página le deja lugar.
+    const sync = () => {
+      document.body.classList.toggle("drawer-open", this.form.element.open || this.stats.isOpen);
+      statsButton.classList.toggle("active", this.stats.isOpen);
+      statsButton.setAttribute("aria-expanded", String(this.stats.isOpen));
+    };
+    this.form.onToggle = (open) => { if (open) this.stats.close(); sync(); };
+    this.stats.onToggle = sync;
+    sync();
+
     this.deps.catalog.subscribe((s) => this.catalogChanged(s));
+    this.deps.live?.subscribe((snap) => this.menu.setLive(snap));
   }
 
   private catalogChanged(s: CatalogSnapshot): void {
@@ -80,7 +105,6 @@ export class ConsoleShell {
   private openForm(gameId: string, fallback?: GameManifest): void {
     const manifest = this.deps.catalog.find(gameId) ?? fallback;
     if (!manifest) return;
-    this.watcher.setCovered(true);
     this.form.open(manifest);
     this.form.setAvailable(this.deps.catalog.find(gameId) !== undefined);
   }

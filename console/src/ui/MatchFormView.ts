@@ -17,8 +17,13 @@ interface NameRow {
   touched: boolean;
 }
 
+/**
+ * Es un panel lateral (no modal): las partidas abiertas siguen a la vista y
+ * siguen corriendo mientras se arma la siguiente. Antes del formulario muestra
+ * el "Cómo se juega" del manifiesto (howToPlay).
+ */
 export class MatchFormView {
-  readonly element = el("dialog", { class: "match-dialog", "aria-labelledby": "match-title" });
+  readonly element = el("dialog", { class: "drawer match-drawer", "aria-labelledby": "match-title" });
   private setup: MatchSetup | null = null;
   private rows: NameRow[] = [];
   private submitted = false;
@@ -26,6 +31,10 @@ export class MatchFormView {
   private readonly form = el("form", { class: "match-form", novalidate: true });
   private readonly title = el("h2", { id: "match-title" });
   private readonly subtitle = el("p", { class: "muted" });
+  private readonly kicker = el("span", { class: "drawer-kicker", text: "Nueva partida" });
+  private readonly howTo = el("section", { class: "how-to", "aria-label": "Cómo se juega" });
+  /** Avisa cuando el panel se abre o se cierra (la consola acomoda el espacio). */
+  onToggle: (open: boolean) => void = () => {};
   private readonly unavailable = el("p", {
     class: "notice warn", role: "status",
     text: "Este juego ya no está en el registry. Cierra el formulario y elige otro.",
@@ -38,14 +47,19 @@ export class MatchFormView {
   constructor(private readonly onStart: (ctx: MatchContext, manifest: GameManifest) => void) {
     const cancel = el("button", { type: "button", class: "btn", text: "Cancelar" });
     cancel.addEventListener("click", () => this.close());
+    const x = el("button", { type: "button", class: "icon-btn", "aria-label": "Cerrar", title: "Cerrar (Esc)", text: "✕" });
+    x.addEventListener("click", () => this.close());
     this.form.append(
-      el("header", {}, this.title, this.subtitle),
+      el("header", { class: "drawer-head" }, el("div", {}, this.kicker, this.title, this.subtitle), x),
+      this.howTo,
       this.unavailable, this.modeBox, this.optionsBox, this.playersBox,
       el("footer", {}, cancel, this.startButton),
     );
     this.form.addEventListener("submit", (e) => { e.preventDefault(); this.submit(); });
     this.element.append(this.form);
-    this.element.addEventListener("close", () => { this.setup = null; });
+    // No es modal, así que Esc no lo cierra solo.
+    this.element.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); this.close(); } });
+    this.element.addEventListener("close", () => { this.setup = null; this.onToggle(false); });
   }
 
   /** El id del juego del formulario abierto, o null. */
@@ -54,13 +68,29 @@ export class MatchFormView {
   open(manifest: GameManifest): void {
     this.setup = new MatchSetup(manifest);
     this.submitted = false;
-    this.title.textContent = `Nueva partida: ${manifest.name}`;
+    this.title.textContent = manifest.name;
     this.subtitle.textContent = manifest.description ?? "";
+    this.renderHowTo(manifest);
     this.setAvailable(true);
     this.renderModes();
     this.renderModeDependent();
-    if (!this.element.open) this.element.showModal();
+    if (!this.element.open) { this.element.show(); this.onToggle(true); }
+    this.element.scrollTop = 0;
     this.rows[0]?.input.focus();
+  }
+
+  /** "Cómo se juega": el texto del manifiesto, con los nombres de las teclas resaltados. */
+  private renderHowTo(manifest: GameManifest): void {
+    const text = manifest.howToPlay?.trim();
+    this.howTo.hidden = !text;
+    if (!text) return;
+    const body = el("p", {});
+    // Partes como "A", "Espacio" o "←" se ven como teclas. Todo es texto, sin HTML.
+    for (const part of text.split(/(\b(?:Espacio|Enter|Esc)\b|[←→↑↓]|\b[A-Z]\b)/)) {
+      if (!part) continue;
+      body.append(/^(Espacio|Enter|Esc|[←→↑↓]|[A-Z])$/.test(part) ? el("kbd", { text: part }) : part);
+    }
+    this.howTo.replaceChildren(el("h3", { text: "Cómo se juega" }), body);
   }
 
   close(): void {

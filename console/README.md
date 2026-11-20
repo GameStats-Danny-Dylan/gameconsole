@@ -13,21 +13,23 @@ La página principal de GameConsole (`/`). Muestra los juegos disponibles, arma 
 
 ## Qué hace
 
-1. **Catálogo:** pide al registry los juegos vivos cada 10 s y arma el menú. Si un juego se cae, sale del menú; sus partidas abiertas siguen.
-2. **Formulario de partida:** se genera desde el `game.json` del juego (modos, cantidad de jugadores y opciones). Los nombres son obligatorios, distintos entre sí y nunca `cpu`.
-3. **Partidas:** cada una corre en su propio iframe, con `matchId = {juego}-{uuid}`. Se pueden abrir varias a la vez, y también en varias pestañas.
-4. **Pausa automática:** si una partida deja de verse (pestaña oculta, fuera de pantalla), se pausa. Al volver no se reanuda sola: se resalta "Reanudar".
-5. **Envío de eventos:** todo lo que emiten los juegos se manda a GameStats con el `EventSender`. La cabecera muestra si está al día, enviando o reintentando.
+1. **Guía de primera vez:** qué es GameConsole y cómo usarla en 3 pasos. Sale sola la primera vez; después, con el botón **? Guía**.
+2. **Catálogo:** pide al registry los juegos vivos cada 10 s y arma el menú. Si un juego se cae, sale del menú; sus partidas abiertas siguen. Cada tarjeta muestra **en vivo lo que dice GameStats** de ese juego: partidas en curso, partidas jugadas y quién va ganando (`LiveStats`, cada 5 s).
+3. **Nueva partida (panel lateral):** muestra **"Cómo se juega"** (el `howToPlay` del `game.json`, con las teclas resaltadas) y el formulario, que se genera desde el manifiesto (modos, jugadores y opciones). Los nombres son obligatorios, distintos entre sí y nunca `cpu`. No es modal: las partidas abiertas se corren a un lado y **siguen jugándose**.
+4. **Partidas:** cada una corre en su propio iframe, con `matchId = {juego}-{uuid}`, y tiene sus botones: Pausar/Reanudar, Reiniciar, Nueva partida y Cerrar. Se pueden abrir varias a la vez, y también en varias pestañas.
+5. **Pausa automática:** si una partida deja de verse (pestaña oculta, fuera de pantalla), se pausa. Al volver no se reanuda sola: se resalta "Reanudar".
+6. **Estadísticas integradas (panel lateral):** el botón **Estadísticas** abre el panel de GameStats dentro de la consola, al lado de las partidas, así se ve cómo cambian las estadísticas mientras se juega. Es la app del panel (`/panel/`) en un iframe, sin duplicar código; también se puede abrir aparte.
+7. **Envío de eventos:** todo lo que emiten los juegos se manda a GameStats con el `EventSender`. La cabecera muestra si está al día, enviando o reintentando.
 
 ## Cómo está armada
 
 | Carpeta | Archivos | Qué hacen |
 |---|---|---|
-| `catalog/` | `GameCatalog`, `RegistryClient` | La lista de juegos vivos, consultada al registry |
+| `catalog/` | `GameCatalog`, `RegistryClient`, `LiveStats` | La lista de juegos vivos (registry) y lo que dice GameStats de cada uno |
 | `domain/` | `MatchSetup`, `MatchContextFactory`, `players` | Las opciones y los nombres de una partida; arma el `INIT` |
 | `match/` | `MatchSession`, `sessionStates`, `MatchMediator`, `MatchSessionFactory`, `MatchFrame`, `EventBus` | Cada partida, sus estados, el reparto de mensajes de los iframes y el bus de eventos |
 | `sending/` | `EventSender`, `EventTransport`, `RetryPolicy` | El envío de eventos a GameStats |
-| `ui/` | `ConsoleShell`, `GameMenu`, `MatchFormView`, `MatchGrid`, `MatchTile`, `SendIndicator`, `VisibilityWatcher` | La pantalla |
+| `ui/` | `ConsoleShell`, `WelcomeGuide`, `GameMenu`, `MatchFormView`, `StatsDrawer`, `MatchGrid`, `MatchTile`, `SendIndicator`, `VisibilityWatcher` | La pantalla |
 
 ## Ciclo de una partida
 
@@ -57,7 +59,7 @@ Protocolo, [sección 6](../docs/protocolo.md#6-eventsender).
 
 | Patrón | Dónde |
 |---|---|
-| Observer | `EventBus`: las sesiones publican, el `EventSender` y la pantalla escuchan |
+| Observer | `EventBus`: las sesiones publican, el `EventSender` y la pantalla escuchan. `LiveStats` avisa a las tarjetas del menú |
 | Mediator | `MatchMediator`: reparte los mensajes de todos los iframes |
 | State | `sessionStates`: qué se puede hacer en cada estado de la partida |
 | Factory | `MatchSessionFactory`, `MatchContextFactory` |
@@ -69,7 +71,7 @@ Protocolo, [sección 6](../docs/protocolo.md#6-eventsender).
 
 ```bash
 npm ci
-npm test         # 104 pruebas
+npm test         # 107 pruebas
 npm run build
 npm run dev      # en desarrollo; necesita el gateway (docker compose) para /api y /games
 ```

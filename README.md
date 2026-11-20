@@ -45,7 +45,7 @@ Proyecto 2 del curso Lenguajes de Programación · Danny González y Dylan Mende
 | Al menos 1 juego **usuario vs computadora con Prolog** (no azar) | 4 en línea: negamax + alfa-beta en SWI-Prolog; el juego manda el tablero y usa la columna que devuelve | [`prolog/`](prolog/) |
 | **Eventos compatibles con GameStats** | Mismo contrato del P1 (campos, tipos, `POST /events`); los eventos pasan las 20 reglas de contexto de Scala | [`docs/protocolo.md` §5](docs/protocolo.md) |
 | **Envío concurrente** sin bloquear, con manejo de fallos | `EventSender`: una cola por partida, lotes, reintentos 1-2-4-8 s, `sendBeacon` al cerrar | [`console/src/sending/`](console/src/sending/) |
-| **Panel** con estadísticas de GameStats por juego y generales, **instancias por juego**, en vivo | Consulta a GameStats cada 3 s; no recalcula nada | [`panel/`](panel/) |
+| **Panel integrado** con estadísticas de GameStats por juego y generales, **instancias por juego**, en vivo | Botón **Estadísticas** de la consola: abre el panel al lado de las partidas, que siguen corriendo. Consulta a GameStats cada 3 s; no recalcula nada. Las tarjetas del menú también muestran en vivo las partidas en curso y jugadas de cada juego | [`panel/`](panel/), [`console/src/ui/StatsDrawer.ts`](console/src/ui/StatsDrawer.ts) |
 | **Git, Docker, CI/CD, deployment** equivalente a GameStats | Docker Compose, imágenes en GHCR, CI por app, CD con integración, publicación y deploy verificado | [§6](#6-deployment), [§7](#7-cicd) |
 | Documentación breve y video | Este README, el protocolo y el README de cada parte | [§12](#12-documentación-de-cada-parte) |
 
@@ -132,7 +132,7 @@ Queda en **<http://localhost:8000>**. Al construir, cada imagen corre sus prueba
 
 | Dirección | Qué hay |
 |---|---|
-| <http://localhost:8000/> | **Consola**: elegir un juego, escribir los nombres, elegir opciones y jugar. Se pueden abrir varias partidas a la vez |
+| <http://localhost:8000/> | **Consola**: elegir un juego, leer cómo se juega, escribir los nombres, elegir opciones y jugar. Se pueden abrir varias partidas a la vez. El botón **Estadísticas** muestra el panel al lado de las partidas |
 | <http://localhost:8000/panel/> | **Panel**: estadísticas generales y por juego, clasificación, partidas en curso |
 | <http://localhost:8000/games/connect4/> | 4 en línea en **modo de prueba**, sin la consola |
 | <http://localhost:8000/api/registry/games> | Juegos registrados en este momento |
@@ -283,7 +283,7 @@ gameconsole/
 
 | Parte | Pruebas | Cómo correrlas |
 |---|---|---|
-| Consola | 104 (Vitest), incluido el EventSender | `cd console && npm ci && npm test` |
+| Consola | 107 (Vitest), incluidos el EventSender y los datos en vivo | `cd console && npm ci && npm test` |
 | SDK | 80 (Vitest) | `cd sdk && npm ci && npm test` |
 | 4 en línea | 44 (Vitest), incluidas 3000 partidas al azar contra una copia de las reglas de Scala | `cd games/connect4 && npm ci && npm test` |
 | 4 en línea contra GameStats real | partidas simuladas y una entera contra Prolog | con el compose corriendo: `GAMESTATS_URL=http://localhost:8000 npm run test:gamestats` |
