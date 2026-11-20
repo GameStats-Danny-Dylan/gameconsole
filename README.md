@@ -166,7 +166,7 @@ Se guardan en dos volúmenes: `analytics-results` (los resultados de Scala) y `i
 | Variable | Por defecto | Qué es |
 |---|---|---|
 | `GATEWAY_PORT` | `8000` | Puerto de la PC donde se publica todo |
-| `GAMESTATS_TAG` | `v1.1` | Versión de las imágenes de GameStats |
+| `GAMESTATS_TAG` | `v1.2` | Versión de las imágenes de GameStats |
 | `ANALYTICS_IMAGE`, `INGESTION_IMAGE` | las de GHCR | Usar una imagen local de GameStats (por ejemplo, una versión sin publicar) |
 | `GAMECONSOLE_TAG` | `latest` | Versión de las imágenes de GameConsole (solo en `docker-compose.deploy.yml`) |
 
@@ -212,8 +212,8 @@ Igual que en GameStats: el CD publica las imágenes en **GitHub Container Regist
 | `ghcr.io/gamestats-danny-dylan/gameconsole-registry` | registry |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-prolog` | IA en Prolog |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-panel` | panel |
-| `ghcr.io/gamestats-danny-dylan/gamestats-analytics:v1.1` | GameStats: análisis en Scala ([release v1.1](https://github.com/GameStats-Danny-Dylan/gamestats/releases/tag/v1.1)) |
-| `ghcr.io/gamestats-danny-dylan/gamestats-ingestion:v1.1` | GameStats: ingesta en Go (mismo release) |
+| `ghcr.io/gamestats-danny-dylan/gamestats-analytics:v1.2` | GameStats: análisis en Scala ([release v1.2](https://github.com/GameStats-Danny-Dylan/gamestats/releases/tag/v1.2)) |
+| `ghcr.io/gamestats-danny-dylan/gamestats-ingestion:v1.2` | GameStats: ingesta en Go (mismo release) |
 
 Todas para `amd64` y `arm64` (también funcionan en una Mac con chip Apple).
 
@@ -289,6 +289,10 @@ GameStats v1.1 también acepta cualquier `gameId`, para que un juego nuevo se an
 ### GameStats v1.1: persistencia de las partidas en curso
 
 Si `ingestion` (Go) se reinicia en medio de una partida, antes la perdía y Scala recibía partidas incompletas. En v1.1 guarda las partidas en curso en disco (`DATA_DIR`, volumen `ingestion-data`) y rechaza eventos de partidas cuyo `MATCH_STARTED` no vio. Probado: con un reinicio a mitad de partida, Scala la recibe completa.
+
+### GameStats v1.2: una partida terminada siempre llega a Scala
+
+Si Scala está caído cuando termina una partida, Go hace 3 reintentos rápidos (1, 2 y 4 s) y, si siguen fallando, deja la partida como `reintentando` y la reenvía cada 30 s hasta que Scala la reciba. Mientras espera, conserva su archivo en `DATA_DIR`, así que tampoco se pierde si Go se reinicia. Con esto, los dos tramos del envío reintentan sin perder eventos: consola → Go (cola por partida en el `EventSender`) y Go → Scala. Probado: 30 partidas con Scala apagado y un reinicio de Go en el medio; al volver Scala llegaron las 30, con todos sus eventos.
 
 ### "Cómo se juega" de cada juego
 
@@ -403,5 +407,5 @@ Resultado el 20-nov: contra la `v1.0` publicada (deployment limpio desde GHCR) d
 | Docker, CI/CD, deployment | ✅ |
 | Tetris y peleas | ✅ |
 | Diseño DnD Games y usabilidad (heurísticas de Nielsen) | ✅ |
-| GameStats v1.1 publicado y en los compose (`GAMESTATS_TAG=v1.1`) | ✅ |
+| GameStats v1.2 publicado y en los compose (`GAMESTATS_TAG=v1.2`) | ✅ |
 | Video de demostración | pendiente |

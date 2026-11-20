@@ -8,7 +8,7 @@
 #   docker compose -f docker-compose.deploy.yml down                            # apagar
 #
 # Versiones: GAMECONSOLE_TAG (por defecto latest; v1.0 al entregar) y
-# GAMESTATS_TAG (por defecto v1.1). Puerto: GATEWAY_PORT (8000).
+# GAMESTATS_TAG (por defecto v1.2). Puerto: GATEWAY_PORT (8000).
 
 name: gameconsole
 
@@ -69,7 +69,7 @@ services:
 
   analytics:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gamestats-analytics:${GAMESTATS_TAG:-v1.1}
+    image: ghcr.io/gamestats-danny-dylan/gamestats-analytics:${GAMESTATS_TAG:-v1.2}
     environment:
       PORT: "8081"
       RESULTS_DIR: "/data"
@@ -83,12 +83,12 @@ services:
 
   ingestion:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gamestats-ingestion:${GAMESTATS_TAG:-v1.1}
+    image: ghcr.io/gamestats-danny-dylan/gamestats-ingestion:${GAMESTATS_TAG:-v1.2}
     environment:
       PORT: "8080"
       SCALA_URL: "http://analytics:8081"
       WORKERS: "4"
-      DATA_DIR: "/app/data"         # GameStats v1.1: las partidas en curso sobreviven a un reinicio
+      DATA_DIR: "/app/data"         # GameStats v1.1+: las partidas en curso (y las que esperan reenvío a Scala) sobreviven a un reinicio
     volumes:
       - ingestion-data:/app/data
     depends_on:
