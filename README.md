@@ -201,7 +201,9 @@ Cada partida tiene su botón **? Cómo se juega** con el objetivo, los pasos, lo
 | <http://localhost:8000/games/connect4/> | 4 en línea en **modo de prueba**, sin la consola |
 | <http://localhost:8000/api/registry/games> | Juegos registrados en este momento |
 
-**Varias partidas a la vez:** desde la consola se abren varias partidas (cada una en su cuadro) o se abre la consola en varias pestañas. Cada partida manda sus eventos por separado. Si una partida deja de verse, se pausa sola, y puede quedar en pausa hasta **20 minutos** sin que GameStats la dé por abandonada (en pausa no hay eventos; los compose suben a 20 min el tiempo de espera de Go, que por defecto es 1 min en Tetris y 2 en peleas). Cerrar una partida o la pestaña la cierra en GameStats al instante.
+**Varias partidas a la vez:** desde la consola se abren varias partidas (cada una en su cuadro) o se abre la consola en varias pestañas. Cada partida manda sus eventos por separado. Si una partida deja de verse, se pausa sola, y puede quedar en pausa hasta **20 minutos** sin que GameStats la dé por abandonada (en pausa no hay eventos; los compose suben a 20 min el tiempo de espera de Go, que por defecto es 1 min en Tetris y 2 en peleas). Cerrar una partida o la pestaña la cierra en GameStats al instante. Lo único que no alcanza a avisar es un cierre forzado (se cuelga el navegador o se apaga la PC): esa partida aparece "en curso" hasta que pasan los 20 minutos y Go la da por abandonada.
+
+**Antes de una demostración**, conviene empezar con `docker compose down -v`: borra las estadísticas guardadas, y las partidas analizadas por una versión anterior de GameStats no se recalculan solas.
 
 **Desde otra computadora:**
 - En la misma red: `http://<IP de la PC>:8000` (puede hacer falta permitir el puerto en el firewall). Probado con la prueba de punta a punta entrando por la IP: 38/38. Ahí el navegador no ofrece `crypto.randomUUID` (no es HTTPS ni `localhost`), así que el SDK arma el `matchId` con `newUuid`, que tiene un respaldo.
@@ -399,7 +401,7 @@ Resultados del 20-nov:
 | `v1.0` publicada (clon limpio, imágenes de GHCR) | 36/38: una partida recién abierta podía pausarse sola antes de quedar a la vista |
 | `v1.0.1` publicada (clon limpio, imágenes de GHCR, GameStats `v1.2`) | **38/38** |
 | `v1.0.2` desde el código, entrando por la IP de la red (`http://<IP>:8000`) | **38/38** (antes, crear una partida por IP fallaba: ver la sección 5) |
-| `v1.0.3` desde el código, con GameStats `v1.3` (partidas cortadas) | **38/38**; además, una pelea cerrada tras ganar el round 1 queda sin ganador y en "Cortadas" |
+| **`v1.0.3` publicada** (clon limpio sin variables: imágenes `v1.0.3` de GHCR y GameStats `v1.3`), entrando por la IP de la red | **38/38**. Además, 16 casos extra: pausa de 75 s (sigue en curso), Scala apagado (la partida queda `reintentando` y llega al volver), juego nuevo `snake`, eventos inválidos rechazados, Prolog en las 3 dificultades, pelea cortada (sin ganador y en "Cortadas"); pelea a ~53 cuadros por segundo; panel sin desplazamiento lateral en 1920 a 390 px |
 
 ## 12. Documentación de cada parte
 
