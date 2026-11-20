@@ -237,6 +237,10 @@ El panel solo muestra lo que devuelve GameStats. Para eso GameStats v1.1 agregó
 
 GameStats v1.1 también acepta cualquier `gameId`, para que un juego nuevo se analice con estadísticas genéricas.
 
+### Usabilidad para quien la usa por primera vez
+
+La consola se revisó contra las **10 heurísticas de Nielsen**: estado siempre visible (indicadores y avisos), lenguaje de jugador, "Cómo se juega" antes y durante cada partida, confirmación antes de cerrar una partida en curso, mensajes de error que dicen qué hacer y una guía de primera vez. La tabla completa está en [`console/README.md`](console/README.md#usabilidad-heurísticas-de-nielsen).
+
 ### Un solo origen
 
 Todo pasa por nginx: no hace falta CORS, el código no tiene `localhost` escrito, y el mismo compose sirve en una PC, detrás del túnel o en un servidor.

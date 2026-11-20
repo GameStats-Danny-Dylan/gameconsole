@@ -7,8 +7,9 @@
  */
 import type { GameManifest, MatchContext } from "@gameconsole/sdk";
 import { MatchSetup, MODE_LABELS } from "../domain/MatchSetup";
-import { CPU_ID, NAME_MAX_LENGTH, toPlayerId } from "../domain/players";
+import { NAME_MAX_LENGTH, toPlayerId } from "../domain/players";
 import { el } from "./dom";
+import { howToPlayText } from "./howTo";
 
 interface NameRow {
   input: HTMLInputElement;
@@ -37,7 +38,7 @@ export class MatchFormView {
   onToggle: (open: boolean) => void = () => {};
   private readonly unavailable = el("p", {
     class: "notice warn", role: "status",
-    text: "Este juego ya no está en el registry. Cierra el formulario y elige otro.",
+    text: "Este juego dejó de estar disponible (su servidor se apagó). Cierra este panel y elige otro juego.",
   });
   private readonly modeBox = el("fieldset", { class: "field-group" });
   private readonly optionsBox = el("div", { class: "field-group" });
@@ -84,13 +85,7 @@ export class MatchFormView {
     const text = manifest.howToPlay?.trim();
     this.howTo.hidden = !text;
     if (!text) return;
-    const body = el("p", {});
-    // Partes como "A", "Espacio" o "←" se ven como teclas. Todo es texto, sin HTML.
-    for (const part of text.split(/(\b(?:Espacio|Enter|Esc)\b|[←→↑↓]|\b[A-Z]\b)/)) {
-      if (!part) continue;
-      body.append(/^(Espacio|Enter|Esc|[←→↑↓]|[A-Z])$/.test(part) ? el("kbd", { text: part }) : part);
-    }
-    this.howTo.replaceChildren(el("h3", { text: "Cómo se juega" }), body);
+    this.howTo.replaceChildren(el("h3", { text: "Cómo se juega" }), howToPlayText(text));
   }
 
   close(): void {
@@ -157,7 +152,7 @@ export class MatchFormView {
     if (s.hasCpu)
       this.playersBox.append(el("div", { class: "field cpu-row" },
         el("span", { class: "label", text: `Jugador ${s.humans + 1}` }),
-        el("p", { class: "fixed-value", text: `Computadora (${CPU_ID})` })));
+        el("p", { class: "fixed-value", text: "Computadora · decide sus jugadas con inteligencia en Prolog" })));
     this.refreshNames();
   }
 
@@ -169,7 +164,7 @@ export class MatchFormView {
       row.error.textContent = show ?? "";
       row.input.setAttribute("aria-invalid", String(show !== null));
       const pid = toPlayerId(row.input.value);
-      row.hint.textContent = pid ? `Se guarda como «${pid}»` : "";
+      row.hint.textContent = pid ? `En las estadísticas aparecerás como «${pid}»` : "";
     });
   }
 

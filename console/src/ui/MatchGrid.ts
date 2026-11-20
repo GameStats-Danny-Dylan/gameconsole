@@ -13,6 +13,7 @@ import type { MatchSession } from "../match/MatchSession";
 import type { MatchSessionFactory } from "../match/MatchSessionFactory";
 import { el } from "./dom";
 import { MatchTile, type TileActions } from "./MatchTile";
+import type { Toasts } from "./Toasts";
 import type { VisibilityWatcher } from "./VisibilityWatcher";
 
 export class MatchGrid {
@@ -24,12 +25,14 @@ export class MatchGrid {
     restart: (t) => void this.restart(t),
     newMatch: (t) => this.onNewMatch(t.session.manifest),
     close: (t) => void this.close(t),
+    notify: (text, kind) => this.toasts?.show(text, kind),
   };
 
   constructor(
     private readonly factory: MatchSessionFactory,
     private readonly watcher: VisibilityWatcher,
     private readonly onNewMatch: (manifest: GameManifest) => void,
+    private readonly toasts?: Toasts,
   ) {
     this.element.append(
       el("div", { class: "section-head row" }, el("h2", { text: "Partidas" }), this.count),
@@ -46,6 +49,9 @@ export class MatchGrid {
     this.watcher.watch(tile.stage, session);
     this.update();
     tile.element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // La partida nueva recibe el teclado: se puede jugar sin hacer clic antes.
+    setTimeout(() => tile.focusGame(), 400);
+    this.toasts?.show(`Se abrió ${manifest.name}: ${context.players.map((p) => p.name).join(" vs ")}.`, "info");
   }
 
   private async restart(tile: MatchTile): Promise<void> {

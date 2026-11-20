@@ -7,7 +7,7 @@
  */
 
 export const CPU_ID = "cpu";
-export const CPU_NAME = "CPU";
+export const CPU_NAME = "Computadora";
 export const NAME_MAX_LENGTH = 24;
 
 /** Convierte el nombre que escribe la persona en su playerId. */

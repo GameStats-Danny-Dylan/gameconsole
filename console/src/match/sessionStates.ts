@@ -63,7 +63,7 @@ class LoadingState extends SessionState {
     s.setState(PLAYING);   // al recibir READY, la consola manda START enseguida
     s.sendStart();
   }
-  override readyTimeout(s: SessionControl) { s.fail("El juego no respondió en 10 s."); }
+  override readyTimeout(s: SessionControl) { s.fail("El juego no respondió a tiempo. Pulsa «Reintentar» para abrirla de nuevo, o «Cerrar»."); }
 }
 
 /** Llegó READY. Es un paso: la consola manda START en ese mismo momento. */

@@ -305,4 +305,37 @@ kbd {
 .match-detail:empty { display: none; }
 .match-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .btn.small { font-size: 13px; padding: 6px 12px; border-radius: 10px; }
+.btn.ghost { background: transparent; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.btn.ghost.active { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+/* Confirmar en el mismo botón (sin ventanas emergentes). */
+.btn.confirm { color: #fff; border-color: transparent; background: var(--critical); animation: confirm-pop .18s ease-out; }
+@keyframes confirm-pop { from { transform: scale(.94); } }
+
+/* "Cómo se juega" encima de la partida, sin cerrarla. */
+.match-body { position: relative; min-height: 0; }
+.tile-howto {
+  position: absolute; inset: 12px; z-index: 2; overflow-y: auto;
+  display: grid; align-content: start; gap: 10px; padding: 18px 20px; border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent); backdrop-filter: blur(6px);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); box-shadow: var(--shadow);
+}
+.tile-howto h4 { margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.tile-howto p { margin: 0; font-size: 14.5px; line-height: 1.8; color: var(--ink-2); }
+.tile-howto .btn { justify-self: start; }
+.match-tile[data-status="playing"] .match-detail { color: var(--accent); font-weight: 600; }
+
+/* ---------- Avisos (toasts) ---------- */
+.toasts { position: fixed; z-index: 40; left: 50%; bottom: 20px; transform: translateX(-50%); display: grid; gap: 8px; width: min(440px, calc(100vw - 32px)); pointer-events: none; }
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 14px;
+  font-size: 14px; font-weight: 600; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border); box-shadow: 0 16px 40px -14px rgb(0 0 0 / .5);
+  animation: toast-in .25s ease-out; transition: opacity .3s, transform .3s;
+}
+.toast.leaving { opacity: 0; transform: translateY(8px); }
+.toast-icon { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; font-size: 13px; color: #fff; background: var(--accent); }
+.toast.good .toast-icon { background: var(--good); }
+.toast.warn .toast-icon { background: var(--critical); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) { .toast, .btn.confirm { animation: none; transition: none; } }
 .btn.danger:not(:disabled):hover { color: var(--critical); border-color: color-mix(in srgb, var(--critical) 45%, var(--border)); }

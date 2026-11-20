@@ -8,6 +8,7 @@ La página principal de GameConsole (`/`). Muestra los juegos disponibles, arma 
 - [Cómo está armada](#cómo-está-armada)
 - [Ciclo de una partida](#ciclo-de-una-partida)
 - [Envío de eventos (EventSender)](#envío-de-eventos-eventsender)
+- [Usabilidad: heurísticas de Nielsen](#usabilidad-heurísticas-de-nielsen)
 - [Patrones](#patrones)
 - [Cómo correrla](#cómo-correrla)
 
@@ -54,6 +55,23 @@ Protocolo, [sección 6](../docs/protocolo.md#6-eventsender).
 | Fallos | Error de red o 5xx: reintenta a los 1, 2, 4 y 8 s, y después cada 8 s, sin perder eventos. 4xx o evento rechazado: se avisa en la consola del navegador y no se reintenta |
 | Partida cerrada sin terminar | Cierre de respaldo: `PLAYER_LEFT` por cada persona y `MATCH_FINISHED` sin `data`, solo si hubo `MATCH_STARTED` y no hubo `MATCH_FINISHED`. Sigue la numeración y la hora de la partida (`EventStamper.continueFrom`) |
 | Pestaña cerrada | Lo pendiente y los cierres salen con `navigator.sendBeacon`; el envío en curso termina solo (`keepalive`) |
+
+## Usabilidad: heurísticas de Nielsen
+
+La consola está pensada para alguien que la abre por primera vez. Se revisó contra las 10 heurísticas de Nielsen:
+
+| # | Heurística | Cómo se cumple |
+|---|---|---|
+| 1 | Visibilidad del estado del sistema | Cabecera con el estado de los juegos ("En línea · 3 juegos") y del envío a GameStats ("al día", "enviando", "no responde"). Cada partida muestra su estado (Cargando, Jugando, En pausa, Terminada). Avisos breves al abrir una partida, cuando alguien gana o si GameStats deja de responder. Las tarjetas muestran partidas en curso en vivo |
+| 2 | Relación con el mundo real | Todo en español y con palabras de jugador: "Cómo se juega", "Computadora", "En las estadísticas aparecerás como…". Nada de términos internos en la pantalla |
+| 3 | Control y libertad | Los paneles laterales se cierran con ✕, "Cancelar" o Esc. Pausar/Reanudar, Reiniciar, Nueva partida y Cerrar en cada partida |
+| 4 | Consistencia y estándares | Los mismos botones, colores y tema claro/oscuro en la consola, los juegos y el panel. El botón principal siempre es el de color |
+| 5 | Prevención de errores | Nombres obligatorios, distintos y validados al escribir. Cerrar o reiniciar una partida en curso pide confirmar en el mismo botón ("¿Cerrar? Sí"), sin ventanas emergentes |
+| 6 | Reconocer en vez de recordar | "Cómo se juega" antes de empezar y también durante la partida (botón "? Cómo se juega"), con las teclas dibujadas. Si la partida no tiene el teclado, se avisa cómo dárselo; la partida nueva lo recibe sola |
+| 7 | Flexibilidad y eficiencia | Teclado en los juegos, Esc para cerrar paneles, Reiniciar juega otra igual sin volver a llenar el formulario, varias partidas a la vez |
+| 8 | Diseño estético y minimalista | Una tarjeta por juego con lo justo; la guía y los paneles se abren solo cuando se piden |
+| 9 | Reconocer, diagnosticar y recuperarse de errores | Los mensajes dicen qué pasó y qué hacer ("El juego no respondió a tiempo. Pulsa «Reintentar»"). Si GameStats no responde, se avisa que no se pierde nada y se reintenta solo |
+| 10 | Ayuda y documentación | Guía de primera vez en 3 pasos (botón "? Guía"), "Cómo se juega" de cada juego y explicaciones al pasar el mouse sobre los indicadores |
 
 ## Patrones
 

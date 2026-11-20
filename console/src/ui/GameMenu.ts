@@ -64,8 +64,8 @@ export class GameMenu {
     this.empty.hidden = s.games.length > 0;
     this.empty.textContent =
       s.status === "loading" ? "Buscando juegos…" :
-      s.status === "offline" ? "No se pudo conectar con el registry. Se vuelve a intentar cada 10 s." :
-      "Todavía no hay juegos registrados.";
+      s.status === "offline" ? "No se pudo cargar la lista de juegos. Se vuelve a intentar sola cada 10 s." :
+      "Todavía no hay juegos disponibles. Aparecen solos cuando se enciende su servidor.";
   }
 
   /** Lo que dice GameStats de cada juego (LiveStats). */

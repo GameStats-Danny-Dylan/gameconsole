@@ -24,6 +24,7 @@ import { MatchFormView } from "./MatchFormView";
 import { MatchGrid } from "./MatchGrid";
 import { sendIndicator } from "./SendIndicator";
 import { StatsDrawer } from "./StatsDrawer";
+import { Toasts } from "./Toasts";
 import { VisibilityWatcher } from "./VisibilityWatcher";
 import { WelcomeGuide } from "./WelcomeGuide";
 
@@ -43,10 +44,11 @@ export class ConsoleShell {
   private readonly stats = new StatsDrawer("/panel/");
   private readonly guide = new WelcomeGuide();
   private readonly watcher = new VisibilityWatcher();
+  private readonly toasts = new Toasts();
   private readonly grid: MatchGrid;
 
   constructor(private readonly root: HTMLElement, private readonly deps: ShellDeps) {
-    this.grid = new MatchGrid(deps.sessions, this.watcher, (m) => this.openForm(m.id, m));
+    this.grid = new MatchGrid(deps.sessions, this.watcher, (m) => this.openForm(m.id, m), this.toasts);
   }
 
   mount(): void {
@@ -61,7 +63,17 @@ export class ConsoleShell {
       this.grid.element,
       this.menu.element,
     );
-    document.body.append(this.form.element, this.stats.element);
+    document.body.append(this.form.element, this.stats.element, this.toasts.element);
+
+    // Si GameStats deja de responder (o vuelve), se avisa una vez: los eventos no se pierden.
+    let failing = false;
+    this.deps.sender?.onChange((s) => {
+      if (s.failing === failing) return;
+      failing = s.failing;
+      this.toasts.show(failing
+        ? "GameStats no responde. Las jugadas se guardan y se mandan solas cuando vuelva."
+        : "GameStats volvió: se mandó todo lo pendiente.", failing ? "warn" : "good");
+    });
 
     // Un solo panel lateral a la vez; mientras hay uno, la página le deja lugar.
     const sync = () => {
@@ -93,7 +105,7 @@ export class ConsoleShell {
     this.status.className = `status ${cls}`.trim();
     this.status.replaceChildren(el("span", { class: "icon", "aria-hidden": "true", text: "●" }), text);
     this.status.title = s.status === "offline"
-      ? "El registry no responde: se muestra la última lista conocida."
+      ? "El servicio que lista los juegos no responde: se muestra la última lista conocida y se reintenta solo."
       : s.updatedAt ? `Actualizado a las ${s.updatedAt.toLocaleTimeString("es")}` : "";
   }
 
