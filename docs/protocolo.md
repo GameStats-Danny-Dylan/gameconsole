@@ -250,7 +250,7 @@ Se usa el **contrato de GameStats tal como está** (`gamestats/contracts/event.s
 
 ### Identificadores
 
-- **`matchId`** = `{id}-{uuid}`, con el `id` del manifiesto (por ejemplo, `connect4-3f9c2a1e-...`). Lo crea la consola con `crypto.randomUUID()`. Es único aunque haya muchas partidas a la vez o en varias pestañas.
+- **`matchId`** = `{id}-{uuid}`, con el `id` del manifiesto (por ejemplo, `connect4-3f9c2a1e-...`). Lo crea la consola con `newUuid()` del SDK, que usa `crypto.randomUUID()` y, si la página no es un contexto seguro (por ejemplo `http://<IP>:8000`, donde esa función no existe), arma el mismo formato con `crypto.getRandomValues`. Es único aunque haya muchas partidas a la vez o en varias pestañas.
 - **`playerId`** = el nombre que escribe el jugador, normalizado: en minúsculas, sin acentos y con los espacios y símbolos cambiados por guiones (una racha de varios cuenta como un solo guion, y no quedan guiones al principio ni al final). Por ejemplo, `"Danny G"` → `danny-g` y `"José Pérez"` → `jose-perez`. Un nombre sin letras ni números no es válido. La computadora es siempre `cpu`, y ningún humano puede tener ese `playerId`.
 - **Nombres repetidos:** la consola consulta `/api/players/{playerId}`. Si el nombre ya existe, pregunta "¿eres tú?". Si la persona dice que no, le pide otro nombre.
 

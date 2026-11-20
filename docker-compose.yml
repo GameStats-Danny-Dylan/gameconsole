@@ -72,6 +72,12 @@ services:
       SCALA_URL: "http://analytics:8081"
       WORKERS: "4"
       DATA_DIR: "/app/data"         # GameStats v1.1+: las partidas en curso (y las que esperan reenvío a Scala) sobreviven a un reinicio
+      # La consola pausa sola una partida que deja de verse (otra pestaña) y en
+      # pausa no hay eventos. Con los tiempos de GameStats por defecto (tetris 1m,
+      # fighting 2m) Go la abandonaría. Una partida cerrada igual se cierra al
+      # instante (la consola manda el cierre); esto solo cubre pausas largas.
+      IDLE_TIMEOUT: "20m"
+      IDLE_TIMEOUT_BY_GAME: "connect4=20m,tetris=20m,fighting=20m"
     volumes:
       - ingestion-data:/app/data
     depends_on:

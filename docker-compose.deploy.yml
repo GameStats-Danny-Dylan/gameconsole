@@ -7,7 +7,7 @@
 #   docker compose -f docker-compose.deploy.yml logs tunnel                     # ahí aparece la URL *.trycloudflare.com
 #   docker compose -f docker-compose.deploy.yml down                            # apagar
 #
-# Versiones: GAMECONSOLE_TAG (por defecto latest; v1.0 al entregar) y
+# Versiones: GAMECONSOLE_TAG (por defecto v1.0.2, la versión entregada; latest = lo último de main) y
 # GAMESTATS_TAG (por defecto v1.2). Puerto: GATEWAY_PORT (8000).
 
 name: gameconsole
@@ -18,7 +18,7 @@ x-gc: &gc
 services:
   gateway:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-gateway:${GAMECONSOLE_TAG:-latest}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-gateway:${GAMECONSOLE_TAG:-v1.0.2}
     ports:
       - "${GATEWAY_PORT:-8000}:80"
     depends_on:
@@ -30,40 +30,40 @@ services:
 
   registry:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-registry:${GAMECONSOLE_TAG:-latest}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-registry:${GAMECONSOLE_TAG:-v1.0.2}
     environment:
       PORT: "8080"
       HEARTBEAT_TIMEOUT_MS: "15000"
 
   prolog:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-prolog:${GAMECONSOLE_TAG:-latest}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-prolog:${GAMECONSOLE_TAG:-v1.0.2}
     environment:
       PORT: "8080"
 
   panel:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-panel:${GAMECONSOLE_TAG:-latest}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-panel:${GAMECONSOLE_TAG:-v1.0.2}
 
   console:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-console:${GAMECONSOLE_TAG:-latest}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-console:${GAMECONSOLE_TAG:-v1.0.2}
 
   game-connect4:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-connect4:${GAMECONSOLE_TAG:-latest}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-connect4:${GAMECONSOLE_TAG:-v1.0.2}
     environment:
       REGISTRY_URL: "http://registry:8080"
 
   game-tetris:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-tetris:${GAMECONSOLE_TAG:-latest}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-tetris:${GAMECONSOLE_TAG:-v1.0.2}
     environment:
       REGISTRY_URL: "http://registry:8080"
 
   game-fighting:
     <<: *gc
-    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-fighting:${GAMECONSOLE_TAG:-latest}
+    image: ghcr.io/gamestats-danny-dylan/gameconsole-game-fighting:${GAMECONSOLE_TAG:-v1.0.2}
     environment:
       REGISTRY_URL: "http://registry:8080"
 
@@ -89,6 +89,12 @@ services:
       SCALA_URL: "http://analytics:8081"
       WORKERS: "4"
       DATA_DIR: "/app/data"         # GameStats v1.1+: las partidas en curso (y las que esperan reenvío a Scala) sobreviven a un reinicio
+      # La consola pausa sola una partida que deja de verse (otra pestaña) y en
+      # pausa no hay eventos. Con los tiempos de GameStats por defecto (tetris 1m,
+      # fighting 2m) Go la abandonaría. Una partida cerrada igual se cierra al
+      # instante (la consola manda el cierre); esto solo cubre pausas largas.
+      IDLE_TIMEOUT: "20m"
+      IDLE_TIMEOUT_BY_GAME: "connect4=20m,tetris=20m,fighting=20m"
     volumes:
       - ingestion-data:/app/data
     depends_on:

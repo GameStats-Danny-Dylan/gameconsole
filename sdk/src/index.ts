@@ -5,6 +5,7 @@
 export * from "./protocol";
 export { MonotonicClock, type Now } from "./events/MonotonicClock";
 export { EventStamper, type StamperConfig } from "./events/EventStamper";
+export { newUuid, type UuidSource } from "./events/uuid";
 export { ConsoleChannel, WindowTransport, type Transport } from "./client/MessageChannel";
 export { GameApp, type GameAppOptions, type GameIdentity, type DiscardReason } from "./client/GameApp";
 export type { MatchState } from "./client/states";

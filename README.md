@@ -122,9 +122,9 @@ docker compose -f docker-compose.deploy.yml up -d --wait
 ```
 
 - Descarga las imágenes ya construidas de GitHub Container Registry (la primera vez, alrededor de 1 GB; después arranca en segundos) y espera a que los 10 servicios estén sanos. Cuando termina, la terminal vuelve a quedar libre.
-- Sin variables usa lo último publicado (`latest`). Para una versión concreta:
-  - bash: `GAMECONSOLE_TAG=v1.0.1 docker compose -f docker-compose.deploy.yml up -d --wait`
-  - PowerShell: `$env:GAMECONSOLE_TAG="v1.0.1"; docker compose -f docker-compose.deploy.yml up -d --wait`
+- Sin variables levanta la **versión entregada, `v1.0.2`**, aunque después se publique algo más en `main`. Para otra versión (por ejemplo `latest`, lo último de `main`):
+  - bash: `GAMECONSOLE_TAG=latest docker compose -f docker-compose.deploy.yml up -d --wait`
+  - PowerShell: `$env:GAMECONSOLE_TAG="latest"; docker compose -f docker-compose.deploy.yml up -d --wait`
 
 **Paso 3: abrir <http://localhost:8000>** y seguir el [recorrido de la sección 5](#5-cómo-se-usa).
 
@@ -168,7 +168,7 @@ Se guardan en dos volúmenes: `analytics-results` (los resultados de Scala) y `i
 | `GATEWAY_PORT` | `8000` | Puerto de la PC donde se publica todo |
 | `GAMESTATS_TAG` | `v1.2` | Versión de las imágenes de GameStats |
 | `ANALYTICS_IMAGE`, `INGESTION_IMAGE` | las de GHCR | Usar una imagen local de GameStats (por ejemplo, una versión sin publicar) |
-| `GAMECONSOLE_TAG` | `latest` | Versión de las imágenes de GameConsole (solo en `docker-compose.deploy.yml`) |
+| `GAMECONSOLE_TAG` | `v1.0.2` | Versión de las imágenes de GameConsole (solo en `docker-compose.deploy.yml`); `latest` = lo último de `main` |
 
 ## 5. Cómo se usa
 
@@ -192,10 +192,10 @@ Cada partida tiene su botón **? Cómo se juega** con el objetivo, los pasos, lo
 | <http://localhost:8000/games/connect4/> | 4 en línea en **modo de prueba**, sin la consola |
 | <http://localhost:8000/api/registry/games> | Juegos registrados en este momento |
 
-**Varias partidas a la vez:** desde la consola se abren varias partidas (cada una en su cuadro) o se abre la consola en varias pestañas. Cada partida manda sus eventos por separado. Si una partida deja de verse, se pausa sola.
+**Varias partidas a la vez:** desde la consola se abren varias partidas (cada una en su cuadro) o se abre la consola en varias pestañas. Cada partida manda sus eventos por separado. Si una partida deja de verse, se pausa sola, y puede quedar en pausa hasta **20 minutos** sin que GameStats la dé por abandonada (en pausa no hay eventos; los compose suben a 20 min el tiempo de espera de Go, que por defecto es 1 min en Tetris y 2 en peleas). Cerrar una partida o la pestaña la cierra en GameStats al instante.
 
 **Desde otra computadora:**
-- En la misma red: `http://<IP de la PC>:8000` (puede hacer falta permitir el puerto en el firewall).
+- En la misma red: `http://<IP de la PC>:8000` (puede hacer falta permitir el puerto en el firewall). Probado con la prueba de punta a punta entrando por la IP: 38/38. Ahí el navegador no ofrece `crypto.randomUUID` (no es HTTPS ni `localhost`), así que el SDK arma el `matchId` con `newUuid`, que tiene un respaldo.
 - Por internet: `docker compose --profile tunnel up -d` levanta un túnel de Cloudflare. La URL pública (`https://….trycloudflare.com`) aparece en `docker compose logs tunnel`. Funciona mientras la PC que lo levantó esté encendida.
 
 ## 6. Deployment
@@ -353,7 +353,7 @@ gameconsole/
 | Parte | Pruebas | Cómo correrlas |
 |---|---|---|
 | Consola | 107 (Vitest), incluidos el EventSender y los datos en vivo | `cd console && npm ci && npm test` |
-| SDK | 80 (Vitest) | `cd sdk && npm ci && npm test` |
+| SDK | 82 (Vitest) | `cd sdk && npm ci && npm test` |
 | 4 en línea | 44 (Vitest), incluidas 3000 partidas al azar contra una copia de las reglas de Scala | `cd games/connect4 && npm ci && npm test` |
 | 4 en línea contra GameStats real | partidas simuladas y una entera contra Prolog | con el compose corriendo: `GAMESTATS_URL=http://localhost:8000 npm run test:gamestats` |
 | Tetris | 58 (Vitest), incluidos eventos contra una copia de las reglas de Scala | `cd games/tetris && npm ci && npm test` |
@@ -379,7 +379,13 @@ Con Docker no hace falta instalar nada: cada imagen corre sus pruebas al constru
 | Fallos | Se apaga GameStats a mitad de una partida: la consola avisa, sigue y al volver manda todo sin perder nada. Cerrar la pestaña cierra la partida en GameStats al instante |
 | Descubrimiento | Se apaga Tetris y desaparece del menú; se enciende y vuelve |
 
-Resultado el 20-nov: contra la `v1.0` publicada (deployment limpio desde GHCR) dio 36/38, porque una partida recién abierta podía pausarse sola antes de quedar a la vista; se corrigió en la `v1.0.1` y con el arreglo da **38/38**.
+Resultados del 20-nov:
+
+| Contra qué | Resultado |
+|---|---|
+| `v1.0` publicada (clon limpio, imágenes de GHCR) | 36/38: una partida recién abierta podía pausarse sola antes de quedar a la vista |
+| `v1.0.1` publicada (clon limpio, imágenes de GHCR, GameStats `v1.2`) | **38/38** |
+| `v1.0.2` desde el código, entrando por la IP de la red (`http://<IP>:8000`) | **38/38** (antes, crear una partida por IP fallaba: ver la sección 5) |
 
 ## 12. Documentación de cada parte
 

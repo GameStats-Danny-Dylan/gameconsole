@@ -4,7 +4,7 @@
  * muestra los eventos en la consola del navegador (no se mandan a GameStats).
  */
 import type { ContractEvent, GameEventDraft, GameHost, MatchContext } from "@gameconsole/sdk";
-import { EventStamper } from "@gameconsole/sdk";
+import { EventStamper, newUuid } from "@gameconsole/sdk";
 import { themeToggle } from "@gameconsole/sdk/theme";
 import manifest from "../../public/game.json";
 import { SoundBank } from "../audio/SoundBank";
@@ -56,7 +56,7 @@ export function mountStandalone(root: HTMLElement): void {
     if (ids[0] === ids[1]) { error.textContent = "Los dos jugadores necesitan nombres distintos."; return; }
     error.textContent = "";
 
-    const matchId = `fighting-${crypto.randomUUID()}`;
+    const matchId = `fighting-${newUuid()}`;
     const ctx: MatchContext = {
       gameId: "fighting", matchId, mode: "local-2p",
       players: names.map((name, i) => ({ playerId: ids[i], name, kind: "human" as const, slot: i + 1 })),

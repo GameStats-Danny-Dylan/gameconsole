@@ -4,7 +4,7 @@
  * Factory: la única parte de la consola que sabe cómo se crea un MatchContext
  * (matchId, slots, el jugador cpu). El formulario solo le pasa lo elegido.
  */
-import type { GameManifest, MatchContext, Mode, PlayerInfo } from "@gameconsole/sdk";
+import { newUuid, type GameManifest, type MatchContext, type Mode, type PlayerInfo } from "@gameconsole/sdk";
 import { CPU_ID, CPU_NAME, toPlayerId } from "./players";
 
 export interface MatchRequest {
@@ -18,7 +18,9 @@ export interface MatchRequest {
 export type IdGenerator = () => string;
 
 export class MatchContextFactory {
-  constructor(private readonly uuid: IdGenerator = () => crypto.randomUUID()) {}
+  // newUuid y no crypto.randomUUID: este último no existe si la consola se
+  // abre por http://<IP>:8000 desde otra computadora (no es contexto seguro).
+  constructor(private readonly uuid: IdGenerator = () => newUuid()) {}
 
   /** matchId = {id}-{uuid}, con el id del manifiesto (protocolo, sección 5). */
   newMatchId(manifest: GameManifest): string {

@@ -197,7 +197,7 @@ CMD ["node", "server/main.js"]
 ```bash
 npm ci
 npm run build   # revisa tipos y compila server/ a dist-server/
-npm test        # 80 pruebas
+npm test        # 82 pruebas
 ```
 
 | Archivo | Pruebas | Qué revisa |
@@ -205,5 +205,6 @@ npm test        # 80 pruebas
 | `gameapp.test.ts` | 32 | Ciclo de vida, estados, reglas de emisión, errores de los pasos |
 | `channel.test.ts` | 14 | Mensajes con la consola: origen, `matchId`, formato |
 | `events.test.ts` | 9 | `eventId`, timestamps estrictamente crecientes, `continueFrom` |
+| `uuid.test.ts` | 2 | `newUuid`: usa `crypto.randomUUID` si existe y, si no (página abierta por `http://<IP>`), arma un UUID v4 válido |
 | `server/game-server.test.ts` | 15 | Rutas, prefijo, `game.json`, `/health` |
 | `server/registry-client.test.ts` | 10 | Registro, latido, reintentos y baja al apagarse |
