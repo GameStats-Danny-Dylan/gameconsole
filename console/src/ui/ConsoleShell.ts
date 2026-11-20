@@ -27,6 +27,7 @@ import { StatsDrawer } from "./StatsDrawer";
 import { Toasts } from "./Toasts";
 import { VisibilityWatcher } from "./VisibilityWatcher";
 import { Hero } from "./Hero";
+import { icon, type IconName } from "./icons";
 
 export interface ShellDeps {
   catalog: GameCatalog;
@@ -54,14 +55,19 @@ export class ConsoleShell {
     // En la cabecera, solo botones. Los estados van aparte, en la barra de estado:
     // así la información nunca parece algo que se pueda pulsar.
     const statsButton = el("button", { type: "button", class: "btn stats-link", "aria-controls": "stats" },
-      el("span", { class: "btn-icon", "aria-hidden": "true", text: "📊" }), "Estadísticas");
+      icon("chart", "btn-svg"), "Estadísticas");
     statsButton.addEventListener("click", () => { this.form.close(); this.stats.toggle(); });
     this.stats.element.id = "stats";
 
-    // Estado del sistema: información (texto con punto de color), dentro de la portada.
+    // Estado del sistema: información, no botones. Un recuadro por cosa, con su
+    // dibujo, qué es y cómo está (el punto de color dice si está bien).
+    const statusItem = (name: IconName, label: string, value: HTMLElement) =>
+      el("div", { class: "status-item" },
+        el("span", { class: "status-icon" }, icon(name)),
+        el("div", {}, el("span", { class: "status-label", text: label }), value));
     const statusbar = el("div", { class: "statusbar", "aria-label": "Estado del sistema" },
-      this.status,
-      ...(this.deps.sender ? [sendIndicator(this.deps.sender)] : []));
+      statusItem("gamepad", "Juegos", this.status),
+      ...(this.deps.sender ? [statusItem("cloud", "GameStats", sendIndicator(this.deps.sender))] : []));
 
     const hero = new Hero(statusbar, () => this.menu.element.scrollIntoView({ behavior: "smooth", block: "start" }));
 
@@ -113,7 +119,7 @@ export class ConsoleShell {
     const n = s.games.length;
     const [cls, text] =
       s.status === "loading" ? ["", "Conectando…"] :
-      s.status === "online" ? ["ok", `${n} ${n === 1 ? "juego disponible" : "juegos disponibles"}`] :
+      s.status === "online" ? ["ok", `${n} ${n === 1 ? "disponible" : "disponibles"}`] :
       ["bad", "Sin conexión con los juegos"];
     this.status.className = `signal ${cls}`.trim();
     this.status.replaceChildren(el("span", { class: "icon", "aria-hidden": "true", text: "●" }), text);

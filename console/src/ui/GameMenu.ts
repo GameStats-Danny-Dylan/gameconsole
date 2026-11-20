@@ -11,6 +11,7 @@ import type { CatalogSnapshot } from "../catalog/GameCatalog";
 import { playerLabel, type LiveSnapshot } from "../catalog/LiveStats";
 import { MODE_LABELS } from "../domain/MatchSetup";
 import { el } from "./dom";
+import { icon as svgIcon, type IconName } from "./icons";
 
 
 /** Colores de papel de regalo: rojo, verde, azul, dorado y violeta. */
@@ -30,7 +31,7 @@ export class GameMenu {
       el("header", { class: "section-head" },
         el("span", { class: "kicker", text: "El taller de juegos" }),
         el("h2", { text: "Elige un juego" }),
-        el("p", { text: "Cada juego es una app aparte que la consola encontró sola. Puedes abrir varias partidas a la vez." })),
+        el("p", { text: "Cada juego es una aplicación aparte que la consola encontró sola. Elige uno, ábrelo como un regalo y juega todas las partidas que quieras, incluso varias a la vez." })),
       this.empty,
       this.grid,
     );
@@ -79,7 +80,7 @@ export class GameMenu {
     entry.live.replaceChildren(
       stat(String(playing), "en curso", playing > 0 ? "on" : "", "Partidas abiertas ahora (GameStats)"),
       stat(String(played), played === 1 ? "jugada" : "jugadas", "", "Partidas terminadas que analizó GameStats"),
-      stat(g?.leader ? (g.leader === "cpu" ? "🤖 IA" : playerLabel(g.leader)) : "—", "líder", "leader",
+      stat(g?.leader ? (g.leader === "cpu" ? "La IA" : playerLabel(g.leader)) : "—", "líder", "leader",
         g?.leader ? `Quien más ha ganado: ${playerLabel(g.leader)} (GameStats)` : "Todavía nadie ganó una partida"),
     );
   }
@@ -94,12 +95,12 @@ export class GameMenu {
         el("span", { class: "game-icon placeholder", "aria-hidden": "true", text: initial })), { once: true });
 
     const play = el("button", { type: "button", class: "btn primary play", "aria-label": `Jugar ${g.name}` },
-      el("span", { class: "btn-icon", "aria-hidden": "true", text: "🎁" }), "¡A jugar!");
+      svgIcon("play", "btn-svg"), "¡A jugar!");
     play.addEventListener("click", () => this.onPlay(g.id));
     const live = el("div", { class: "game-live", "aria-label": "En GameStats" });
     // Los modos ya dicen cuántos juegan: no se repite la cantidad de jugadores.
-    const MODES: Record<string, [string, string]> = {
-      "vs-cpu": ["🤖", "Contra la computadora"], "local-2p": ["👥", "2 personas, misma pantalla"], solo: ["👤", "Un jugador"],
+    const MODES: Record<string, [IconName, string]> = {
+      "vs-cpu": ["cpu", "Contra la computadora"], "local-2p": ["users", "2 personas, misma pantalla"], solo: ["user", "Un jugador"],
     };
 
     const card = el("article", { class: "game-card", "data-game": g.id },
@@ -109,7 +110,7 @@ export class GameMenu {
         g.description ? el("p", { class: "game-desc", text: g.description }) : null,
         el("ul", { class: "game-meta", "aria-label": "Modos de juego" },
           ...g.modes.map((m) => el("li", {},
-            el("span", { "aria-hidden": "true", text: MODES[m]?.[0] ?? "🎮" }), MODES[m]?.[1] ?? MODE_LABELS[m] ?? m))),
+            svgIcon(MODES[m]?.[0] ?? "gamepad", "meta-svg"), MODES[m]?.[1] ?? MODE_LABELS[m] ?? m))),
         live,
         play),
     );

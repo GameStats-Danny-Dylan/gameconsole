@@ -347,3 +347,42 @@ th { font-size: 12px; }
 .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
 @media (max-width: 860px) { .pair { grid-template-columns: 1fr; } }
 .metrics th.num, .metrics td.num { width: 96px; }
+
+/* ============================================================
+   v5 (20-nov) — más aire y jerarquía clara de textos:
+   etiqueta (mayúsculas, color) · título (Poppins 800) ·
+   descripción (gris, interlineado 1.75, justificada).
+   ============================================================ */
+html { hyphens: auto; -webkit-hyphens: auto; }
+body { line-height: 1.7; }
+#app { gap: 30px; }
+.body { gap: 30px; }
+.card { padding: 26px 26px 28px; }
+.section-head { margin-bottom: 20px; }
+.section-head h2 { font-size: 23px; line-height: 1.2; }
+.section-head p {
+  margin: 8px 0 0; max-width: 78ch; font-size: 15px; line-height: 1.75; color: var(--ink-2);
+  text-align: justify; text-wrap: pretty;
+}
+.foot, .notice, .empty, .hl-text small, .metrics td small { text-align: justify; text-wrap: pretty; }
+.foot { margin-top: 16px; line-height: 1.7; }
+.tabs { gap: 10px; }
+.tiles { gap: 18px; }
+.tile { gap: 8px; padding: 22px 22px 20px; }
+.tile .label { letter-spacing: .1em; }
+.tile .hint { line-height: 1.5; }
+.split, .pair { gap: 20px; }
+.highlights { gap: 12px; }
+.highlights li { gap: 16px; padding: 14px 16px; }
+.hl-text { gap: 3px; }
+.hl-text small { line-height: 1.55; }
+th, td { padding-top: 14px; padding-bottom: 14px; }
+.metrics td small { margin-top: 4px; line-height: 1.5; }
+.game-head { padding: 20px 24px; gap: 18px; }
+.who { gap: 12px; }
+.brand-sub { line-height: 1.5; }
+@media (max-width: 560px) {
+  .card { padding: 18px; }
+  .section-head p { text-align: left; }
+}
+

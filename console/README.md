@@ -97,6 +97,9 @@ DnD Games (por **D**anny a**n**d **D**ylan) tiene una temática navideña propia
 | **Modo claro** | Cabaña: papel kraft y crema (sin fondo blanco) |
 | **Decoración** | Nieve que cae, colinas nevadas, guirnalda de luces que titilan, nieve acumulada sobre las tarjetas, juegos como regalos con cinta y moño, y un paisaje con pinos en la portada |
 | **Botones vs. información** | Los botones tienen relieve e ícono; al pasar el mouse **cambian de color de fondo** y se levantan, así se nota que se pueden pulsar. La información es texto plano con un punto de color o un ícono, sin forma de botón |
+| **Íconos** | Dibujados en SVG (`ui/icons.ts`), todos con el mismo trazo y el color del tema, en vez de emojis: regalo, ventanas, trofeo, control de juego, nube, computadora, personas, objetivo, teclado, foco |
+| **Textos** | Tres niveles que no se confunden: etiqueta (pequeña, en mayúsculas y en color), título (Poppins, grueso) y descripción (Inter, gris, interlineado amplio y **justificada**). Más espacio entre secciones, tarjetas y renglones |
+| **Portada** | El estado del sistema en dos recuadros ("Juegos · 3 disponibles" y "GameStats · Al día") y "Cómo funciona" en tres tarjetas con su paso, su dibujo, título y explicación |
 | **Jerarquía de botones** | Ayuda ("? Cómo se juega"): sin caja hasta pasar el mouse. Normales (Pausar, Nueva partida, Cancelar): dorado al pasar el mouse. Principal (Jugar, Reanudar, Jugar otra): verde. Peligro (Cerrar): rojo, que se rellena al pasar el mouse |
 
 El tema (claro u oscuro) se elige con el botón de la cabecera y se comparte con el panel y los juegos.
