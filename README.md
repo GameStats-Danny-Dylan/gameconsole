@@ -310,11 +310,27 @@ gameconsole/
 | Tetris | 58 (Vitest), incluidos eventos contra una copia de las reglas de Scala | `cd games/tetris && npm ci && npm test` |
 | Peleas | 106 (Vitest), incluidas peleas al azar contra una copia de las reglas de Scala, el dibujo, los efectos y el sonido | `cd games/fighting && npm ci && npm test` |
 | Registry | 15 (`node:test`) | `cd registry && npm ci && npm test` |
-| Panel | 7 (Vitest) | `cd panel && npm ci && npm test` |
+| Panel | 8 (Vitest) | `cd panel && npm ci && npm test` |
 | Prolog | 18 (plunit) | `cd prolog && swipl tests.pl` |
 | Todo integrado | prueba de humo | con el compose corriendo: `bash scripts/smoke.sh` |
+| **De punta a punta** | 38 comprobaciones con un navegador real que juega de verdad | con el compose corriendo: `node scripts/e2e.mjs http://localhost:8000 gameconsole ./e2e-out` |
 
 Con Docker no hace falta instalar nada: cada imagen corre sus pruebas al construirse.
+
+**La prueba de punta a punta** (`scripts/e2e.mjs`) abre la consola en Edge o Chrome sin ventana y revisa, sobre el sistema levantado:
+
+| Qué | Cómo |
+|---|---|
+| Los 3 juegos | Aparecen solos en el menú (registry) y se juegan hasta el final: 4 en línea contra la IA en difícil, Tetris hasta perder y una pelea de 1 round |
+| Partidas en paralelo | Las tres a la vez, en **dos pestañas**; GameStats ve las 3 en curso mientras se juegan |
+| Eventos | Captura lo que la consola manda a `/api/events`: cada partida con su `matchId`, ningún envío mezcla partidas, todos los campos del contrato, `MATCH_STARTED` … `MATCH_FINISHED`, tiempos en orden y `eventId` únicos |
+| Prolog | Cada jugada de la computadora trae `data.ai` (`prolog-minimax`, profundidad, nodos) y Prolog tapa una amenaza conocida |
+| GameStats | Go tiene exactamente los eventos que mandó la consola y Scala analizó cada partida |
+| Panel | Los totales generales y por juego son los mismos que devuelve GameStats |
+| Fallos | Se apaga GameStats a mitad de una partida: la consola avisa, sigue y al volver manda todo sin perder nada. Cerrar la pestaña cierra la partida en GameStats al instante |
+| Descubrimiento | Se apaga Tetris y desaparece del menú; se enciende y vuelve |
+
+Resultado el 20-nov: contra la `v1.0` publicada (deployment limpio desde GHCR) dio 36/38, porque una partida recién abierta podía pausarse sola antes de quedar a la vista; se corrigió en la `v1.0.1` y con el arreglo da **38/38**.
 
 ## 12. Documentación de cada parte
 
