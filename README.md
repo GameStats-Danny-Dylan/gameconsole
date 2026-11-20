@@ -127,7 +127,7 @@ Se guardan en dos volúmenes: `analytics-results` (los resultados de Scala) y `i
 | Variable | Por defecto | Qué es |
 |---|---|---|
 | `GATEWAY_PORT` | `8000` | Puerto de la PC donde se publica todo |
-| `GAMESTATS_TAG` | `v1.0` | Versión de las imágenes de GameStats |
+| `GAMESTATS_TAG` | `v1.1` | Versión de las imágenes de GameStats |
 | `ANALYTICS_IMAGE`, `INGESTION_IMAGE` | las de GHCR | Usar una imagen local de GameStats (por ejemplo, una versión sin publicar) |
 | `GAMECONSOLE_TAG` | `latest` | Versión de las imágenes de GameConsole (solo en `docker-compose.deploy.yml`) |
 
@@ -167,7 +167,8 @@ GAMECONSOLE_TAG=v1.0 docker compose -f docker-compose.deploy.yml up -d --wait
 | `ghcr.io/gamestats-danny-dylan/gameconsole-registry` | registry |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-prolog` | IA en Prolog |
 | `ghcr.io/gamestats-danny-dylan/gameconsole-panel` | panel |
-| GameStats: `gamestats-analytics`, `gamestats-ingestion` | del repo `gamestats` |
+| `ghcr.io/gamestats-danny-dylan/gamestats-analytics:v1.1` | GameStats: análisis en Scala ([release v1.1](https://github.com/GameStats-Danny-Dylan/gamestats/releases/tag/v1.1)) |
+| `ghcr.io/gamestats-danny-dylan/gamestats-ingestion:v1.1` | GameStats: ingesta en Go (mismo release) |
 
 Todas para `amd64` y `arm64` (también funcionan en una Mac con chip Apple).
 
@@ -341,5 +342,5 @@ Con Docker no hace falta instalar nada: cada imagen corre sus pruebas al constru
 | Docker, CI/CD, deployment | ✅ |
 | Tetris y peleas | ✅ |
 | Diseño DnD Games y usabilidad (heurísticas de Nielsen) | ✅ |
-| GameStats v1.1 publicado y en los compose (`GAMESTATS_TAG=v1.1`) | pendiente |
+| GameStats v1.1 publicado y en los compose (`GAMESTATS_TAG=v1.1`) | ✅ |
 | Video de demostración | pendiente |
