@@ -2,22 +2,29 @@
    Tema: tokens de color. El claro es el de base; el oscuro se
    activa con <html data-theme="dark"> (ver sdk/src/ui/theme.ts).
    ============================================================ */
+/* Paleta de DnD Games (igual que la consola): claro = cabaña kraft y crema,
+   oscuro = noche de invierno; rojo navidad, dorado y verde pino. El tablero
+   sigue azul y las fichas rojas y amarillas, para que se lea como siempre. */
 :root {
   color-scheme: light;
-  --bg: #eef1f8;
-  --surface: #ffffff;
-  --surface-2: #f4f6fb;
-  --line: #dfe3ee;
-  --fg: #111628;
-  --muted: #5b6479;
-  --accent: #5b4cf0;
-  --accent-2: #0ea5e9;
+  --font-display: "Poppins", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --bg: #e6d8c2;
+  --surface: #f6eddf;
+  --surface-2: #ece0cc;
+  --line: #d6c3a5;
+  --fg: #2a1a10;
+  --muted: #6a5544;
+  --accent: #c8102e;
+  --accent-2: #c9951a;
   --accent-fg: #ffffff;
-  --ok: #15803d;
-  --danger: #dc2626;
-  --shadow: 0 1px 2px rgb(17 22 40 / .05), 0 10px 30px -8px rgb(17 22 40 / .14);
-  --glow-1: rgb(91 76 240 / .16);
-  --glow-2: rgb(14 165 233 / .13);
+  --primary: #1e8a4c;
+  --primary-deep: #125c31;
+  --ok: #1e8a4c;
+  --danger: #c8102e;
+  --shadow: 0 1px 2px rgb(43 27 19 / .08), 0 14px 32px -14px rgb(43 27 19 / .28);
+  --glow-1: rgb(200 16 46 / .10);
+  --glow-2: rgb(201 149 26 / .14);
 
   --board-top: #3563f0;
   --board-bottom: #2140c4;
@@ -32,20 +39,22 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #090d18;
-  --surface: #121829;
-  --surface-2: #192037;
+  --bg: #0b1530;
+  --surface: #12213f;
+  --surface-2: #192b50;
   --line: rgb(255 255 255 / .09);
-  --fg: #e9edf7;
-  --muted: #9ba5bd;
-  --accent: #8b7cff;
-  --accent-2: #22d3ee;
-  --accent-fg: #0b0f1c;
-  --ok: #4ade80;
-  --danger: #f87171;
-  --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 14px 36px -10px rgb(0 0 0 / .7);
-  --glow-1: rgb(139 124 255 / .20);
-  --glow-2: rgb(34 211 238 / .12);
+  --fg: #fdf6ea;
+  --muted: #95a2c0;
+  --accent: #ff5a64;
+  --accent-2: #f6c453;
+  --accent-fg: #ffffff;
+  --primary: #23a35b;
+  --primary-deep: #136b38;
+  --ok: #3ccf7a;
+  --danger: #ff6b73;
+  --shadow: 0 1px 2px rgb(0 0 0 / .5), 0 18px 40px -16px rgb(0 0 0 / .75);
+  --glow-1: rgb(255 90 100 / .14);
+  --glow-2: rgb(246 196 83 / .10);
 
   --board-top: #2a4fd6;
   --board-bottom: #18308f;
@@ -58,7 +67,7 @@ html, body { margin: 0; }
 body {
   min-height: 100dvh;
   color: var(--fg);
-  font: 15px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  font: 15px/1.45 var(--font-body);
   background:
     radial-gradient(900px 520px at 0% -10%, var(--glow-1), transparent 65%),
     radial-gradient(800px 480px at 100% 0%, var(--glow-2), transparent 60%),
@@ -167,7 +176,13 @@ body {
 #app.embedded > .game.card { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px; }
 #app.embedded .c4 { flex: 1; min-height: 0; gap: 8px; grid-template-rows: auto auto minmax(0, 1fr) auto auto; }
 #app.embedded .c4-board-wrap { width: 100%; height: 100%; min-height: 0; container-type: size; display: grid; place-items: center; }
-#app.embedded .c4-board { width: min(100cqw, calc((100cqh - 35px) * 7 / 6 + 38px)); }
+#app.embedded .c4-board-wrap > * { grid-area: 1 / 1; }
+#app.embedded .c4-board { --bw: min(100cqw, calc((100cqh - 35px) * 7 / 6 + 38px)); width: var(--bw); }
+/* "En pausa" tapa solo el tablero: mismo ancho y alto (6 filas de ancho/7 + bordes). */
+#app.embedded .c4-overlay {
+  --bw: min(100cqw, calc((100cqh - 35px) * 7 / 6 + 38px));
+  position: static; width: var(--bw); height: calc((var(--bw) - 38px) * 6 / 7 + 35px);
+}
 #app.embedded .c4-message:empty { display: none; }
 .c4-board {
   display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
@@ -309,3 +324,13 @@ body {
 .dev-log { font-size: 12px; color: var(--muted); }
 .dev-log summary { cursor: pointer; }
 .dev-log ol { max-height: 220px; overflow: auto; padding: 8px 8px 8px 34px; margin: 8px 0 0; border-radius: 10px; background: var(--surface-2); font-family: ui-monospace, Consolas, monospace; }
+
+/* ---------- DnD Games: Poppins en títulos, nombres, estado y botones ---------- */
+.brand h1, .brand-kicker, .c4-name, .c4-status, .c4-overlay, .c4-timer, .setup-head h2, .mode-text strong { font-family: var(--font-display); }
+.c4-button { font-family: var(--font-display); }
+.c4-button.primary {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 80%, #fff), var(--primary));
+  box-shadow: 0 3px 0 var(--primary-deep), 0 10px 22px -10px var(--primary);
+}
+.c4-tag { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.c4[data-status="finished"] .c4-status { color: var(--ok); }

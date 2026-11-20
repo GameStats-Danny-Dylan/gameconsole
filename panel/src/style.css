@@ -390,3 +390,8 @@ th, td { padding-top: 14px; padding-bottom: 14px; }
 .score-board .c-avg { border-left: 1px solid var(--grid); padding-left: 14px; }
 .score-board td.best { font-size: 17px; }
 .score-board td.c-avg { color: var(--ink-2); }
+
+/* Texto dorado legible en claro (contraste 5,1 a 6 sobre los cremas). */
+:root { --gold-text: #7a5100; }
+:root[data-theme="dark"] { --gold-text: #f6c453; }
+.leaderboard td.c-extra, .metrics td.record { color: var(--gold-text); }

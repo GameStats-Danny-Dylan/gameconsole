@@ -68,7 +68,7 @@ describe("el dibujo no cambia la pelea", () => {
     expect(view.ctx.calls).toBeGreaterThan(view.frames * 50);
     expect(view.ctx.badNumbers).toEqual([]);
     expect(drawn.events).toEqual(plain.events);
-  }, 30_000);   // dibuja más de 500 cuadros de una pelea entera: en Docker o en el CI tarda más de 5 s
+  });
 });
 
 describe("el golpe dibujado llega a donde conecta", () => {

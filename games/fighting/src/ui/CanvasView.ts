@@ -16,6 +16,7 @@ import type { FightView, ViewModel } from "../game/ports";
 import { EffectsRenderer } from "./EffectsRenderer";
 import { FighterRenderer } from "./FighterRenderer";
 import { HudRenderer } from "./HudRenderer";
+import { preloadFonts } from "./fonts";
 import { lookOf } from "./looks";
 import type { AnimContext } from "./pose/PoseAnimator";
 import { StageRenderer, type Theme } from "./StageRenderer";
@@ -63,6 +64,8 @@ export class CanvasView implements FightView {
     new MutationObserver(() => this.redraw())
       .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     new ResizeObserver(() => this.resize()).observe(stage);
+    // Poppins e Inter solo las usa el canvas: se piden aquí y se redibuja al llegar.
+    preloadFonts(() => this.redraw());
     // El aviso de foco aparece y se va sin esperar un cuadro.
     window.addEventListener("focus", () => this.redraw());
     window.addEventListener("blur", () => this.redraw());

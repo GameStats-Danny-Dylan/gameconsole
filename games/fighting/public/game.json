@@ -31,13 +31,13 @@
       { "player": "Jugador 2 (derecha)", "keys": ["↑"], "action": "Saltar" },
       { "player": "Jugador 2 (derecha)", "keys": ["K"], "action": "Golpe" },
       { "player": "Jugador 2 (derecha)", "keys": ["↓+K"], "action": "Patada" },
-      { "player": "Jugador 2 (derecha)", "keys": ["L"], "action": "Bloquear" }
+      { "player": "Jugador 2 (derecha)", "keys": ["L"], "action": "Bloquear" },
+      { "player": "Los dos jugadores", "keys": ["M"], "action": "Silenciar o activar el sonido" }
     ],
     "tips": [
       "Golpear en el aire también es patada.",
       "Conecta golpes seguidos, rápido (menos de un segundo entre uno y otro), y haces un combo.",
-      "Bloquear un golpe corta el combo del rival.",
-      "La tecla M silencia o vuelve a activar el sonido (sirve para los dos)."
+      "Bloquear un golpe corta el combo del rival."
     ]
   },
   "protocol": "gameconsole/1"

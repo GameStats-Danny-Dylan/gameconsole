@@ -39,10 +39,10 @@ interface Palette {
 const PALETTES: Record<Theme, Palette> = {
   // Atardecer.
   light: {
-    sky: ["#3f3f93", "#a2588f", "#f4876a", "#ffcf8a"],
+    sky: ["#34498a", "#8c5a8a", "#f08468", "#ffd48f"],
     stars: 0,
     orb: { x: 690, y: 330, r: 64, color: "#fff2c4", glow: "#ffd28a" },
-    far: "#8e5d9a", near: "#62437f", mist: "#ffd3b0",
+    far: "#7c6397", near: "#51477f", mist: "#ffd3b0",
     hall: "#3b2747", hallDark: "#2b1c36", roof: "#24172f", window: "#ffd27c", windowGlow: "#ffb35a",
     pine: "#2c2040", fence: "#2a1d33", ground: "#3a2840",
     lantern: "#3a2a44", lanternGlow: "#ffbf6a",
@@ -52,10 +52,10 @@ const PALETTES: Record<Theme, Palette> = {
   },
   // Noche.
   dark: {
-    sky: ["#060a1c", "#141c45", "#33295c", "#5b3f6e"],
+    sky: ["#050b1f", "#0e1a3c", "#1d2f5e", "#3d4a7a"],
     stars: 140,
     orb: { x: 740, y: 112, r: 30, color: "#f4eed6", glow: "#a9b8ff" },
-    far: "#1d2349", near: "#151a36", mist: "#9aa6e0",
+    far: "#1a2a52", near: "#121f40", mist: "#9fb2e6",
     hall: "#121631", hallDark: "#0c0f24", roof: "#090b1b", window: "#ffb35c", windowGlow: "#ff9a3c",
     pine: "#0b1024", fence: "#0d1023", ground: "#11152c",
     lantern: "#151a33", lanternGlow: "#ffa64d",

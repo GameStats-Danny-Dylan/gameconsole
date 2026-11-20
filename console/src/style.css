@@ -888,3 +888,9 @@ body { line-height: 1.7; }
 .game-meta .meta-svg { width: 17px; height: 17px; color: var(--accent); }
 .game-live { margin-top: auto; margin-bottom: 18px; }
 
+
+/* Texto dorado legible: en claro, dorado oscuro (contraste 5,1 a 6 sobre los cremas);
+   en oscuro, el dorado claro de siempre. */
+:root { --gold-text: #7a5100; }
+:root[data-theme="dark"] { --gold-text: #f6c453; }
+.match-detail, .match-tile[data-status="playing"] .match-detail { color: var(--gold-text); }

@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
     <title>Tetris</title>
+    <!-- Mismas fuentes que la consola: Poppins para títulos y marcador, Inter para los textos. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" />
     <!-- Tema antes de pintar (lo mismo que sdk/src/ui/theme.ts), para que no parpadee. -->
     <script>try{var t=localStorage.getItem("gameconsole-theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}</script>
   </head>
