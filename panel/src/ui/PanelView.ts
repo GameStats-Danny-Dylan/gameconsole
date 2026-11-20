@@ -34,7 +34,7 @@ export class PanelView {
     this.status = h("p", { class: "status", "aria-live": "polite" });
     this.body = h("div", { class: "body" });
     root.append(
-      appHeader("Panel de estadísticas", "Calculadas por GameStats · se actualiza cada 3 s", this.status),
+      appHeader("Estadísticas", "La lista de Santa: calculadas por GameStats · se actualizan cada 3 s", this.status),
       this.body,
     );
     // "hace N s" avanza aunque no llegue una foto nueva.
