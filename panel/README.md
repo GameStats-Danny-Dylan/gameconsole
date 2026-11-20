@@ -73,7 +73,7 @@ Las rutas `/stats/...` y `/games` las agregó **GameStats v1.1** para este proye
 
 ```bash
 npm ci
-npm test          # 7 pruebas: el cliente de GameStats, el store que consulta y avisa, y el armado de cada juego
+npm test          # 8 pruebas: el cliente de GameStats, el store que consulta y avisa, el armado de cada juego y la clasificación por puntaje de Tetris
 npm run dev       # necesita el gateway (docker compose) para /api
 ```
 
