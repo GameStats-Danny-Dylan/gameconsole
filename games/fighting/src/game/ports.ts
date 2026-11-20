@@ -38,6 +38,8 @@ export interface ViewModel {
   stopped: boolean;
   /** Lo que se anima en la presentación (estela de vida, reloj de animaciones...). */
   fx: EffectsSystem | null;
+  /** El sonido está silenciado (tecla M). */
+  muted: boolean;
 }
 
 export interface FightView {

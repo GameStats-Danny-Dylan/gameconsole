@@ -7,6 +7,8 @@ Pelea 1 contra 1 para 2 personas en el mismo teclado (modo `local-2p`), al mejor
 | Slot 1 (izquierda) | A / D | W | F | S + F | G |
 | Slot 2 (derecha) | ← / → | ↑ | K | ↓ + K | L |
 
+**M** silencia o vuelve a activar el sonido (sirve para los dos).
+
 Golpear en el aire también es patada. El bloqueo solo sirve de frente. Un round termina por KO o por tiempo (60 s; gana el que tiene más vida, con la misma vida es empate). Gana la pelea quien llega a la mayoría de los rounds; si se juegan todos sin llegar, gana el que ganó más y, si empatan, no hay ganador (igual que calcula GameStats).
 
 ```bash
@@ -28,6 +30,7 @@ npm run build
 | `src/ui/` | `CanvasView` coordina a `StageRenderer` (cielo, montañas, patio del dojo y piso, con parallax), `FighterRenderer` (luchadores articulados con ropa por personaje, sombra y destello) y `HudRenderer` (barras con estela de daño, retratos, medallones de rounds, reloj y carteles animados) | Facade (`CanvasView`) |
 | `src/ui/pose/` | `Skeleton` (huesos y cinemática directa) y `PoseAnimator` (la pose de cada estado: respiración, ciclo de piernas, salto, puño, patada, bloqueo, golpeado, caída del KO) | State (lee el estado del luchador) |
 | `src/fx/` | `GameFeel` une la pelea con `HitStop` (congelado de impacto), `SlowMotion` (cámara lenta del KO final) y `EffectsSystem` (estela de vida, `ParticleSystem`, `CameraRig`, contador de combo, aterrizaje, festejo). Todo es lógica pura que avanza con el ciclo: en la pausa queda quieto | Mediator (`GameFeel`), Facade (`EffectsSystem`), Observer (`impacts`) |
+| `src/audio/` | `SoundPort` (lo que el juego necesita del sonido) y `SoundBank` (efectos sintetizados con WebAudio) | Adapter / inyección (`SoundPort`) |
 
 ## Personajes
 
@@ -42,6 +45,15 @@ Diseños propios del juego (`src/ui/looks.ts`): **Brasa** (camiseta sin mangas c
 - **Efectos**: chispas y estrella de impacto, esquirlas y arco de guardia al bloquear, polvo al caminar, aterrizar y caer; sacudida de pantalla en patadas y KO; contador de combo ("3 GOLPES") del lado de quien lo hace; destello, zoom leve y cámara lenta en el KO que decide la pelea.
 
 Nada de esto cambia los hechos ni los eventos: `FightingMatch.impacts` avisa los golpes solo para la presentación.
+
+## Sonido
+
+Efectos sintetizados en el momento con WebAudio, sin archivos (`src/audio/SoundBank.ts`): puño, patada, bloqueo, KO, campana de round y el silbido de un golpe que sale.
+
+- El audio se crea recién con la primera tecla o clic dentro del juego (política de reproducción automática de los navegadores).
+- **M** silencia y vuelve a activar; se recuerda en el navegador y el marcador muestra un aviso mientras está silenciado.
+- En la pausa (o al cerrar la partida) el audio se suspende: lo que sonaba se corta y no suena nada nuevo hasta seguir.
+- Los sonidos salen de `GameFeel`, igual que los efectos: no cambian hechos ni eventos (`test/sound.test.ts`).
 
 ## Eventos
 

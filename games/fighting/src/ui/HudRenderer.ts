@@ -287,6 +287,41 @@ export class HudRenderer {
     subText(c, sub, H / 2 + 42, 1);
   }
 
+  /** Parlante tachado abajo a la derecha mientras el sonido está silenciado. */
+  drawMuted(c: Ctx): void {
+    const x = W - 30, y = H - 28;
+    c.save();
+    c.fillStyle = withAlpha("#07060d", 0.72);
+    roundRect(c, x - 112, y - 16, 128, 32, 16);
+    c.fill();
+    c.fillStyle = "#ffffff";
+    c.strokeStyle = "#ffffff";
+    c.lineWidth = 2;
+    c.lineCap = "round";
+    // Parlante.
+    c.beginPath();
+    c.moveTo(x - 6, y - 4);
+    c.lineTo(x - 2, y - 4);
+    c.lineTo(x + 4, y - 9);
+    c.lineTo(x + 4, y + 9);
+    c.lineTo(x - 2, y + 4);
+    c.lineTo(x - 6, y + 4);
+    c.closePath();
+    c.fill();
+    // Tachado.
+    c.strokeStyle = "#ff5a4f";
+    c.beginPath();
+    c.moveTo(x - 9, y - 9);
+    c.lineTo(x + 9, y + 9);
+    c.stroke();
+    c.font = `800 12px ${FONT}`;
+    c.textAlign = "right";
+    c.textBaseline = "middle";
+    c.fillStyle = "#ffffff";
+    c.fillText("Sin sonido · M", x - 16, y + 1);
+    c.restore();
+  }
+
   drawFocusHint(c: Ctx): void {
     c.fillStyle = withAlpha("#090d18", 0.8);
     roundRect(c, W / 2 - 230, H - 58, 460, 40, 10);

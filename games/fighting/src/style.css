@@ -89,6 +89,7 @@ body {
 .fight-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 18px; width: 100%; font-size: 12.5px; color: var(--muted); }
 .fight-keys { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .fight-keys.right { justify-content: flex-end; }
+.fight-sound { align-self: center; white-space: nowrap; }
 .fight-keys strong { color: var(--fg); border-left: 4px solid var(--player); padding-left: 6px; }
 kbd {
   display: inline-block; min-width: 1.6em; padding: 0 5px; text-align: center;

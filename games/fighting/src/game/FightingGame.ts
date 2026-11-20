@@ -16,6 +16,7 @@ import type { GameHost, MatchContext, PauseReason, StopReason } from "@gameconso
 import { GameStatsAdapter } from "../adapter/GameStatsAdapter";
 import { FightingMatch, ROUND_OPTIONS, type RoundsOption } from "../domain/FightingMatch";
 import { NO_INTENT, type Intent } from "../domain/fighter/Intent";
+import { SILENT_SOUND, type SoundPort } from "../audio/SoundPort";
 import { GameFeel } from "../fx/GameFeel";
 import { controlsForSlot, type ControlStrategy } from "../input/ControlScheme";
 import { animationFrames, type FightView, type FrameScheduler, type InputPort, type Status } from "./ports";
@@ -34,7 +35,7 @@ export class FightingGame {
    * Mediator de la presentación: congelado de impacto, cámara lenta y efectos.
    * Solo avanza con el ciclo, así en la pausa todo queda quieto.
    */
-  private readonly feel = new GameFeel();
+  private readonly feel: GameFeel;
 
   private frameId: number | null = null;
   private lastTime: number | null = null;
@@ -46,7 +47,10 @@ export class FightingGame {
     private readonly view: FightView,
     private readonly input: InputPort,
     private readonly frames: FrameScheduler = animationFrames,
-  ) {}
+    private readonly sound: SoundPort = SILENT_SOUND,
+  ) {
+    this.feel = new GameFeel(sound);
+  }
 
   get state(): Status { return this.status; }
   get fight(): FightingMatch { return this.match; }
@@ -94,6 +98,7 @@ export class FightingGame {
     if (this.status !== "playing") return;
     this.status = "paused";
     this.stopLoop();
+    this.sound.pause();
     this.input.reset();
     this.host.emit(this.adapter.paused(reason));
     this.render();
@@ -103,6 +108,7 @@ export class FightingGame {
     if (this.status !== "paused") return;
     this.status = "playing";
     this.host.emit(this.adapter.resumed());
+    this.sound.resume();
     this.input.reset();
     this.startLoop();
   }
@@ -118,6 +124,7 @@ export class FightingGame {
     }
     if (this.status !== "playing" && this.status !== "paused") return;
     this.stopLoop();
+    this.sound.pause();
     this.match.flushAll(); // los golpes que estaban en espera también cuentan
     this.status = "finished";
     this.stopped = true;
@@ -181,6 +188,9 @@ export class FightingGame {
     this.host.finish(winner, "normal");
   }
 
+  /** Vuelve a dibujar (por ejemplo, al silenciar con M en la pausa). */
+  refresh(): void { this.render(); }
+
   private render(): void {
     if (!this.match) return;
     const w = this.match.winner;
@@ -190,6 +200,7 @@ export class FightingGame {
       winnerName: w ? this.match.fighters.find((f) => f.playerId === w)?.name ?? w : null,
       stopped: this.stopped,
       fx: this.feel.fx,
+      muted: this.sound.muted,
     });
   }
 }

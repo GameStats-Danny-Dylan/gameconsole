@@ -94,7 +94,12 @@ export class CanvasView implements FightView {
   private renderLegend(match: FightingMatch): void {
     this.namesShown = true;
     const [a, b] = match.fighters;
-    this.legend.replaceChildren(legendFor(a, SLOT1_KEYS), legendFor(b, SLOT2_KEYS));
+    const sound = document.createElement("span");
+    sound.className = "fight-sound";
+    const m = document.createElement("kbd");
+    m.textContent = "M";
+    sound.append(m, " sonido");
+    this.legend.replaceChildren(legendFor(a, SLOT1_KEYS), sound, legendFor(b, SLOT2_KEYS));
   }
 
   // ------------------------------------------------------------------
@@ -143,6 +148,7 @@ export class CanvasView implements FightView {
     this.hud.draw(c, vm, fx);
     if (fx && vm.status !== "paused") this.effects.drawCombos(c, fx);
     this.hud.drawBanners(c, vm);
+    if (vm.muted) this.hud.drawMuted(c);
     if (vm.status === "playing" && typeof document !== "undefined" && !document.hasFocus()) this.hud.drawFocusHint(c);
   }
 }

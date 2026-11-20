@@ -6,6 +6,8 @@
  * pasa a FightingGame, que no sabe nada del SDK (depende de GameHost).
  */
 import { GameApp, type GameAppOptions, type MatchContext, type PauseReason, type StopReason } from "@gameconsole/sdk";
+import { SoundBank } from "../audio/SoundBank";
+import type { SoundPort } from "../audio/SoundPort";
 import { controlsForSlot } from "../input/ControlScheme";
 import { KeyboardInput } from "../input/KeyboardInput";
 import { CanvasView } from "../ui/CanvasView";
@@ -20,7 +22,9 @@ export class FightingApp extends GameApp {
   }
 
   protected onInit(ctx: MatchContext): void {
-    this.game = new FightingGame(this.host, this.mountView(), this.mountInput(), this.scheduler());
+    const sound = this.mountSound();
+    this.game = new FightingGame(this.host, this.mountView(), this.mountInput(), this.scheduler(), sound);
+    sound.onChange = () => this.game?.refresh(); // silenciar con M se ve aunque esté en pausa
     this.game.init(ctx); // lanza un error si el modo o los jugadores no sirven
   }
 
@@ -33,6 +37,11 @@ export class FightingApp extends GameApp {
   protected mountInput(): InputPort {
     const codes = new Set([...controlsForSlot(1).codes(), ...controlsForSlot(2).codes()]);
     return new KeyboardInput(codes).attach();
+  }
+
+  /** Los efectos de sonido (suenan desde la primera tecla; M silencia). */
+  protected mountSound(): SoundPort {
+    return new SoundBank().attach();
   }
 
   protected scheduler(): FrameScheduler {

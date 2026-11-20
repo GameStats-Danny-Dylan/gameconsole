@@ -7,6 +7,7 @@ import type { ContractEvent, GameEventDraft, GameHost, MatchContext } from "@gam
 import { EventStamper } from "@gameconsole/sdk";
 import { themeToggle } from "@gameconsole/sdk/theme";
 import manifest from "../../public/game.json";
+import { SoundBank } from "../audio/SoundBank";
 import { FightingGame } from "../game/FightingGame";
 import { controlsForSlot } from "../input/ControlScheme";
 import { KeyboardInput } from "../input/KeyboardInput";
@@ -44,6 +45,7 @@ export function mountStandalone(root: HTMLElement): void {
   root.replaceChildren(header, form, game);
 
   let input: KeyboardInput | null = null;
+  const sound = new SoundBank().attach();
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const data = new FormData(form);
@@ -65,7 +67,9 @@ export function mountStandalone(root: HTMLElement): void {
     input?.detach();
     const codes = new Set([...controlsForSlot(1).codes(), ...controlsForSlot(2).codes()]);
     input = new KeyboardInput(codes).attach();
-    const fight = new FightingGame(new LogHost(matchId, () => again()), new CanvasView(game), input);
+    const fight = new FightingGame(new LogHost(matchId, () => again()), new CanvasView(game), input, undefined, sound);
+    sound.onChange = () => fight.refresh();
+    sound.unlock(); // el clic en "Empezar" ya cuenta como gesto de la persona
     fight.init(ctx);
     fight.start();
   });
