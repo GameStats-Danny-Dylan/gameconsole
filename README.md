@@ -15,6 +15,8 @@ Profesor: Oscar Viquez Acuña
 
 Es la **continuación de [GameStats](https://github.com/GameStats-Danny-Dylan/gamestats)** (Proyecto 1). En el P1 un simulador generaba las partidas; aquí las generan **juegos de verdad**, y GameStats las sigue analizando con el mismo contrato de eventos.
 
+**Video de demostración:** <https://youtu.be/tPpMBlDSyJg>
+
 ---
 
 ## Contenido
@@ -469,4 +471,4 @@ Resultados del 20-nov:
 | Tetris y peleas | ✅ |
 | Diseño DnD Games y usabilidad (heurísticas de Nielsen) | ✅ |
 | GameStats v1.3 publicado y en los compose (`GAMESTATS_TAG=v1.3`) | ✅ |
-| Video de demostración | pendiente |
+| Video de demostración | ✅ [youtu.be/tPpMBlDSyJg](https://youtu.be/tPpMBlDSyJg) |
