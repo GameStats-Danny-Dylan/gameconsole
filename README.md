@@ -117,16 +117,26 @@ Hay dos formas de levantarlo. Para probarlo, la **A** es la más rápida.
 
 ### A. Probarlo en 5 minutos, con las imágenes publicadas (sin compilar)
 
-**Paso 1: bajar el repositorio** (o solo el archivo [`docker-compose.deploy.yml`](docker-compose.deploy.yml), que es lo único que se usa).
+**No hace falta clonar el repositorio.** Solo se usa el archivo [`docker-compose.deploy.yml`](docker-compose.deploy.yml), que no compila nada: descarga las imágenes ya publicadas.
+
+**Paso 1 y 2 en un solo comando: bajar ese archivo y levantar todo.** Se corre en una carpeta cualquiera (por ejemplo, una carpeta nueva vacía).
+
+- PowerShell (Windows):
+
+  ```powershell
+  iwr https://raw.githubusercontent.com/GameStats-Danny-Dylan/gameconsole/v1.0.3/docker-compose.deploy.yml -OutFile docker-compose.deploy.yml; docker compose -f docker-compose.deploy.yml up -d --wait
+  ```
+
+- bash (Linux, Mac o Git Bash):
+
+  ```bash
+  curl -fsSLO https://raw.githubusercontent.com/GameStats-Danny-Dylan/gameconsole/v1.0.3/docker-compose.deploy.yml && docker compose -f docker-compose.deploy.yml up -d --wait
+  ```
+
+Si ya se clonó el repositorio, basta con entrar a la carpeta y correr la segunda parte:
 
 ```bash
-git clone https://github.com/GameStats-Danny-Dylan/gameconsole.git
 cd gameconsole
-```
-
-**Paso 2: levantar todo.**
-
-```bash
 docker compose -f docker-compose.deploy.yml up -d --wait
 ```
 
