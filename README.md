@@ -167,6 +167,10 @@ Con la forma A, a cada comando de `docker compose` se le agrega `-f docker-compo
 | `bash scripts/smoke.sh` | Prueba de humo por el gateway (necesita `curl` y `jq`) |
 | `docker compose down` | Apagar (se conservan las estadísticas y las partidas en curso) |
 | `docker compose down -v` | Apagar y **borrar** las estadísticas guardadas y las partidas en curso |
+| `docker compose up -d --wait` | Volver a encender lo que ya estaba construido (sin compilar de nuevo) |
+| `docker compose restart <servicio>` | Reiniciar un solo servicio, por ejemplo `docker compose restart game-tetris` |
+
+Para jugar desde otra computadora, ver [Jugar desde otra computadora](#jugar-desde-otra-computadora) en la sección 5.
 
 Se guardan en dos volúmenes: `analytics-results` (los resultados de Scala) y `ingestion-data` (las partidas en curso de Go, para que un reinicio de `ingestion` no las corte).
 
@@ -200,14 +204,39 @@ Cada partida tiene su botón **? Cómo se juega** con el objetivo, los pasos, lo
 | <http://localhost:8000/panel/> | **Panel**: estadísticas generales y por juego, clasificación, partidas en curso |
 | <http://localhost:8000/games/connect4/> | 4 en línea en **modo de prueba**, sin la consola |
 | <http://localhost:8000/api/registry/games> | Juegos registrados en este momento |
+| <http://localhost:8000/api/matches> | **GameStats por dentro (Go):** cada partida con su estado (`en_curso`, `enviada`…) y sus eventos recibidos |
+| <http://localhost:8000/api/stats/overview> | **GameStats por dentro (Scala):** las estadísticas que muestra el panel, en JSON |
 
 **Varias partidas a la vez:** desde la consola se abren varias partidas (cada una en su cuadro) o se abre la consola en varias pestañas. Cada partida manda sus eventos por separado. Si una partida deja de verse, se pausa sola, y puede quedar en pausa hasta **20 minutos** sin que GameStats la dé por abandonada (en pausa no hay eventos; los compose suben a 20 min el tiempo de espera de Go, que por defecto es 1 min en Tetris y 2 en peleas). Cerrar una partida o la pestaña la cierra en GameStats al instante. Lo único que no alcanza a avisar es un cierre forzado (se cuelga el navegador o se apaga la PC): esa partida aparece "en curso" hasta que pasan los 20 minutos y Go la da por abandonada.
 
 **Antes de una demostración**, conviene empezar con `docker compose down -v`: borra las estadísticas guardadas, y las partidas analizadas por una versión anterior de GameStats no se recalculan solas.
 
-**Desde otra computadora:**
-- En la misma red: `http://<IP de la PC>:8000` (puede hacer falta permitir el puerto en el firewall). Probado con la prueba de punta a punta entrando por la IP: 38/38. Ahí el navegador no ofrece `crypto.randomUUID` (no es HTTPS ni `localhost`), así que el SDK arma el `matchId` con `newUuid`, que tiene un respaldo.
-- Por internet: `docker compose --profile tunnel up -d` levanta un túnel de Cloudflare. La URL pública (`https://….trycloudflare.com`) aparece en `docker compose logs tunnel`. Funciona mientras la PC que lo levantó esté encendida.
+### Jugar desde otra computadora
+
+Una sola PC levanta el sistema y las demás solo abren el navegador. **Todo se guarda en el GameStats de la PC que lo levantó:** las partidas de las otras computadoras aparecen en su panel. Si cada persona levanta su propia copia, cada una tiene su propio GameStats y no se comparten.
+
+**En la misma red** (misma casa, mismo wifi):
+
+1. En la PC que levantó el sistema, buscar su IP: en PowerShell, `ipconfig`, y copiar la «Dirección IPv4» del adaptador de wifi o de red (por ejemplo, `192.168.1.20`).
+2. Permitir el puerto 8000 en el firewall de Windows. En **PowerShell como administrador**:
+   ```powershell
+   New-NetFirewallRule -DisplayName "DnD Games 8000" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow
+   ```
+   Para quitar el permiso después: `Remove-NetFirewallRule -DisplayName "DnD Games 8000"`.
+3. En la otra computadora, abrir `http://<esa IP>:8000`, por ejemplo `http://192.168.1.20:8000`.
+
+Entrando por la IP, el navegador no ofrece `crypto.randomUUID` (no es HTTPS ni `localhost`), así que el SDK arma el `matchId` con `newUuid`, que tiene un respaldo. La prueba de punta a punta entrando por la IP de la red da 38/38.
+
+**Por internet** (otra casa), con un túnel de Cloudflare, sin abrir puertos:
+
+| Paso | Forma A (imágenes publicadas) | Forma B (desde el código) |
+|---|---|---|
+| Encender el túnel | `docker compose -f docker-compose.deploy.yml --profile tunnel up -d --wait` | `docker compose --profile tunnel up -d --wait` |
+| Ver la dirección pública | `docker compose -f docker-compose.deploy.yml logs tunnel` | `docker compose logs tunnel` |
+| Apagar solo el túnel | `docker compose -f docker-compose.deploy.yml stop tunnel` | `docker compose stop tunnel` |
+| Apagar todo, túnel incluido | `docker compose -f docker-compose.deploy.yml --profile tunnel down` | `docker compose --profile tunnel down` |
+
+En los mensajes del túnel aparece una dirección `https://….trycloudflare.com`: esa se le pasa a la otra persona. Cambia cada vez que se enciende el túnel y funciona mientras la PC que lo levantó esté encendida. Cualquiera con esa dirección puede entrar, así que conviene apagar el túnel al terminar.
 
 ## 6. Deployment
 
